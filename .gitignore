@@ -13,3 +13,5 @@ yarn-error.log*
 # environment variables (never commit this file)
 .env
 .env.local
+.vercel
+.env*

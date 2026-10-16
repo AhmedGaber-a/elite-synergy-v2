@@ -48,9 +48,9 @@ export const OFFICIAL_DOCTORS = [
 
 export const MOCK_USER = {
   id: '1',
-  name: 'Mariem ahmed',
-  fullName: 'Mariem ahmed',
-  email: 'mariem.ahmed@elite-synergy.edu.eg',
+  name: 'ahmed',
+  fullName: 'ahme gaber',
+  email: 'ahmed.gaber@elite-synergy.edu.eg',
   specialty: 'Cloud Architect & Software Engineer',
   avatarType: 'niqab' as const,
   skills: [
