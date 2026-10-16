@@ -1,0 +1,716 @@
+// src/lib/data/projects.ts
+
+export interface TeamRole {
+  role: string
+  description: string
+}
+
+export interface TeamProject {
+  id: string
+  title: string
+  description: string
+  forStudents: string
+  phases: string[]
+  illustration: string
+  category: string
+  level: number
+  doctor: string
+  companyBackground: string
+  businessProblem: string
+  relevantData: string[]
+  tasksToSolve: string[]
+  expectedDeliverables: string[]
+  teamRoles: TeamRole[]
+  score: number
+  completionTime: string
+  members: number
+  isMega?: boolean
+  megaDomains?: string[]
+}
+
+export interface PreviousSolution {
+  id: string
+  author: string
+  isSample: boolean
+  summary: string
+  content: string
+  submittedAt?: string
+  fileUrl?: string
+}
+
+export interface SoloCase {
+  id: string
+  title: string
+  level: 'Beginner' | 'Intermediate' | 'Advanced'
+  description: string
+  task: string
+  score: number
+  completionTime: string
+  subject: string
+  supervisors: string[]
+  category: string
+  forStudents: string
+  companyBackground: string
+  businessProblem: string
+  relevantData: string[]
+  tasksToSolve: string[]
+  expectedDeliverables: string[]
+  hints?: string[]
+  previousSolutions?: PreviousSolution[]
+}
+
+export const TEAM_PROJECTS: TeamProject[] = [
+  // MEGA PROJECT — must be first
+  {
+    id: 'mega-iot-erp-flutter',
+    title: 'Integrated Smart Enterprise: IoT + ERP + Flutter Mobile App',
+    description:
+      'A landmark multi-domain capstone project where your team designs and builds a fully integrated smart enterprise system. Students choose their own specific industry idea — it must incorporate an IoT sensor network, a full ERP backend system, and a Flutter mobile application. This is the ultimate test of cross-functional collaboration.',
+    forStudents: 'All Departments — Level 4',
+    phases: [
+      'Ideation & Domain Selection',
+      'IoT Architecture Design',
+      'ERP Module Development',
+      'Flutter App Development',
+      'System Integration & Testing',
+      'Final Presentation',
+    ],
+    illustration: '/assets/illustrations/mega-project.svg',
+    category: 'Cross-Disciplinary',
+    level: 4,
+    doctor: 'Dr. Romany & Dr. Radwa',
+    score: 1000,
+    completionTime: '3 months',
+    members: 11,
+    isMega: true,
+    megaDomains: ['IoT', 'ERP System', 'Flutter Mobile App'],
+    companyBackground:
+      'This is an open-ended capstone project. Your team selects a real-world problem from any industry (e.g., smart agriculture, smart hospital, smart logistics, smart campus). The solution must span all three domains.',
+    businessProblem:
+      'Modern enterprises require seamless integration between physical sensor networks, back-office resource planning, and mobile-first user experiences. Your challenge is to design and prototype a system that achieves this integration for your chosen domain.',
+    relevantData: [
+      'Team size: Strictly 11 members',
+      'Duration: 3 months',
+      'Domains required: IoT (hardware/simulation), ERP System (backend/logic), Flutter Mobile App (UI/UX)',
+      'Students choose their specific idea — any industry is valid as long as it covers all 3 domains',
+      'Final deliverable includes a live demo, documentation, and a video presentation',
+    ],
+    tasksToSolve: [
+      'Select and validate your specific industry idea with your supervisor.',
+      'Design the IoT architecture: sensors, gateways, data streams.',
+      'Build ERP modules: resource management, reporting, dashboards.',
+      'Develop the Flutter mobile app: real-time data display, user management.',
+      'Integrate all three systems end-to-end.',
+      'Produce a 5-minute demo video and final presentation deck.',
+    ],
+    expectedDeliverables: [
+      'System Architecture Diagram (all 3 domains).',
+      'IoT Simulation or Hardware Prototype.',
+      'ERP System (functional modules).',
+      'Flutter Mobile App (APK + source code).',
+      'Integration Documentation.',
+      'Final Presentation Deck (20 slides).',
+      'Project Demo Video (5 minutes).',
+    ],
+    teamRoles: [
+      { role: 'Project Manager', description: 'Oversees timeline, coordinates between sub-teams, prepares final presentation.' },
+      { role: 'IoT Lead', description: 'Designs sensor network architecture and data pipeline.' },
+      { role: 'IoT Developer', description: 'Implements IoT sensors/simulation and MQTT/HTTP communication.' },
+      { role: 'ERP Architect', description: 'Designs ERP modules and database schema.' },
+      { role: 'ERP Backend Developer', description: 'Builds ERP business logic and APIs.' },
+      { role: 'ERP Frontend Developer', description: 'Develops ERP admin dashboard UI.' },
+      { role: 'Flutter Lead', description: 'Leads Flutter app architecture and state management.' },
+      { role: 'Flutter Developer', description: 'Builds Flutter screens and connects to ERP APIs.' },
+      { role: 'UI/UX Designer', description: 'Designs user experience for both ERP dashboard and Flutter app.' },
+      { role: 'QA Engineer', description: 'Tests all three systems and writes integration test cases.' },
+      { role: 'Technical Writer', description: 'Produces all documentation, diagrams, and the final video script.' },
+    ],
+  },
+  {
+    id: 'team-1',
+    title: 'Digital Marketing Strategy for a Sustainable Brand',
+    description: 'Develop a full 6-month digital marketing plan for an eco-friendly startup, including SEO, social media, and influencer strategy.',
+    forStudents: 'BIS & Marketing Students',
+    phases: [],
+    illustration: '/assets/illustrations/project-1.svg',
+    category: 'Marketing',
+    level: 2,
+    doctor: 'Dr. Romany',
+    score: 200,
+    completionTime: '3 weeks',
+    members: 4,
+    companyBackground: 'GreenLeaf Co. is an emerging brand selling sustainable home products.',
+    businessProblem: 'They have zero online presence and a limited budget of $5,000 for their first digital marketing push.',
+    relevantData: ['Target age: 25-40', 'Budget: $5,000', 'Channels considered: Instagram, TikTok, Google Ads'],
+    tasksToSolve: ['Define target personas', 'Allocate the $5,000 budget across channels', 'Plan content calendar for 6 months'],
+    expectedDeliverables: ['Digital Marketing Plan PDF', 'Content Calendar', 'Budget Allocation Spreadsheet'],
+    teamRoles: [
+      { role: 'Strategy Lead', description: 'Sets overall direction and KPIs.' },
+      { role: 'Content Creator', description: 'Plans and creates content assets.' },
+      { role: 'SEO Specialist', description: 'Optimizes web presence and keywords.' },
+      { role: 'Data Analyst', description: 'Tracks performance metrics and ROI.' },
+    ],
+  },
+  {
+    id: 'team-2',
+    title: 'HR Transformation: Building a People-First Culture',
+    description: 'Design a comprehensive HR transformation roadmap for a manufacturing company transitioning to remote-hybrid work.',
+    forStudents: 'BIS Students',
+    phases: [],
+    illustration: '/assets/illustrations/project-2.svg',
+    category: 'Human Resources Management',
+    level: 3,
+    doctor: 'Dr. Hadeer',
+    score: 300,
+    completionTime: '4 weeks',
+    members: 3,
+    companyBackground: 'ManuCorp is a 500-employee manufacturing firm moving to hybrid work after COVID.',
+    businessProblem: 'Employee morale has dropped 40% and productivity metrics are inconsistent across departments.',
+    relevantData: ['Current office attendance: 30%', 'Turnover rate: 28%', 'Employee NPS: -12'],
+    tasksToSolve: ['Redesign performance review system', 'Create a hybrid work policy', 'Build employee wellness program'],
+    expectedDeliverables: ['HR Transformation Roadmap', 'Policy Document', 'Wellness Program Outline'],
+    teamRoles: [
+      { role: 'HR Strategist', description: 'Leads policy design.' },
+      { role: 'Culture Lead', description: 'Focuses on engagement and wellbeing.' },
+      { role: 'Data Analyst', description: 'Analyzes HR metrics.' },
+    ],
+  },
+  {
+    id: 'team-3',
+    title: 'FinTech Startup Financial Model & Pitch Deck',
+    description: 'Build a 5-year financial model and investor pitch deck for a B2B payment processing startup.',
+    forStudents: 'Accounting & BIS Students',
+    phases: [],
+    illustration: '/assets/illustrations/project-3.svg',
+    category: 'Accounting and Finance',
+    level: 3,
+    doctor: 'Dr. Radwa',
+    score: 350,
+    completionTime: '3 weeks',
+    members: 4,
+    companyBackground: 'PayFlow is a pre-seed FinTech startup building an API-first payment gateway.',
+    businessProblem: 'They need to raise $2M seed round and require a solid financial model and pitch deck.',
+    relevantData: ['Projected GMV Year 1: $10M', 'Transaction fee: 1.5%', 'Burn rate: $80K/month'],
+    tasksToSolve: ['Build 5-year P&L model', 'Calculate break-even point', 'Design investor pitch deck (15 slides)'],
+    expectedDeliverables: ['Financial Model (Excel)', 'Pitch Deck (PDF)', 'Executive Summary (1 page)'],
+    teamRoles: [
+      { role: 'Financial Modeler', description: 'Builds the core P&L and projections.' },
+      { role: 'Pitch Designer', description: 'Creates the investor presentation.' },
+      { role: 'Market Researcher', description: 'Validates market size and competitive landscape.' },
+      { role: 'Risk Analyst', description: 'Identifies financial risks and mitigation.' },
+    ],
+  },
+  {
+    id: 'team-4',
+    title: 'Digital Transformation Strategy for RetailCorp',
+    description:
+      'Developing a digital transformation plan for a mid-sized company including strategy, data analytics, financial analysis, and financial feasibility.',
+    forStudents: 'BIS Students',
+    phases: [],
+    illustration: '/assets/illustrations/project-4.svg',
+    category: 'Information systems analysis and design',
+    level: 4,
+    doctor: 'Dr. Radwa',
+    score: 400,
+    completionTime: '5 weeks',
+    members: 5,
+    companyBackground: 'RetailCorp is a traditional brick-and-mortar retail chain losing market share to e-commerce.',
+    businessProblem: 'Lacks unified digital presence and relies on outdated legacy POS systems.',
+    relevantData: ['Current stores: 25', 'Revenue decline: 8% YoY', 'Customer retention: dropped from 65% to 42%'],
+    tasksToSolve: [
+      'Propose a comprehensive digital transformation strategy.',
+      'Design a modern system architecture.',
+      'Calculate ROI and financial feasibility.',
+    ],
+    expectedDeliverables: ['Digital Transformation Strategy Doc', 'System Architecture Diagram', 'Financial Feasibility Spreadsheet'],
+    teamRoles: [
+      { role: 'Business Strategist', description: 'Defines transformation goals.' },
+      { role: 'Systems Architect', description: 'Designs technical infrastructure.' },
+      { role: 'Data Analyst', description: 'Plans analytics framework.' },
+      { role: 'Financial Modeler', description: 'Calculates costs and ROI.' },
+      { role: 'Change Manager', description: 'Plans rollout and change communication.' },
+    ],
+  },
+  {
+    id: 'team-5',
+    title: 'E-Commerce Platform — Full Stack Development',
+    description: 'Design and build a fully functional multi-vendor e-commerce platform with payment integration and admin dashboard.',
+    forStudents: 'Computer Science Students',
+    phases: [],
+    illustration: '/assets/illustrations/project-5.svg',
+    category: 'Computer Science',
+    level: 3,
+    doctor: 'Dr. Romany',
+    score: 500,
+    completionTime: '6 weeks',
+    members: 5,
+    companyBackground: 'A local marketplace wanting to transition from physical kiosks to online.',
+    businessProblem: 'No digital storefront exists. Vendors lose 60% of potential revenue due to lack of online presence.',
+    relevantData: ['Target vendors: 50+', 'Expected monthly traffic: 10,000 visits', 'Budget for hosting: $200/month'],
+    tasksToSolve: [
+      'Design database schema and API architecture.',
+      'Build vendor and customer portals.',
+      'Integrate payment gateway (Stripe mock).',
+      'Create admin dashboard with analytics.',
+    ],
+    expectedDeliverables: ['Deployed Web App', 'API Documentation', 'Admin Dashboard', 'Source Code Repository'],
+    teamRoles: [
+      { role: 'Tech Lead', description: 'Sets architecture and code standards.' },
+      { role: 'Backend Developer', description: 'Builds APIs and database.' },
+      { role: 'Frontend Developer', description: 'Builds customer-facing UI.' },
+      { role: 'UI/UX Designer', description: 'Designs wireframes and UI components.' },
+      { role: 'DevOps', description: 'Manages deployment and CI/CD.' },
+    ],
+  },
+  {
+    id: 'team-6',
+    title: 'AI-Powered Student Advisor Chatbot',
+    description: 'Build an AI chatbot that helps university students navigate course selection, internship opportunities, and academic planning.',
+    forStudents: 'Computer Science Students',
+    phases: [],
+    illustration: '/assets/illustrations/project-6.svg',
+    category: 'Computer Science',
+    level: 4,
+    doctor: 'Dr. Radwa',
+    score: 600,
+    completionTime: '8 weeks',
+    members: 4,
+    companyBackground: 'FACI University wants to reduce the burden on academic advisors by 50%.',
+    businessProblem: 'Students wait 2+ weeks for advisor appointments. 30% miss registration deadlines due to confusion.',
+    relevantData: ['Student population: 5,000', 'Current advisors: 8', 'Average appointment wait: 14 days'],
+    tasksToSolve: [
+      'Design conversation flows for course selection, internships, and scheduling.',
+      'Integrate with LLM API (mock OpenAI).',
+      'Build web chat widget and admin dashboard.',
+      'Test with 20 sample student scenarios.',
+    ],
+    expectedDeliverables: ['Chatbot Web App', 'Conversation Flow Documentation', 'Admin Dashboard', 'Evaluation Report'],
+    teamRoles: [
+      { role: 'AI/ML Engineer', description: 'Designs prompts and integrates LLM.' },
+      { role: 'Backend Developer', description: 'Builds APIs and conversation state management.' },
+      { role: 'Frontend Developer', description: 'Creates the chat widget UI.' },
+      { role: 'QA & Tester', description: 'Tests all conversation scenarios.' },
+    ],
+  },
+]
+
+export const SOLO_CASES: SoloCase[] = [
+  // --- Marketing ---
+  {
+    id: 'mkt-1',
+    title: 'Market Entry Strategy for Eco-Friendly Packaging',
+    level: 'Advanced',
+    description: 'Develop a go-to-market strategy for a new sustainable packaging product.',
+    task: 'Analyze the market and propose a launch plan.',
+    score: 250,
+    completionTime: '2 weeks',
+    subject: 'Marketing',
+    supervisors: ['Dr. Hadeer'],
+    category: 'Marketing',
+    forStudents: 'Advanced',
+    companyBackground: 'EcoPack Solutions is a startup that has developed a 100% biodegradable packaging material made from agricultural waste.',
+    businessProblem: 'They need to enter the highly competitive B2B food delivery packaging market with a limited $20,000 marketing budget.',
+    relevantData: ['Cost per unit: $0.15 (15% higher than plastic)', 'Target market: Mid-to-high-end restaurants', 'Marketing budget: $20,000'],
+    tasksToSolve: ['Identify primary target audience segments.', 'Develop a UVP that justifies the premium price.', 'Create a digital marketing plan within budget.'],
+    expectedDeliverables: ['Presentation deck (10-15 slides)', 'Budget breakdown spreadsheet'],
+    hints: ['Focus on brand image and sustainability goals.', 'Consider direct B2B outreach.'],
+    previousSolutions: [
+      {
+        id: 'sol-mkt-1',
+        author: 'Sample Solution',
+        isSample: true,
+        submittedAt: '2024-03-15',
+        summary: 'Targeted LinkedIn outreach combined with eco-certification partnerships.',
+        content: 'The solution focuses on reaching Sustainability Officers at mid-sized restaurant chains via LinkedIn, using 40% of the budget for targeted B2B ads and 60% for sponsoring a major local food festival.',
+      },
+      {
+        id: 'sol-mkt-1b',
+        author: 'Nada Elsayed',
+        isSample: false,
+        submittedAt: '2024-03-20',
+        summary: 'Partnership-first approach targeting eco-certified restaurants.',
+        content: 'Proposed forming strategic alliances with eco-certification bodies to co-market the product. This provides instant credibility and access to a pre-qualified customer base.',
+      },
+    ],
+  },
+  {
+    id: 'mkt-2',
+    title: 'Social Media Campaign for a Local Coffee Brand',
+    level: 'Beginner',
+    description: 'Create a 30-day Instagram and TikTok campaign strategy for a new local artisan coffee shop.',
+    task: 'Plan content, influencer partnerships, and success metrics.',
+    score: 100,
+    completionTime: '1 week',
+    subject: 'Marketing',
+    supervisors: ['Dr. Hadeer'],
+    category: 'Marketing',
+    forStudents: 'Beginner',
+    companyBackground: 'Brew & Bloom is a new specialty coffee shop in downtown Cairo targeting millennials and Gen-Z.',
+    businessProblem: 'They have zero social media following and need to attract 500 customers in their first month.',
+    relevantData: ['Budget: 5,000 EGP', 'Target audience: 18-35 years old in Cairo', 'Current followers: 0'],
+    tasksToSolve: ['Design a 30-day content calendar.', 'Identify 3 micro-influencers to partner with.', 'Define KPIs for success.'],
+    expectedDeliverables: ['30-Day Content Calendar', 'Influencer Partnership Brief', 'KPI Dashboard Template'],
+  },
+  {
+    id: 'mkt-3',
+    title: 'Rebranding Strategy for an Outdated Financial Service',
+    level: 'Intermediate',
+    description: 'Develop a complete rebranding plan for a 20-year-old bank branch targeting younger demographics.',
+    task: 'Create a brand identity refresh and communication strategy.',
+    score: 180,
+    completionTime: '10 days',
+    subject: 'Marketing',
+    supervisors: ['Dr. Romany'],
+    category: 'Marketing',
+    forStudents: 'Intermediate',
+    companyBackground: 'Pioneer Bank is a well-established Egyptian bank with a dated brand perception among customers under 35.',
+    businessProblem: 'Only 8% of their customers are under 35. They need to modernize their image without alienating existing customers.',
+    relevantData: ['Current customer age average: 52 years', 'Mobile app rating: 2.1/5', 'Competitor NPS: 45 vs Pioneer 12'],
+    tasksToSolve: ['Propose a new visual identity direction.', 'Redesign the tone of voice for digital channels.', 'Plan a phased rollout strategy.'],
+    expectedDeliverables: ['Brand Audit Report', 'Rebranding Proposal Deck', 'Rollout Timeline'],
+  },
+  // --- HR ---
+  {
+    id: 'hr-1',
+    title: 'Resolving High Turnover in a Tech Startup',
+    level: 'Intermediate',
+    description: 'Analyze employee survey data to identify root causes of high turnover and propose HR interventions.',
+    task: 'Propose a retention strategy based on data analysis.',
+    score: 150,
+    completionTime: '1 week',
+    subject: 'Human Resources',
+    supervisors: ['Dr. Romany'],
+    category: 'Human Resources Management',
+    forStudents: 'Intermediate',
+    companyBackground: 'InnoTech is a fast-growing software startup that recently expanded from 50 to 150 employees.',
+    businessProblem: 'Experiencing a 35% annual turnover rate among junior developers.',
+    relevantData: ['Average tenure of departing employees: 8 months', 'Exit themes: Lack of mentorship, unclear career progression, burnout', 'HR team size: 2 people'],
+    tasksToSolve: ['Analyze exit interview themes.', 'Design a cost-effective mentorship program.', 'Propose interventions to reduce burnout.'],
+    expectedDeliverables: ['3-page HR Intervention Proposal', 'Sample 6-month roadmap for a new developer'],
+    previousSolutions: [
+      {
+        id: 'sol-hr-1',
+        author: 'Mohammed Hamada',
+        isSample: false,
+        submittedAt: '2024-04-10',
+        summary: 'Structured mentorship pairing + quarterly career mapping sessions.',
+        content: 'Proposed a buddy system pairing each junior developer with a senior, combined with a quarterly "career vision" meeting with their manager. Cost: $0 additional budget.',
+      },
+    ],
+  },
+  {
+    id: 'hr-2',
+    title: 'Designing a Fair Performance Review System',
+    level: 'Beginner',
+    description: 'Create an unbiased, metric-driven performance review framework for a 200-person mid-sized company.',
+    task: 'Design the evaluation criteria, process, and template.',
+    score: 100,
+    completionTime: '1 week',
+    subject: 'Human Resources',
+    supervisors: ['Dr. Romany'],
+    category: 'Human Resources Management',
+    forStudents: 'Beginner',
+    companyBackground: 'DataSoft is a software company where managers feel the current annual review is subjective and unfair.',
+    businessProblem: '60% of employees believe their review scores are biased. Top performers are leaving due to perceived unfairness.',
+    relevantData: ['Current review system: Annual, manager-only assessment', 'Employee satisfaction with reviews: 35%', 'Turnover after review season: 18%'],
+    tasksToSolve: ['Define objective, measurable performance criteria.', 'Design a 360-degree feedback process.', 'Create a review template and scoring rubric.'],
+    expectedDeliverables: ['Performance Review Template', 'Process Flowchart', 'Implementation Guide'],
+  },
+  {
+    id: 'hr-3',
+    title: 'Remote Onboarding Program Design',
+    level: 'Advanced',
+    description: 'Build a comprehensive 90-day remote onboarding program for a fully distributed tech company.',
+    task: 'Design the onboarding journey, tools, and checkpoints.',
+    score: 200,
+    completionTime: '2 weeks',
+    subject: 'Human Resources',
+    supervisors: ['Dr. Hadeer'],
+    category: 'Human Resources Management',
+    forStudents: 'Advanced',
+    companyBackground: 'RemoteFirst Inc. is a 100% remote company hiring 30 new employees per month globally.',
+    businessProblem: 'New hires report feeling isolated and unproductive in their first 3 months. Time-to-productivity averages 4 months.',
+    relevantData: ['Hire locations: 15+ countries', 'Average time to productivity: 4 months (target: 2 months)', 'Current onboarding NPS: 28'],
+    tasksToSolve: ['Design a 30-60-90 day onboarding plan.', 'Recommend tools and platforms for remote collaboration.', 'Create milestone checkpoints and manager guides.'],
+    expectedDeliverables: ['90-Day Onboarding Journey Map', 'Week-1 Checklist', 'Manager Onboarding Guide'],
+  },
+  // --- Accounting ---
+  {
+    id: 'acc-1',
+    title: 'Financial Statement Analysis for Investment Decision',
+    level: 'Intermediate',
+    description: 'Analyze the financial statements of two competing retail companies and recommend which to invest in.',
+    task: 'Perform ratio analysis and write an investment recommendation report.',
+    score: 180,
+    completionTime: '10 days',
+    subject: 'Accounting',
+    supervisors: ['Dr. Radwa'],
+    category: 'Accounting and Finance',
+    forStudents: 'Intermediate',
+    companyBackground: 'Two Egyptian retail chains — ShopMart and FreshMart — are both publicly traded on the EGX.',
+    businessProblem: 'An investment club with 50,000 EGP to invest needs to decide which company offers better returns and lower risk.',
+    relevantData: ['ShopMart Revenue: 120M EGP | Net Profit: 8M EGP', 'FreshMart Revenue: 95M EGP | Net Profit: 12M EGP', 'Debt/Equity: ShopMart 2.1 | FreshMart 0.8'],
+    tasksToSolve: ['Calculate key financial ratios (liquidity, profitability, leverage).', 'Compare both companies side by side.', 'Write a 2-page investment recommendation.'],
+    expectedDeliverables: ['Ratio Analysis Spreadsheet', '2-Page Investment Recommendation'],
+    previousSolutions: [
+      {
+        id: 'sol-acc-1',
+        author: 'Sample Solution',
+        isSample: true,
+        submittedAt: '2024-02-20',
+        summary: 'FreshMart recommended based on superior profitability ratios and lower leverage.',
+        content: 'Despite lower revenue, FreshMart demonstrates a 12.6% net profit margin vs ShopMart\'s 6.7%, and a far safer D/E ratio of 0.8. Recommendation: Invest in FreshMart.',
+      },
+    ],
+  },
+  {
+    id: 'acc-2',
+    title: 'Budgeting & Cost Control for a Manufacturing Unit',
+    level: 'Beginner',
+    description: 'Prepare a master budget and identify cost reduction opportunities for a small manufacturing unit.',
+    task: 'Build the budget and propose 3 cost-saving strategies.',
+    score: 120,
+    completionTime: '1 week',
+    subject: 'Accounting',
+    supervisors: ['Dr. Radwa'],
+    category: 'Accounting and Finance',
+    forStudents: 'Beginner',
+    companyBackground: 'EgyCraft is a small furniture manufacturing unit in 10th of Ramadan City.',
+    businessProblem: 'Their production costs have risen 22% this year while revenue grew only 5%. They need a budget plan.',
+    relevantData: ['Monthly revenue: 500,000 EGP', 'Raw materials cost: 45% of revenue', 'Labor cost: 30% of revenue'],
+    tasksToSolve: ['Prepare a monthly master budget.', 'Identify the top 3 cost drivers.', 'Propose actionable cost reduction strategies.'],
+    expectedDeliverables: ['Master Budget Spreadsheet', 'Cost Reduction Report (1 page)'],
+  },
+  {
+    id: 'acc-3',
+    title: 'Tax Planning Strategy for a Growing SME',
+    level: 'Advanced',
+    description: 'Develop a legal tax minimization strategy for a fast-growing Egyptian SME using available tax incentives.',
+    task: 'Analyze the company tax position and propose optimization strategies.',
+    score: 250,
+    completionTime: '2 weeks',
+    subject: 'Accounting',
+    supervisors: ['Dr. Radwa'],
+    category: 'Accounting and Finance',
+    forStudents: 'Advanced',
+    companyBackground: 'TechSpark is an Egyptian tech startup that grew from 2M to 15M EGP in revenue in 2 years.',
+    businessProblem: 'Paying the highest tax bracket (22.5%) without utilizing any available investment incentives or deductions.',
+    relevantData: ['Revenue: 15M EGP', 'Taxable income: 4.2M EGP', 'Available incentives: SME Act 2020, R&D deductions'],
+    tasksToSolve: ['Map all applicable tax incentives.', 'Calculate potential tax savings.', 'Propose a legal restructuring plan.'],
+    expectedDeliverables: ['Tax Optimization Report', 'Savings Calculation Spreadsheet'],
+  },
+  // --- ISAD ---
+  {
+    id: 'isad-1',
+    title: 'Database Design for a Library Management System',
+    level: 'Beginner',
+    description: 'Create an ER diagram and relational schema for a university library.',
+    task: 'Design a normalized database schema.',
+    score: 100,
+    completionTime: '1 week',
+    subject: 'Information Systems Analysis and Design',
+    supervisors: ['Dr. Radwa'],
+    category: 'Information systems analysis and design',
+    forStudents: 'Beginner',
+    companyBackground: 'The university library is upgrading from a manual card catalog to a digital management system.',
+    businessProblem: 'Needs a robust database to track books, members, loans, and fines without data redundancy.',
+    relevantData: ['Entities: Books, Authors, Members, Loans, Categories', 'Rules: Member can borrow up to 5 books. A book can have multiple authors.'],
+    tasksToSolve: ['Identify all entities and attributes.', 'Define primary and foreign keys.', 'Create ER diagram.', 'Normalize to 3NF.'],
+    expectedDeliverables: ['ER Diagram (image or PDF)', 'Normalized Relational Schema document'],
+    previousSolutions: [
+      {
+        id: 'sol-isad-1',
+        author: 'Elite Demo',
+        isSample: true,
+        submittedAt: '2024-01-15',
+        summary: 'Complete 3NF schema with ERD using junction table for Book_Author.',
+        content: 'The design includes a junction table for Book_Author to handle the many-to-many relationship. The Loans table tracks issue_date, due_date, and return_date to calculate fines automatically.',
+      },
+      {
+        id: 'sol-isad-1b',
+        author: 'Rania Khaled',
+        isSample: false,
+        submittedAt: '2024-01-22',
+        summary: 'ERD with additional Book_Reservation table for future extension.',
+        content: 'Added a Reservations table to allow students to reserve books that are currently on loan. The schema anticipates future needs while maintaining 3NF compliance.',
+      },
+    ],
+  },
+  {
+    id: 'isad-2',
+    title: 'System Analysis for an Online Food Delivery Platform',
+    level: 'Intermediate',
+    description: 'Conduct a full system analysis including use case diagrams, DFDs, and system requirements for a food delivery app.',
+    task: 'Document the system requirements and design the process flows.',
+    score: 180,
+    completionTime: '10 days',
+    subject: 'Information Systems Analysis and Design',
+    supervisors: ['Dr. Radwa'],
+    category: 'Information systems analysis and design',
+    forStudents: 'Intermediate',
+    companyBackground: 'Deliver-E is a startup building a food delivery app to compete with Talabat in smaller Egyptian cities.',
+    businessProblem: 'The development team has no system documentation, leading to scope creep and miscommunication.',
+    relevantData: ['User types: Customer, Restaurant, Driver, Admin', 'Key features: Order placement, real-time tracking, ratings, payments'],
+    tasksToSolve: ['Write a Software Requirements Specification (SRS).', 'Draw Use Case diagrams for all actors.', 'Create Level-0 and Level-1 DFDs.'],
+    expectedDeliverables: ['SRS Document', 'Use Case Diagrams', 'DFD Diagrams (Level 0 & 1)'],
+  },
+  {
+    id: 'isad-3',
+    title: 'ERP System Selection for a Retail Chain',
+    level: 'Advanced',
+    description: 'Evaluate and recommend an ERP system for a 10-branch retail chain, including cost-benefit analysis.',
+    task: 'Compare ERP vendors and justify your recommendation.',
+    score: 220,
+    completionTime: '2 weeks',
+    subject: 'Information Systems Analysis and Design',
+    supervisors: ['Dr. Radwa'],
+    category: 'Information systems analysis and design',
+    forStudents: 'Advanced',
+    companyBackground: 'ChainMart is a growing Egyptian retail chain with 10 branches operating on 4 different incompatible systems.',
+    businessProblem: 'Inventory discrepancies cost them 1.2M EGP per year. They need a unified ERP solution.',
+    relevantData: ['Budget: $50,000/year for software', 'Employees: 200', 'Key modules needed: Inventory, HR, Finance, POS'],
+    tasksToSolve: ['Evaluate 3 ERP options (SAP, Odoo, Oracle NetSuite).', 'Create a weighted decision matrix.', 'Write a recommendation report with ROI projection.'],
+    expectedDeliverables: ['ERP Evaluation Matrix', 'Recommendation Report', 'ROI Projection Spreadsheet'],
+  },
+  // --- Management ---
+  {
+    id: 'mgmt-1',
+    title: 'Strategic Plan for a University Startup Incubator',
+    level: 'Intermediate',
+    description: 'Develop a 3-year strategic plan for launching a student startup incubator at a university.',
+    task: 'Use strategic planning frameworks to build the plan.',
+    score: 200,
+    completionTime: '2 weeks',
+    subject: 'Management',
+    supervisors: ['Dr. Romany'],
+    category: 'Management',
+    forStudents: 'Intermediate',
+    companyBackground: 'FACI University wants to establish an incubator to commercialize student research projects.',
+    businessProblem: 'The university has no structured support for student entrepreneurs. 40% of promising projects die after graduation.',
+    relevantData: ['Available budget: 500,000 EGP/year', 'Target: Support 20 startups/year', 'Available mentors: 15 industry professionals'],
+    tasksToSolve: ['Conduct SWOT analysis.', 'Define the incubator mission, vision, and goals.', 'Create a 3-year operational plan with milestones.'],
+    expectedDeliverables: ['Strategic Plan Document', 'SWOT Analysis', '3-Year Roadmap'],
+  },
+  {
+    id: 'mgmt-2',
+    title: 'Supply Chain Risk Management Plan',
+    level: 'Advanced',
+    description: 'Develop a comprehensive supply chain risk assessment and mitigation plan for a pharmaceutical company.',
+    task: 'Identify risks and create a business continuity plan.',
+    score: 280,
+    completionTime: '2 weeks',
+    subject: 'Management',
+    supervisors: ['Dr. Hadeer'],
+    category: 'Management',
+    forStudents: 'Advanced',
+    companyBackground: 'EgyPharma imports 70% of its raw materials from China and India.',
+    businessProblem: 'Post-COVID disruptions caused 3 production shutdowns, costing 8M EGP. They need a risk management plan.',
+    relevantData: ['Import dependency: 70% from Asia', 'Lead time: 90 days average', 'Insurance coverage: Basic only'],
+    tasksToSolve: ['Map all supply chain risks using a risk matrix.', 'Propose diversification strategies.', 'Design a business continuity plan.'],
+    expectedDeliverables: ['Risk Assessment Matrix', 'Mitigation Strategy Report', 'Business Continuity Plan'],
+  },
+  // --- Computer Science ---
+  {
+    id: 'cs-1',
+    title: 'Design a RESTful API for a Task Management App',
+    level: 'Beginner',
+    description: 'Design and document a complete RESTful API for a task management application following best practices.',
+    task: 'Create API documentation with endpoints, request/response schemas.',
+    score: 120,
+    completionTime: '1 week',
+    subject: 'Computer Science',
+    supervisors: ['Dr. Romany'],
+    category: 'Computer Science',
+    forStudents: 'Beginner',
+    companyBackground: 'DevFlow is building a Trello-like task management tool for small teams.',
+    businessProblem: 'The backend team needs complete API documentation before frontend development can begin.',
+    relevantData: ['Resources: Users, Projects, Tasks, Comments, Labels', 'Auth: JWT-based', 'Format: JSON'],
+    tasksToSolve: ['Define all API endpoints (CRUD for each resource).', 'Write request/response schemas in OpenAPI format.', 'Document authentication flows.', 'Identify error codes and edge cases.'],
+    expectedDeliverables: ['OpenAPI/Swagger Documentation', 'Postman Collection', 'Error Handling Guide'],
+    previousSolutions: [
+      {
+        id: 'sol-cs-1',
+        author: 'Mariem Ahmed',
+        isSample: false,
+        submittedAt: '2024-05-10',
+        summary: 'Complete OpenAPI 3.0 spec with 28 endpoints covering all resources.',
+        content: 'Designed a RESTful API with JWT authentication. Implemented versioning (/api/v1/), standardized error responses using RFC 7807 Problem Details format, and documented rate limiting headers.',
+      },
+    ],
+  },
+  {
+    id: 'cs-2',
+    title: 'Cybersecurity Penetration Testing Report',
+    level: 'Advanced',
+    description: 'Conduct a simulated penetration test on a test web application and produce a professional security report.',
+    task: 'Identify vulnerabilities and provide remediation recommendations.',
+    score: 300,
+    completionTime: '2 weeks',
+    subject: 'Computer Science',
+    supervisors: ['Dr. Romany'],
+    category: 'Computer Science',
+    forStudents: 'Advanced',
+    companyBackground: 'SecureBank (simulated environment) is a web banking application running on a test server.',
+    businessProblem: 'Security audit required before production launch. The team needs to identify OWASP Top 10 vulnerabilities.',
+    relevantData: ['Test environment URL provided', 'Scope: Web app only, no social engineering', 'Tools allowed: Burp Suite, OWASP ZAP, Nmap'],
+    tasksToSolve: ['Perform reconnaissance and mapping.', 'Test for OWASP Top 10 vulnerabilities.', 'Document all findings with severity ratings.', 'Provide remediation steps for each vulnerability.'],
+    expectedDeliverables: ['Penetration Test Report (executive summary + technical detail)', 'Vulnerability Matrix with CVSS scores', 'Remediation Roadmap'],
+  },
+  {
+    id: 'cs-3',
+    title: 'Machine Learning Model for Student Grade Prediction',
+    level: 'Intermediate',
+    description: 'Build and evaluate a machine learning model to predict student final grades based on engagement data.',
+    task: 'Train, evaluate, and document an ML model.',
+    score: 220,
+    completionTime: '10 days',
+    subject: 'Computer Science',
+    supervisors: ['Dr. Romany'],
+    category: 'Computer Science',
+    forStudents: 'Intermediate',
+    companyBackground: 'FACI University wants to identify at-risk students early using their LMS engagement data.',
+    businessProblem: 'Currently, students are only identified as at-risk after failing their midterm. Early intervention could increase pass rates by 20%.',
+    relevantData: ['Dataset: 2,000 student records (anonymized)', 'Features: Login frequency, assignment submission rate, video watch time, forum activity', 'Target: Final grade (Pass/Fail)'],
+    tasksToSolve: ['Perform exploratory data analysis (EDA).', 'Train at least 2 classification models.', 'Evaluate using accuracy, precision, recall, F1-score.', 'Visualize feature importance.'],
+    expectedDeliverables: ['Jupyter Notebook with full code', 'Model Evaluation Report', 'Feature Importance Chart'],
+  },
+]
+
+export const FILTER_CATEGORIES = [
+  { label: 'Marketing', count: 5 },
+  { label: 'Human Resources Management', count: 4 },
+  { label: 'Accounting and Finance', count: 5 },
+  { label: 'Information systems analysis and design', count: 6 },
+  { label: 'Management', count: 4 },
+  { label: 'Computer Science', count: 5 },
+  { label: 'Cross-Disciplinary', count: 1 },
+]
+
+export const SOLO_CATEGORIES = [
+  { id: 'marketing', label: 'Marketing', icon: '📢' },
+  { id: 'hr', label: 'Human Resources Management', icon: '👤' },
+  { id: 'accounting', label: 'Accounting and Finance', icon: '💰' },
+  { id: 'isad', label: 'Information systems analysis and design', icon: '🗂️' },
+  { id: 'management', label: 'Management', icon: '⚙️' },
+  { id: 'cs', label: 'Computer Science', icon: '💻' },
+]
+
+export const FILTER_DOCTORS = [
+  { label: 'Dr. Romany', count: 12 },
+  { label: 'Dr. Hadeer', count: 10 },
+  { label: 'Dr. Radwa', count: 10 },
+]
+
+export const FILTER_POINTS = [
+  { label: 'All', count: 30, value: 'all' },
+  { label: '100-200', count: 12, value: '100' },
+  { label: '200-400', count: 12, value: '200' },
+  { label: '400+', count: 6, value: '400' },
+]
+
+export const FILTER_LEVELS = [
+  { label: 'All levels', count: 30, value: 'all' },
+  { label: '2', count: 8, value: '2' },
+  { label: '3', count: 12, value: '3' },
+  { label: '4', count: 10, value: '4' },
+]

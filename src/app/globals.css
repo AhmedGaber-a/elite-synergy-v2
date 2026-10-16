@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-bg-cream text-text-primary font-sans antialiased;
+  }
+  * {
+    @apply box-border;
+  }
+  /* Better focus rings */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-orange ring-offset-2;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-orange text-white font-semibold px-6 py-2.5 rounded-full hover:bg-brand-orange-dark transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98];
+  }
+  .btn-navy {
+    @apply bg-brand-navy text-white font-semibold px-6 py-2.5 rounded-full hover:opacity-90 transition-all duration-200 cursor-pointer active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply border border-brand-orange text-brand-orange font-semibold px-6 py-2.5 rounded-full hover:bg-brand-orange hover:text-white transition-all duration-200 cursor-pointer active:scale-[0.98];
+  }
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+  }
+  /* Glassmorphism helper */
+  .glass {
+    @apply bg-white/40 backdrop-blur-md border border-white/50;
+  }
+}
+
+@layer utilities {
+  /* Smooth animations */
+  .animate-in {
+    animation: fadeSlideIn 0.2s ease-out both;
+  }
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .slide-in-from-top-2 {
+    --tw-enter-translate-y: -8px;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #e5e7eb;
+    border-radius: 99px;
+  }
+
+  /* Text balance for headings */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-orange to-amber-500 bg-clip-text text-transparent;
+  }
+}
