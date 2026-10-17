@@ -7,7 +7,7 @@ export interface Peer {
   specialty: string;
   skills: string[];
   avatar: string;
-  avatarType: 'niqab' | 'hijab' | 'male';
+  avatarType: 'male' | 'female';
   college: string;
   bio: string;
   projects: PeerProject[];

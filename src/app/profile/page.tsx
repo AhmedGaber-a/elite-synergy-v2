@@ -29,7 +29,7 @@ interface ProfileData {
   fullName: string;
   email: string;
   specialty: string;
-  avatarType: 'male' | 'female' | 'hijab' | 'niqab';
+  avatarType: 'male' | 'female';
   avatar: string;
   college: string;
   age: number | null;
@@ -83,7 +83,7 @@ function EditProfileModal({
 }) {
   const [form, setForm] = useState({
     avatar: user.avatar || '',
-    avatarType: user.avatarType || 'male',
+    avatarType: ((user.avatarType === 'female' || (user.avatarType as string) === 'hijab' || (user.avatarType as string) === 'niqab') ? 'female' : 'male') as 'male' | 'female',
     name: user.name,
     fullName: user.fullName,
     specialty: user.specialty,
@@ -219,19 +219,35 @@ function EditProfileModal({
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-text-muted mb-1">
-                  Predefined Avatar Character
+                <label className="block text-[11px] font-semibold text-text-muted mb-1.5">
+                  الجنس / الصورة الرمزية
                 </label>
-                <select
-                  value={form.avatarType}
-                  onChange={(e) => setForm({ ...form, avatarType: e.target.value as any })}
-                  className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-white"
-                >
-                  <option value="male">Male (طالب)</option>
-                  <option value="female">Female (طالبة)</option>
-                  <option value="hijab">Hijab (محجبة)</option>
-                  <option value="niqab">Niqab (منتقبة)</option>
-                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, avatarType: 'male' })}
+                    className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                      form.avatarType === 'male'
+                        ? 'border-brand-orange bg-orange-50 text-brand-orange ring-1 ring-brand-orange shadow-sm'
+                        : 'border-gray-200 text-text-muted hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <Avatar name="طالب" avatarType="male" size="xs" />
+                    <span>ذكر (Male)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, avatarType: 'female' })}
+                    className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                      form.avatarType === 'female'
+                        ? 'border-brand-orange bg-orange-50 text-brand-orange ring-1 ring-brand-orange shadow-sm'
+                        : 'border-gray-200 text-text-muted hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <Avatar name="طالبة" avatarType="female" size="xs" />
+                    <span>أنثى (Female)</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

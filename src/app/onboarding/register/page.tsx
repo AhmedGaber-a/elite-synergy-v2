@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Camera, Linkedin, Facebook, User, Mail, Lock, Eye, EyeOff, AlertTriangle, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
 
 function XIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -26,6 +27,7 @@ function RegisterContent() {
 
   const [email, setEmail] = useState(queryEmail || state.email || '');
   const [fullName, setFullName] = useState(state.fullName || '');
+  const [avatarType, setAvatarType] = useState<'male' | 'female'>(state.avatarType || 'male');
   const [college, setCollege] = useState(state.college || 'Computer Science');
   const [specialty, setSpecialty] = useState(state.specialty || 'Cloud Architecture & Software Engineering');
   const [password, setPassword] = useState(state.password || '');
@@ -94,6 +96,7 @@ function RegisterContent() {
       password,
       college,
       specialty,
+      avatarType,
       socialLinks: {
         linkedin,
         twitter,
@@ -211,6 +214,39 @@ function RegisterContent() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
+                </div>
+              </div>
+
+              {/* Gender / Avatar Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-text-primary mb-1.5">
+                  الجنس (Gender) <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAvatarType('male')}
+                    className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl border text-sm font-bold transition-all ${
+                      avatarType === 'male'
+                        ? 'border-brand-orange bg-orange-50 text-brand-orange ring-1 ring-brand-orange shadow-sm'
+                        : 'border-gray-200 bg-gray-50 text-text-muted hover:border-gray-300'
+                    }`}
+                  >
+                    <Avatar name="طالب" avatarType="male" size="xs" />
+                    <span>ذكر (Male)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvatarType('female')}
+                    className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl border text-sm font-bold transition-all ${
+                      avatarType === 'female'
+                        ? 'border-brand-orange bg-orange-50 text-brand-orange ring-1 ring-brand-orange shadow-sm'
+                        : 'border-gray-200 bg-gray-50 text-text-muted hover:border-gray-300'
+                    }`}
+                  >
+                    <Avatar name="طالبة" avatarType="female" size="xs" />
+                    <span>أنثى (Female)</span>
+                  </button>
                 </div>
               </div>
 

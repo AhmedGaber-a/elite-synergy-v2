@@ -5,7 +5,7 @@ export interface Post {
   id: string;
   author: string;
   authorAvatar?: string;
-  authorAvatarType?: 'niqab' | 'hijab' | 'male';
+  authorAvatarType?: 'male' | 'female';
   role?: string;
   content: string;
   contentAr?: string;
@@ -21,7 +21,7 @@ export interface Comment {
   id: string;
   author: string;
   authorAvatar?: string;
-  authorAvatarType?: 'niqab' | 'hijab' | 'male';
+  authorAvatarType?: 'male' | 'female';
   text: string;
   textAr?: string;
   timeAgo?: string;
@@ -32,7 +32,7 @@ export interface Reply {
   id: string;
   author: string;
   authorAvatar?: string;
-  authorAvatarType?: 'niqab' | 'hijab' | 'male';
+  authorAvatarType?: 'male' | 'female';
   text: string;
   textAr?: string;
 }
@@ -70,7 +70,7 @@ export const POSTS: Post[] = [
       {
         id: 'c2',
         author: 'basmalha Ibrahim',
-        authorAvatarType: 'hijab',
+        authorAvatarType: 'female',
         text: 'The Power BI executive summary dashboard is ready for our presentation!',
         textAr: 'داشبورد الـ Power BI للملخص التنفيذي جهز خلاص للعرض!',
       },
@@ -81,7 +81,7 @@ export const POSTS: Post[] = [
   {
     id: '2',
     author: 'Dooa Abd-elftah',
-    authorAvatarType: 'hijab',
+    authorAvatarType: 'female',
     role: 'BIS · Systems Analysis',
     content:
       'Finished modeling the business workflow diagrams for the Supply Chain Case. Any peers free today to review the BPMN notation together?',
@@ -92,7 +92,7 @@ export const POSTS: Post[] = [
       {
         id: 'c3',
         author: 'Rania Khaled',
-        authorAvatarType: 'hijab',
+        authorAvatarType: 'female',
         text: 'I can review it with you around 4 PM in the study room!',
         textAr: 'أنا فاضية أراجع معاكي الساعة 4 في قاعة المذاكرة!',
       },
@@ -103,10 +103,10 @@ export const POSTS: Post[] = [
 ];
 
 export const MY_COMMUNITIES = [
-  { id: '1', name: 'Raneem Yasser', avatarType: 'hijab' as const },
-  { id: '2', name: 'Rania Khaled', avatarType: 'hijab' as const },
-  { id: '3', name: 'basmalha Ibrahim', avatarType: 'hijab' as const },
-  { id: '4', name: 'Malak Mahmouad', avatarType: 'hijab' as const },
+  { id: '1', name: 'Raneem Yasser', avatarType: 'female' as const },
+  { id: '2', name: 'Rania Khaled', avatarType: 'female' as const },
+  { id: '3', name: 'basmalha Ibrahim', avatarType: 'female' as const },
+  { id: '4', name: 'Malak Mahmouad', avatarType: 'female' as const },
   { id: '5', name: 'Mohamed hamada', avatarType: 'male' as const },
 ];
 
@@ -118,10 +118,10 @@ export const COMMUNITY_GROUPS = [
 ];
 
 export const PEOPLE_YOU_MAY_KNOW = [
-  { id: 'p-1', name: 'Shahd Khamees', role: 'Auditing & Compliance Student', roleAr: 'طالبة مراجعة وحوكمة', avatarType: 'hijab' as const },
-  { id: 'p-2', name: 'Rahma', role: 'Mobile App Developer (Flutter)', roleAr: 'مطورة تطبيقات موبايل فلاتر', avatarType: 'hijab' as const },
-  { id: 'p-3', name: 'Nada Elsayed', role: 'ERP Systems & Odoo Specialist', roleAr: 'أخصائية نظم ERP وأودو', avatarType: 'hijab' as const },
-  { id: 'p-4', name: 'Shahd Mohamed', role: 'Cloud Security & Networking', roleAr: 'أمن سحابي وشبكات', avatarType: 'hijab' as const },
+  { id: 'p-1', name: 'Shahd Khamees', role: 'Auditing & Compliance Student', roleAr: 'طالبة مراجعة وحوكمة', avatarType: 'female' as const },
+  { id: 'p-2', name: 'Rahma', role: 'Mobile App Developer (Flutter)', roleAr: 'مطورة تطبيقات موبايل فلاتر', avatarType: 'female' as const },
+  { id: 'p-3', name: 'Nada Elsayed', role: 'ERP Systems & Odoo Specialist', roleAr: 'أخصائية نظم ERP وأودو', avatarType: 'female' as const },
+  { id: 'p-4', name: 'Shahd Mohamed', role: 'Cloud Security & Networking', roleAr: 'أمن سحابي وشبكات', avatarType: 'female' as const },
 ];
 
 export const MOCK_POSTS = POSTS;

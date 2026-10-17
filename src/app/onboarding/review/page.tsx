@@ -30,6 +30,7 @@ export default function ReviewPage() {
         password: state.password || 'TemporaryPassword2026!',
         college: state.college || 'Computer Science',
         specialty: state.specialty || 'Cloud Architecture & Software Engineering',
+        avatarType: state.avatarType === 'female' ? 'female' : 'male',
         skills: allSkills,
         languages: state.languages,
         bio: state.bio,

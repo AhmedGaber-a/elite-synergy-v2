@@ -119,7 +119,9 @@ export async function POST(request: Request) {
         bio: bio || null,
         resumeUrl: finalCvUrl,
         socialLinks: socialLinks || null,
-        avatarType: (avatarType as AvatarType) || AvatarType.male,
+        avatarType: (avatarType === 'female' || avatarType === 'hijab' || avatarType === 'niqab')
+          ? AvatarType.female
+          : AvatarType.male,
         userRole: UserRole.STUDENT,
         isVerified: false,
         priorProjects: {

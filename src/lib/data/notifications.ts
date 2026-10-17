@@ -12,7 +12,7 @@ export interface Notification {
   timeAgo: string
   timeAgoAr?: string
   avatar?: string
-  avatarType?: 'niqab' | 'hijab' | 'male'
+  avatarType?: 'male' | 'female'
   unread?: boolean
   actionUrl?: string
 }
@@ -41,7 +41,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'بعتولك دعوة تمسك دور ليد الكلاود والـ IoT في تيم المشروع الكبير (11 عضو).',
     timeAgo: '1 hour ago',
     timeAgoAr: 'من ساعة',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: true,
     actionUrl: '/practical/team/mega-iot-erp-flutter',
   },
@@ -54,7 +54,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'اعتمدت حلك للكيس العملي الفردي، ونزل في رصيدك 450 نقطة!',
     timeAgo: '3 hours ago',
     timeAgoAr: 'من 3 ساعات',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: false,
     actionUrl: '/practical/solo',
   },
@@ -67,7 +67,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'نزلت تعليمات وملاحظات جديدة لتسليم دراسة الجدوى المالية.',
     timeAgo: 'Yesterday',
     timeAgoAr: 'إمبارح',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: false,
     actionUrl: '/practical/team',
   },
@@ -82,7 +82,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'بعتتلك طلب إضافة عشان تذاكروا سوا Power BI وتحليل بيانات.',
     timeAgo: '20 mins ago',
     timeAgoAr: 'من 20 دقيقة',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: true,
     actionUrl: '/peers',
   },
@@ -108,7 +108,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'وافقت على طلب التواصل! تقدر تبدأ شات معاها دلوقتي عشان تنسقوا مشاريع.',
     timeAgo: '2 hours ago',
     timeAgoAr: 'من ساعتين',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: false,
     actionUrl: '/messages',
   },
@@ -121,7 +121,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'شاركت معاك تمبلت لمشروع الـ UML ونظم المعلومات بقسم الـ BIS.',
     timeAgo: 'Yesterday',
     timeAgoAr: 'إمبارح',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: false,
     actionUrl: '/peers',
   },
@@ -136,7 +136,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'مناقشة جديدة قالعة نار في الهاب: "أحسن ممارسات هيكلة الـ ERP للشركات المصرية الناشئة".',
     timeAgo: '30 mins ago',
     timeAgoAr: 'من نص ساعة',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: true,
     actionUrl: '/community',
   },
@@ -162,7 +162,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'علقت على بوستك: "عاش بجد، شرح مفيد جداً لطرق توفير تكاليف الكلاود!"',
     timeAgo: '5 hours ago',
     timeAgoAr: 'من 5 ساعات',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: false,
     actionUrl: '/community',
   },
@@ -175,7 +175,7 @@ export const NOTIFICATIONS: Notification[] = [
     messageAr: 'عملت إعجاب لعرض مشروعك في منتدى دراسات الجدوى المالية.',
     timeAgo: 'Yesterday',
     timeAgoAr: 'إمبارح',
-    avatarType: 'hijab',
+    avatarType: 'female',
     unread: false,
     actionUrl: '/community',
   },

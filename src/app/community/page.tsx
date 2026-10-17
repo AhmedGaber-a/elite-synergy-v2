@@ -18,7 +18,7 @@ export interface PostCommentItem {
   id: string;
   author: string;
   authorAvatar?: string;
-  authorAvatarType?: 'male' | 'female' | 'hijab' | 'niqab';
+  authorAvatarType?: 'male' | 'female';
   text: string;
   textAr?: string | null;
   timeAgo: string;
@@ -26,7 +26,7 @@ export interface PostCommentItem {
     id: string;
     author: string;
     authorAvatar?: string;
-    authorAvatarType?: 'male' | 'female' | 'hijab' | 'niqab';
+    authorAvatarType?: 'male' | 'female';
     text: string;
   }>;
 }
@@ -36,13 +36,13 @@ export interface PostItem {
   authorId?: string;
   author: string;
   authorAvatar?: string;
-  authorAvatarType?: 'male' | 'female' | 'hijab' | 'niqab';
+  authorAvatarType?: 'male' | 'female';
   authorDetails?: {
     id: string;
     name: string;
     fullName?: string;
     avatar?: string;
-    avatarType?: 'male' | 'female' | 'hijab' | 'niqab';
+    avatarType?: 'male' | 'female';
     college?: string;
     specialty?: string;
   };
@@ -145,9 +145,9 @@ function CreatePostModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
           <h2 className="text-lg font-extrabold text-text-primary">
             {t('community.sharePost')}
           </h2>
@@ -156,7 +156,8 @@ function CreatePostModal({
           </button>
         </div>
 
-        <div className="p-5">
+        {/* Scrollable Modal Content */}
+        <div className="p-5 overflow-y-auto flex-1">
           {error && (
             <div className="mb-4 bg-red-50 text-red-600 text-xs p-3 rounded-xl border border-red-200 flex items-center gap-2">
               <AlertCircle size={15} />
@@ -195,10 +196,10 @@ function CreatePostModal({
                 <div className="relative">
                   {activeTab === 'photo' && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={filePreview} alt="Preview" className="max-h-48 mx-auto rounded-xl object-contain" />
+                    <img src={filePreview} alt="Preview" className="max-h-[240px] w-full object-contain mx-auto rounded-xl" />
                   )}
                   {activeTab === 'video' && (
-                    <video controls src={filePreview} className="max-h-48 mx-auto rounded-xl bg-black" />
+                    <video controls src={filePreview} className="max-h-[240px] w-full object-contain mx-auto rounded-xl bg-black" />
                   )}
                   {activeTab === 'file' && (
                     <div className="flex items-center justify-center gap-3 py-4 text-brand-navy">
@@ -242,7 +243,7 @@ function CreatePostModal({
           )}
 
           {/* Tab buttons */}
-          <div className="flex gap-1 mb-4 border border-gray-100 rounded-2xl p-1 bg-gray-50">
+          <div className="flex gap-1 mb-2 border border-gray-100 rounded-2xl p-1 bg-gray-50">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -259,7 +260,7 @@ function CreatePostModal({
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 flex items-center gap-3 border-t border-gray-50 pt-4">
+        <div className="px-5 py-4 flex items-center gap-3 border-t border-gray-100 shrink-0 bg-white">
           <button className="p-2 text-gray-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-colors">
             <Smile size={20} />
           </button>
@@ -362,8 +363,8 @@ function EditPostModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 flex flex-col max-h-[85vh]">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
           <h2 className="text-lg font-extrabold text-text-primary flex items-center gap-2">
             <Pencil size={18} className="text-brand-orange" /> تعديل المنشور
           </h2>
@@ -372,7 +373,8 @@ function EditPostModal({
           </button>
         </div>
 
-        <div className="p-5">
+        {/* Scrollable Modal Content */}
+        <div className="p-5 overflow-y-auto flex-1">
           {error && (
             <div className="mb-4 bg-red-50 text-red-600 text-xs p-3 rounded-xl border border-red-200 flex items-center gap-2">
               <AlertCircle size={15} />
@@ -400,10 +402,10 @@ function EditPostModal({
                 <div className="relative">
                   {activeTab === 'photo' && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={filePreview} alt="Preview" className="max-h-48 mx-auto rounded-xl object-contain" />
+                    <img src={filePreview} alt="Preview" className="max-h-[240px] w-full object-contain mx-auto rounded-xl" />
                   )}
                   {activeTab === 'video' && (
-                    <video controls src={filePreview} className="max-h-48 mx-auto rounded-xl bg-black" />
+                    <video controls src={filePreview} className="max-h-[240px] w-full object-contain mx-auto rounded-xl bg-black" />
                   )}
                   {activeTab === 'file' && (
                     <div className="flex items-center justify-center gap-3 py-4 text-brand-navy">
@@ -447,7 +449,7 @@ function EditPostModal({
           )}
 
           {/* Tab buttons */}
-          <div className="flex gap-1 mb-4 border border-gray-100 rounded-2xl p-1 bg-gray-50">
+          <div className="flex gap-1 mb-2 border border-gray-100 rounded-2xl p-1 bg-gray-50">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -464,7 +466,7 @@ function EditPostModal({
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 flex items-center justify-end gap-3 border-t border-gray-50 pt-4">
+        <div className="px-5 py-4 flex items-center justify-end gap-3 border-t border-gray-100 shrink-0 bg-white">
           <Button variant="ghost" size="sm" className="rounded-full" onClick={onClose}>
             {t('common.cancel')}
           </Button>
@@ -492,7 +494,7 @@ function PostCard({
   onShowToast,
 }: {
   post: PostItem;
-  currentUser: { id?: string; name: string; avatar?: string | null; avatarUrl?: string | null; avatarType?: 'male' | 'female' | 'hijab' | 'niqab' } | null;
+  currentUser: { id?: string; name: string; avatar?: string | null; avatarUrl?: string | null; avatarType?: 'male' | 'female' | string } | null;
   onEdit: (post: PostItem) => void;
   onShowToast: (msg: string) => void;
 }) {

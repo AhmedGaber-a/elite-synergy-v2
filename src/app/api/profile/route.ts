@@ -162,10 +162,13 @@ export async function PATCH(req: NextRequest) {
     }
 
     const avatarValue = body.avatar !== undefined ? body.avatar : body.avatarUrl;
-    const validAvatarTypes = ['male', 'female', 'hijab', 'niqab'];
-    const avatarTypeValue = body.avatarType && validAvatarTypes.includes(body.avatarType)
-      ? body.avatarType
-      : undefined;
+    // Strictly normalize AvatarType to base categories: 'male' or 'female'
+    let avatarTypeValue: 'male' | 'female' | undefined = undefined;
+    if (body.avatarType !== undefined) {
+      avatarTypeValue = (body.avatarType === 'female' || body.avatarType === 'hijab' || body.avatarType === 'niqab')
+        ? 'female'
+        : 'male';
+    }
 
     // Sub-action: Update avatar / profile picture
     if (action === 'update_avatar') {
@@ -180,16 +183,21 @@ export async function PATCH(req: NextRequest) {
       const userSafe = { ...updated };
       delete (userSafe as { password?: string | null }).password;
 
+      const normalizedType: 'male' | 'female' =
+        userSafe.avatarType === 'female' || (userSafe.avatarType as string) === 'hijab' || (userSafe.avatarType as string) === 'niqab'
+          ? 'female'
+          : 'male';
+
       return NextResponse.json({
         success: true,
         user: {
           ...userSafe,
           avatarUrl: userSafe.avatar || null,
           image: userSafe.avatar || null,
-          avatarType: userSafe.avatarType,
+          avatarType: normalizedType,
         },
         avatar: updated.avatar,
-        avatarType: updated.avatarType,
+        avatarType: normalizedType,
       });
     }
 
@@ -223,16 +231,21 @@ export async function PATCH(req: NextRequest) {
     const userSafe = { ...updatedUser };
     delete (userSafe as { password?: string | null }).password;
 
+    const normalizedUpdatedType: 'male' | 'female' =
+      userSafe.avatarType === 'female' || (userSafe.avatarType as string) === 'hijab' || (userSafe.avatarType as string) === 'niqab'
+        ? 'female'
+        : 'male';
+
     return NextResponse.json({
       success: true,
       user: {
         ...userSafe,
         avatarUrl: userSafe.avatar || null,
         image: userSafe.avatar || null,
-        avatarType: userSafe.avatarType,
+        avatarType: normalizedUpdatedType,
       },
       avatar: updatedUser.avatar,
-      avatarType: updatedUser.avatarType,
+      avatarType: normalizedUpdatedType,
     });
   } catch (error) {
     console.error('Update profile error:', error);

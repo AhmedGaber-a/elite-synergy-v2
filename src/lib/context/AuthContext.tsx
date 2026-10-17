@@ -11,7 +11,7 @@ export interface User {
   avatar?: string | null;
   avatarUrl?: string | null;
   image?: string | null;
-  avatarType?: 'male' | 'female' | 'hijab' | 'niqab';
+  avatarType?: 'male' | 'female' | string;
   specialty?: string;
   role?: string;
   userRole?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
