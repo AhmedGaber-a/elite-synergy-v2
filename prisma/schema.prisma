@@ -73,9 +73,14 @@ model User {
   posts          Post[]
   postComments   PostComment[]
   commentReplies CommentReply[]
+  commentReactions CommentReaction[]
   postLikes      PostLike[]
   conversations  ConversationParticipant[]
   sentMessages   Message[]                 @relation("SentMessages")
+
+  // Notifications Relations
+  notifications     Notification[]        @relation("UserNotifications")
+  sentNotifications Notification[]        @relation("SentNotifications")
 
   // Peers Collaboration Relations
   sentRequests     CollaborationRequest[] @relation("SentCollabRequests")
@@ -273,11 +278,18 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Internal Post Sharing
+  sharedPostId     String?
+  sharedPost       Post?       @relation("SharedPostRelation", fields: [sharedPostId], references: [id], onDelete: SetNull)
+  shares           Post[]      @relation("SharedPostRelation")
+  sharedInMessages Message[]   @relation("MessageSharedPost")
+
   likes    PostLike[]
   comments PostComment[]
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([sharedPostId])
 }
 
 model PostLike {
@@ -302,10 +314,19 @@ model PostComment {
   textAr    String?  @db.Text
   createdAt DateTime @default(now())
 
+  // Nested comment replies self-relation
+  parentId      String?
+  parent        PostComment?  @relation("NestedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  nestedReplies PostComment[] @relation("NestedComments")
+
+  // Comment reactions
+  reactions CommentReaction[]
+
   replies CommentReply[]
 
   @@index([postId])
   @@index([authorId])
+  @@index([parentId])
 }
 
 model CommentReply {
@@ -322,12 +343,29 @@ model CommentReply {
   @@index([authorId])
 }
 
+model CommentReaction {
+  id        String      @id @default(cuid())
+  commentId String
+  comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String      // 👍, ❤️, 🔥, 👏
+  createdAt DateTime    @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+}
+
 model Conversation {
   id            String   @id @default(cuid())
   name          String? // Group chat name or project title
   isGroup       Boolean  @default(false)
   role          String? // e.g. "11 Members · Mega Project"
   avatarType    AvatarType?
+  category      String?  @default("peers") // "peers" | "practical"
+  projectId     String?
+  teamId        String?
   lastMessage   String?  @db.Text
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
@@ -360,10 +398,34 @@ model Message {
   sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   text           String       @db.Text
   isRead         Boolean      @default(false)
+
+  // Shared post preview in chat
+  sharedPostId   String?
+  sharedPost     Post?        @relation("MessageSharedPost", fields: [sharedPostId], references: [id], onDelete: SetNull)
+
   createdAt      DateTime     @default(now())
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([sharedPostId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  senderId  String?
+  sender    User?    @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  category  String   @default("community") // "community" | "peers" | "practical"
+  title     String
+  message   String   @db.Text
+  messageAr String?  @db.Text
+  actionUrl String?
+  unread    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // ─────────────────────────────────────────────────────────────

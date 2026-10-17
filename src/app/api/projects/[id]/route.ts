@@ -174,6 +174,8 @@ export async function GET(
         expectedDeliverables: project.expectedDeliverables,
         illustration: project.illustration,
         category: project.category,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
       },
       teams: project.teams.map((t) => ({
         id: t.slug || t.id,

@@ -29,16 +29,6 @@ export async function GET(req: NextRequest) {
               ],
             }
           : {}),
-        ...(search
-          ? {
-              OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { fullName: { contains: search, mode: 'insensitive' } },
-                { specialty: { contains: search, mode: 'insensitive' } },
-                { skills: { has: search } },
-              ],
-            }
-          : {}),
       },
       include: {
         priorProjects: true,
@@ -57,7 +47,7 @@ export async function GET(req: NextRequest) {
       college: u.college,
       avatar: u.avatar || '',
       avatarType: u.avatarType,
-      skills: u.skills,
+      skills: u.skills || [],
       bio: u.bio || '',
       points: u.points,
       matchScore: u.matchScore ?? 85,
@@ -71,10 +61,26 @@ export async function GET(req: NextRequest) {
       })),
     }));
 
-    // Filter by skill if requested
-    const filteredPeers = skill
-      ? peers.filter((p) => p.skills.some((s) => s.toLowerCase().includes(skill.toLowerCase())))
-      : peers;
+    // Dynamic case-insensitive free-text filter for skills & search
+    let filteredPeers = peers;
+    if (skill) {
+      const sLower = skill.toLowerCase().trim();
+      filteredPeers = filteredPeers.filter((p) =>
+        p.skills.some((s) => s.toLowerCase().includes(sLower))
+      );
+    }
+
+    if (search) {
+      const qLower = search.toLowerCase().trim();
+      filteredPeers = filteredPeers.filter((p) =>
+        p.name.toLowerCase().includes(qLower) ||
+        p.fullName.toLowerCase().includes(qLower) ||
+        p.specialty.toLowerCase().includes(qLower) ||
+        p.college.toLowerCase().includes(qLower) ||
+        p.discipline.toLowerCase().includes(qLower) ||
+        p.skills.some((s) => s.toLowerCase().includes(qLower))
+      );
+    }
 
     return NextResponse.json({ peers: filteredPeers });
   } catch (error) {
@@ -121,10 +127,55 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create a real Notification in database for the receiver
+    await prisma.notification.create({
+      data: {
+        userId: peerId,
+        senderId: authUser.id,
+        category: 'peers',
+        title: 'طلب تواصل أكاديمي جديد',
+        message: `${authUser.name} أرسل لك دعوة للتواصل والتعاون الأكاديمي.`,
+        messageAr: `${authUser.name} أرسل لك دعوة للتواصل والتعاون الأكاديمي.`,
+        actionUrl: `/peers/${authUser.id}`,
+      },
+    });
+
+    // Ensure a real peer conversation is available in Chat
+    const existingConv = await prisma.conversation.findFirst({
+      where: {
+        isGroup: false,
+        participants: {
+          every: {
+            userId: { in: [authUser.id, peerId] },
+          },
+        },
+      },
+      include: { participants: true },
+    });
+
+    let convId = existingConv?.id;
+    if (!existingConv || existingConv.participants.length < 2) {
+      const newConv = await prisma.conversation.create({
+        data: {
+          isGroup: false,
+          category: 'peers',
+          lastMessage: message || 'بدأت المحادثة الأكاديمية',
+          participants: {
+            create: [
+              { userId: authUser.id },
+              { userId: peerId },
+            ],
+          },
+        },
+      });
+      convId = newConv.id;
+    }
+
     return NextResponse.json({
       success: true,
       message: 'تم إرسال طلب التواصل بنجاح!',
       request,
+      conversationId: convId,
     });
   } catch (error) {
     console.error('Connect peer error:', error);

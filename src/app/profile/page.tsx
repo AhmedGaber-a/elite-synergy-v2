@@ -300,9 +300,40 @@ function EditProfileModal({
             <div>
               <label className="block text-xs font-bold text-text-primary mb-1">CV / Portfolio Link</label>
               <input
+                type="text"
                 value={form.resumeUrl}
                 onChange={(e) => setForm({ ...form, resumeUrl: e.target.value })}
                 placeholder="https://drive.google.com/..."
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-text-primary mb-1">LinkedIn Profile</label>
+              <input
+                type="text"
+                value={form.linkedin}
+                onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
+                placeholder="linkedin.com/in/username"
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-text-primary mb-1">X (Twitter) Profile</label>
+              <input
+                type="text"
+                value={form.x}
+                onChange={(e) => setForm({ ...form, x: e.target.value })}
+                placeholder="x.com/username"
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-text-primary mb-1">Facebook Profile</label>
+              <input
+                type="text"
+                value={form.facebook}
+                onChange={(e) => setForm({ ...form, facebook: e.target.value })}
+                placeholder="facebook.com/username"
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-gray-50"
               />
             </div>

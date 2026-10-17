@@ -1,328 +1,616 @@
-'use client'
-import React, { useState, useRef, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { Search, Plus, Settings, Paperclip, Mic, Send, MoreVertical, Video, X, Phone, PhoneOff, MicOff } from 'lucide-react'
-import { AppLayout } from '@/components/layout/AppLayout'
-import { Avatar } from '@/components/ui/Avatar'
-import { Badge } from '@/components/ui/Badge'
-import { CONVERSATIONS } from '@/lib/data/messages'
-import { PEERS } from '@/lib/data/peers'
-import { SOLO_CASES, TEAM_PROJECTS } from '@/lib/data/projects'
-import { cn } from '@/lib/utils/cn'
+// src/app/messages/page.tsx
+'use client';
+import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Search, Plus, Paperclip, Send, MoreVertical,
+  Users, Briefcase, ExternalLink, MessageSquare, ArrowLeft, RefreshCw
+} from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/context/AuthContext';
+import { cn } from '@/lib/utils/cn';
+
+interface SharedPostPreview {
+  id: string;
+  author: string;
+  authorAvatar?: string;
+  authorAvatarType?: 'male' | 'female';
+  content: string;
+  mediaType?: string | null;
+  mediaUrl?: string | null;
+  fileName?: string | null;
+  fileUrl?: string | null;
+  createdAt?: string;
+}
+
+interface MessageItem {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  sender: string;
+  senderFullName?: string;
+  senderAvatar?: string;
+  senderAvatarType?: 'male' | 'female';
+  text: string;
+  isMe: boolean;
+  time: string;
+  timeAgoEn: string;
+  exactDate: string;
+  createdAt: string;
+  sharedPost?: SharedPostPreview | null;
+}
+
+interface ConversationItem {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  avatarType?: 'male' | 'female';
+  isGroup: boolean;
+  category: 'peers' | 'practical';
+  projectId?: string | null;
+  teamId?: string | null;
+  lastMessage: string;
+  time: string;
+  timeAgoEn: string;
+  unread: number;
+  otherUserId?: string | null;
+}
 
 function MessagesContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const type = searchParams.get('type')
-  const id = searchParams.get('id')
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [conversations, setConversations] = useState(CONVERSATIONS)
-  const [activeId, setActiveId] = useState(conversations[0].id)
-  const [newMessage, setNewMessage] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showVideo, setShowVideo] = useState(false)
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const typeParam = searchParams.get('type'); // 'peer' | 'project'
+  const idParam = searchParams.get('id');
 
-  // Initialization: If navigating from a peer or project, ensure conversation exists
+  const [activeCategory, setActiveCategory] = useState<'all' | 'peers' | 'practical'>('all');
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loadingConvs, setLoadingConvs] = useState(true);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. Fetch conversations from real Prisma API
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/conversations', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        const convList: ConversationItem[] = data.conversations || [];
+        setConversations(convList);
+
+        // Auto-select first conversation if none selected
+        if (!activeId && convList.length > 0 && !idParam) {
+          setActiveId(convList[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch conversations:', err);
+    } finally {
+      setLoadingConvs(false);
+    }
+  }, [activeId, idParam]);
+
+  // Handle URL query navigation: open or create conversation
   useEffect(() => {
-    if (type && id) {
-      const convId = `${type}_${id}`
-      const existing = conversations.find(c => c.id === convId)
-      
-      if (!existing) {
-        let newConv
-        if (type === 'peer') {
-          const peer = PEERS.find(p => p.id === id)
-          if (peer) {
-            newConv = {
-              id: convId,
-              name: peer.name,
-              role: peer.specialty,
-              avatar: peer.avatar,
-              lastMessage: 'Conversation started',
-              time: 'Just now',
-              unread: 0,
-              isOnline: true,
-              isGroup: false,
-              messages: [],
-              contextType: 'peer'
+    async function handleUrlParam() {
+      if (!idParam) return;
+
+      // If idParam is a conversation ID that exists in list
+      const existing = conversations.find((c) => c.id === idParam);
+      if (existing) {
+        setActiveId(existing.id);
+        if (existing.category) setActiveCategory(existing.category);
+        return;
+      }
+
+      // If typeParam is peer or project, ensure conversation is initialized
+      if (typeParam === 'peer') {
+        try {
+          const res = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ peerId: idParam, category: 'peers' }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.conversationId) {
+              await fetchConversations();
+              setActiveId(data.conversationId);
+              setActiveCategory('peers');
             }
           }
-        } else if (type === 'project') {
-          const project = SOLO_CASES.find(p => p.id === id) || TEAM_PROJECTS.find(p => p.id === id)
-          if (project) {
-            newConv = {
-              id: convId,
-              name: `${project.title} Discussion`,
-              role: 'Project Workspace',
-              avatar: '/assets/logo-mark.svg',
-              lastMessage: 'Workspace created',
-              time: 'Just now',
-              unread: 0,
-              isOnline: true,
-              isGroup: true,
-              messages: [],
-              contextType: 'project'
+        } catch (err) {
+          console.error('Failed to create peer conversation:', err);
+        }
+      } else if (typeParam === 'project') {
+        try {
+          const res = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: idParam, category: 'practical' }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.conversationId) {
+              await fetchConversations();
+              setActiveId(data.conversationId);
+              setActiveCategory('practical');
             }
           }
+        } catch (err) {
+          console.error('Failed to create project workspace conversation:', err);
         }
-        
-        if (newConv) {
-          setConversations(prev => [newConv, ...prev])
-          setActiveId(newConv.id)
-        }
-      } else {
-        setActiveId(existing.id)
       }
     }
-  }, [type, id]) // run only when type/id change in URL
 
-  const active = conversations.find(c => c.id === activeId) || conversations[0]
+    handleUrlParam();
+  }, [typeParam, idParam, conversations, fetchConversations]);
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return
-    setConversations(prev => prev.map(c =>
-      c.id === activeId
-        ? {
-            ...c,
-            messages: [...c.messages, {
-              id: String(Date.now()),
-              text: newMessage,
-              sender: 'me',
-              senderName: 'Ahmed',
-              senderRole: 'Student',
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            }],
-            lastMessage: newMessage,
-          }
-        : c
-    ))
-    setNewMessage('')
-  }
+  // Initial load & poll conversations
+  useEffect(() => {
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 8000);
+    return () => clearInterval(interval);
+  }, [fetchConversations]);
+
+  // 2. Fetch messages for active conversation
+  const fetchMessages = useCallback(async (convId: string) => {
+    try {
+      const res = await fetch(`/api/messages?conversationId=${convId}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch messages:', err);
+    }
+  }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [active?.messages?.length])
+    if (!activeId) return;
 
-  const filtered = conversations.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    setLoadingMsgs(true);
+    fetchMessages(activeId).finally(() => setLoadingMsgs(false));
+
+    // Fast polling for active chat messages
+    const msgInterval = setInterval(() => {
+      fetchMessages(activeId);
+    }, 3500);
+
+    return () => clearInterval(msgInterval);
+  }, [activeId, fetchMessages]);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  // 3. Send message
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !activeId || sending) return;
+    const textToSend = newMessage.trim();
+    setNewMessage('');
+    setSending(true);
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: activeId,
+          text: textToSend,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.message) {
+          setMessages((prev) => [...prev, data.message]);
+          // Update conversation last message in list
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === activeId
+                ? { ...c, lastMessage: textToSend, time: 'الآن' }
+                : c
+            )
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const activeConversation = conversations.find((c) => c.id === activeId);
+
+  // Filter conversations by category & search query
+  const filteredConversations = conversations.filter((c) => {
+    const matchesCategory =
+      activeCategory === 'all' || c.category === activeCategory;
+    const matchesSearch =
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.role.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const counts = {
+    all: conversations.length,
+    peers: conversations.filter((c) => c.category === 'peers').length,
+    practical: conversations.filter((c) => c.category === 'practical').length,
+  };
+
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <AppLayout>
+        <div className="bg-bg-cream min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md text-center shadow-sm border border-gray-100">
+            <div className="w-16 h-16 bg-orange-50 text-brand-orange rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+              💬
+            </div>
+            <h2 className="text-xl font-extrabold text-text-primary mb-2">تسجيل الدخول مطلوب</h2>
+            <p className="text-xs text-text-muted mb-6">
+              يرجى تسجيل الدخول بحسابك الجامعي للوصول إلى محادثاتك الأكاديمية ومساحات عمل الفرق.
+            </p>
+            <Link href="/auth/login">
+              <Button variant="primary" size="md" className="rounded-xl px-6 font-bold">
+                تسجيل الدخول الآن
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
       <div className="bg-bg-cream" style={{ height: 'calc(100vh - 80px)' }}>
         <div className="section-container h-full py-4">
           <div className="flex h-full gap-4">
-            
-            {/* Conversation list */}
-            <div className="w-72 md:w-80 flex-shrink-0 flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hidden sm:flex">
-              <div className="p-5 border-b border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-extrabold text-xl text-text-primary">Inbox</h2>
-                  <div className="flex gap-2">
-                    <button className="text-text-muted hover:text-brand-orange transition-colors"><Plus size={20} /></button>
-                    <button className="text-text-muted hover:text-brand-orange transition-colors"><Settings size={20} /></button>
-                  </div>
+            {/* Conversation List Sidebar */}
+            <div className="w-80 md:w-88 flex-shrink-0 flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+              <div className="p-4 border-b border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-extrabold text-xl text-text-primary">الرسائل والمحادثات</h2>
+                  <span className="text-xs font-bold bg-orange-100 text-brand-orange px-2.5 py-0.5 rounded-full">
+                    {conversations.length}
+                  </span>
                 </div>
+
+                {/* Categorized Tabs Switcher (Peers vs Practical) */}
+                <div className="grid grid-cols-3 gap-1 bg-gray-50 p-1 rounded-2xl border border-gray-100 text-xs font-bold">
+                  <button
+                    onClick={() => setActiveCategory('all')}
+                    className={`py-1.5 rounded-xl transition-all ${
+                      activeCategory === 'all'
+                        ? 'bg-white text-text-primary shadow-xs'
+                        : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    الكل ({counts.all})
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory('peers')}
+                    className={`py-1.5 rounded-xl transition-all flex items-center justify-center gap-1 ${
+                      activeCategory === 'peers'
+                        ? 'bg-teal-600 text-white shadow-xs'
+                        : 'text-text-muted hover:text-teal-700'
+                    }`}
+                  >
+                    <Users size={12} />
+                    <span>الزملاء ({counts.peers})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory('practical')}
+                    className={`py-1.5 rounded-xl transition-all flex items-center justify-center gap-1 ${
+                      activeCategory === 'practical'
+                        ? 'bg-brand-orange text-white shadow-xs'
+                        : 'text-text-muted hover:text-brand-orange'
+                    }`}
+                  >
+                    <Briefcase size={12} />
+                    <span>عملي ({counts.practical})</span>
+                  </button>
+                </div>
+
+                {/* Search Conversations */}
                 <div className="relative">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
-                    className="w-full pl-11 pr-4 py-2.5 rounded-full border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50"
-                    placeholder="Search conversations..."
+                    className="w-full ps-10 pe-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50"
+                    placeholder="بحث في المحادثات..."
                     value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
+
+              {/* Conversations Scrollable List */}
               <div className="flex-1 overflow-y-auto">
-                {filtered.map(conv => (
-                  <button
-                    key={conv.id}
-                    onClick={() => setActiveId(conv.id)}
-                    className={cn(
-                      'w-full flex items-center gap-3 p-4 text-left transition-colors border-b border-gray-50',
-                      activeId === conv.id ? 'bg-orange-50/50' : 'hover:bg-gray-50'
-                    )}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <Avatar src={conv.avatar} name={conv.name} size="md" />
-                      {conv.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />}
+                {loadingConvs ? (
+                  <div className="p-8 text-center">
+                    <div className="w-6 h-6 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-[11px] text-text-muted">جاري تحميل المحادثات...</p>
+                  </div>
+                ) : filteredConversations.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-text-muted space-y-3">
+                    <p>لا توجد محادثات في هذا التصنيف حالياً.</p>
+                    <div className="flex flex-col gap-2 pt-2">
+                      <Link href="/peers">
+                        <Button variant="outline" size="sm" fullWidth className="rounded-xl text-xs">
+                          <Users size={13} className="me-1" /> التواصل مع زملاء في Peers
+                        </Button>
+                      </Link>
+                      <Link href="/practical">
+                        <Button variant="outline" size="sm" fullWidth className="rounded-xl text-xs">
+                          <Briefcase size={13} className="me-1" /> استكشاف المشاريع العملية
+                        </Button>
+                      </Link>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="text-sm font-bold text-text-primary truncate">{conv.name}</span>
-                        <span className="text-xs font-medium text-text-muted ml-2 whitespace-nowrap">{conv.time}</span>
+                  </div>
+                ) : (
+                  filteredConversations.map((conv) => (
+                    <button
+                      key={conv.id}
+                      onClick={() => setActiveId(conv.id)}
+                      className={cn(
+                        'w-full flex items-center gap-3 p-3.5 text-start transition-colors border-b border-gray-50 relative',
+                        activeId === conv.id ? 'bg-orange-50/70 border-brand-orange/30' : 'hover:bg-gray-50'
+                      )}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <Avatar
+                          src={conv.avatar}
+                          avatarType={conv.avatarType}
+                          name={conv.name}
+                          size="md"
+                        />
+                        <span
+                          className={`absolute -bottom-0.5 -end-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white ${
+                            conv.category === 'practical' ? 'bg-brand-orange' : 'bg-teal-600'
+                          }`}
+                        >
+                          {conv.category === 'practical' ? <Briefcase size={9} /> : <Users size={9} />}
+                        </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <p className="text-xs text-text-body truncate pr-2">{conv.lastMessage}</p>
-                        {conv.unread > 0 && (
-                          <span className="w-4 h-4 bg-brand-orange text-white rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0">{conv.unread}</span>
-                        )}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <p className="font-bold text-xs md:text-sm text-text-primary truncate">{conv.name}</p>
+                          <span className="text-[10px] text-text-muted flex-shrink-0">{conv.time}</span>
+                        </div>
+                        <p className="text-[11px] text-text-muted truncate mb-0.5">{conv.role}</p>
+                        <p className="text-xs text-text-body truncate leading-relaxed">
+                          {conv.lastMessage}
+                        </p>
                       </div>
-                      {conv.contextType === 'project' && <Badge variant="navy" className="text-[9px] px-1.5 py-0 mt-1">Practical</Badge>}
-                    </div>
-                  </button>
-                ))}
+
+                      {conv.unread > 0 && (
+                        <span className="w-2 h-2 rounded-full bg-brand-orange flex-shrink-0" />
+                      )}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
-            {/* Chat panel */}
-            <div className="flex-1 flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 relative">
-              
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 md:p-5 border-b border-gray-100 bg-white z-10">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar src={active.avatar} name={active.name} size="md" />
-                    {active.isOnline && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />}
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-text-primary text-base md:text-lg leading-tight">{active.name}</h2>
-                    <p className="text-xs text-text-muted font-medium">
-                      {active.role} • {active.isOnline ? <span className="text-green-500">Online</span> : 'Offline'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 md:gap-3">
-                  {active.contextType !== 'project' && (
-                    <button 
-                      onClick={() => setShowVideo(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy rounded-full transition-colors text-sm font-semibold"
-                    >
-                      <Video size={16} /> <span className="hidden md:inline">Meet</span>
-                    </button>
-                  )}
-                  <button className="p-2 text-text-muted hover:text-brand-orange rounded-full hover:bg-orange-50 transition-colors">
-                    <MoreVertical size={20} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-[url('/assets/grid-pattern.svg')] bg-repeat opacity-95">
-                {active.messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center opacity-70">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-3xl mb-4">💬</div>
-                    <h3 className="font-bold text-text-primary mb-1">No messages yet</h3>
-                    <p className="text-sm text-text-muted">Start the conversation with {active.name}</p>
-                  </div>
-                ) : (
-                  active.messages.map(msg => (
-                    <div key={msg.id} className={cn('flex', msg.sender === 'me' ? 'justify-end' : 'justify-start')}>
-                      <div className="max-w-[85%] md:max-w-[70%]">
-                        <div className={cn('flex items-baseline gap-2 mb-1', msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row')}>
-                          <span className="text-xs font-bold text-text-primary">{msg.senderName}</span>
-                          <span className="text-[10px] font-medium text-text-muted">{msg.senderRole}</span>
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 min-w-0">
+              {activeConversation ? (
+                <>
+                  {/* Chat Header */}
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white z-10">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar
+                        src={activeConversation.avatar}
+                        avatarType={activeConversation.avatarType}
+                        name={activeConversation.name}
+                        size="md"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-sm md:text-base text-text-primary truncate">
+                            {activeConversation.name}
+                          </h3>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                              activeConversation.category === 'practical'
+                                ? 'bg-orange-100 text-brand-orange'
+                                : 'bg-teal-100 text-teal-700'
+                            }`}
+                          >
+                            {activeConversation.category === 'practical' ? 'مشروع عملي' : 'محادثة زميل'}
+                          </span>
                         </div>
-                        <div className={cn(
-                          'px-4 py-3 text-sm shadow-sm',
-                          msg.sender === 'me'
-                            ? 'bg-brand-orange text-white rounded-2xl rounded-tr-sm'
-                            : 'bg-white border border-gray-100 text-text-primary rounded-2xl rounded-tl-sm'
-                        )}>
-                          {msg.text}
-                        </div>
-                        <p className={cn('text-[10px] font-medium text-text-muted mt-1', msg.sender === 'me' ? 'text-right' : 'text-left')}>
-                          {msg.timestamp}
-                        </p>
+                        <p className="text-xs text-text-muted truncate">{activeConversation.role}</p>
                       </div>
                     </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
 
-              {/* Input Area */}
-              <div className="p-4 border-t border-gray-100 bg-white">
-                <div className="flex items-end gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-200 focus-within:border-brand-orange focus-within:ring-1 focus-within:ring-brand-orange transition-all">
-                  <button className="p-2.5 text-gray-400 hover:text-brand-orange transition-colors"><Paperclip size={20} /></button>
-                  <textarea
-                    className="flex-1 text-sm bg-transparent resize-none border-0 outline-none max-h-32 py-2.5"
-                    rows={1}
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={e => setNewMessage(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        sendMessage()
-                      }
-                    }}
-                  />
-                  <div className="flex items-center gap-1 pb-1 pr-1">
-                    <button className="p-2 text-gray-400 hover:text-brand-orange transition-colors"><Mic size={20} /></button>
-                    <button
-                      onClick={sendMessage}
+                    <div className="flex items-center gap-2">
+                      {activeConversation.otherUserId && (
+                        <Link href={`/peers/${activeConversation.otherUserId}`}>
+                          <Button variant="ghost" size="sm" className="rounded-xl text-xs font-bold text-brand-orange">
+                            عرض الملف الشخصي
+                          </Button>
+                        </Link>
+                      )}
+                      {activeConversation.projectId && (
+                        <Link href={`/practical/${activeConversation.projectId}`}>
+                          <Button variant="ghost" size="sm" className="rounded-xl text-xs font-bold text-brand-orange">
+                            مساحة المشروع
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Messages Feed */}
+                  <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-gray-50/40">
+                    {loadingMsgs && messages.length === 0 ? (
+                      <div className="py-20 text-center">
+                        <div className="w-8 h-8 border-3 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                        <p className="text-xs text-text-muted">جاري تحميل الرسائل...</p>
+                      </div>
+                    ) : messages.length === 0 ? (
+                      <div className="py-20 text-center text-xs text-text-muted max-w-sm mx-auto">
+                        <p className="text-3xl mb-2">👋</p>
+                        <p className="font-bold text-sm text-text-primary mb-1">بداية المحادثة الأكاديمية</p>
+                        <p>ابدأ بالترحيب بزميلك وناقش معه أفكار المشاريع والتعاون الدراسي المشترك.</p>
+                      </div>
+                    ) : (
+                      messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={cn('flex flex-col', msg.isMe ? 'items-end' : 'items-start')}
+                        >
+                          <div
+                            className={cn(
+                              'max-w-[85%] md:max-w-[70%] rounded-2xl p-3.5 shadow-xs text-xs md:text-sm leading-relaxed space-y-2',
+                              msg.isMe
+                                ? 'bg-brand-navy text-white rounded-ee-none'
+                                : 'bg-white text-text-body border border-gray-100 rounded-es-none'
+                            )}
+                          >
+                            {!msg.isMe && (
+                              <p className="text-[10px] font-bold text-brand-orange mb-0.5">{msg.sender}</p>
+                            )}
+
+                            {/* Main Message Text */}
+                            {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
+
+                            {/* Embedded Shared Post Preview in Chat */}
+                            {msg.sharedPost && (
+                              <div
+                                className={cn(
+                                  'border rounded-xl p-3 text-xs space-y-1.5 transition-all mt-1',
+                                  msg.isMe
+                                    ? 'border-white/20 bg-white/10 text-white'
+                                    : 'border-orange-200 bg-orange-50/40 text-text-body'
+                                )}
+                              >
+                                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <Avatar
+                                      src={msg.sharedPost.authorAvatar}
+                                      avatarType={msg.sharedPost.authorAvatarType}
+                                      name={msg.sharedPost.author}
+                                      size="xs"
+                                    />
+                                    <span className="font-bold truncate text-[11px]">{msg.sharedPost.author}</span>
+                                  </div>
+                                  <Link
+                                    href={`/community#post-${msg.sharedPost.id}`}
+                                    className="text-[10px] font-bold underline flex items-center gap-0.5 text-brand-orange hover:text-orange-400 flex-shrink-0"
+                                    target="_blank"
+                                  >
+                                    <span>فتح في المجتمع</span>
+                                    <ExternalLink size={10} />
+                                  </Link>
+                                </div>
+
+                                <p className="line-clamp-2 text-[11px] leading-relaxed">
+                                  {msg.sharedPost.content}
+                                </p>
+
+                                {msg.sharedPost.mediaType === 'image' && msg.sharedPost.mediaUrl && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={msg.sharedPost.mediaUrl}
+                                    alt="Shared Preview"
+                                    className="w-full h-24 object-cover rounded-lg mt-1"
+                                  />
+                                )}
+                              </div>
+                            )}
+
+                            <span
+                              className={cn(
+                                'block text-[9px] text-end mt-1',
+                                msg.isMe ? 'text-white/60' : 'text-gray-400'
+                              )}
+                              title={msg.exactDate}
+                            >
+                              {msg.time}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Message Input Box */}
+                  <div className="p-3 md:p-4 bg-white border-t border-gray-100 flex items-center gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2.5 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                      placeholder="اكتب رسالتك الأكاديمية هنا..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="rounded-full px-4 py-2.5 font-bold flex items-center gap-1.5"
+                      onClick={handleSendMessage}
+                      isLoading={sending}
                       disabled={!newMessage.trim()}
-                      className="w-10 h-10 bg-brand-orange text-white rounded-xl flex items-center justify-center hover:bg-brand-orange-dark transition-colors disabled:opacity-50 disabled:hover:bg-brand-orange shadow-sm"
                     >
-                      <Send size={18} className="ml-1" />
-                    </button>
+                      <span>إرسال</span>
+                      <Send size={14} />
+                    </Button>
                   </div>
-                </div>
-              </div>
-
-              {/* Video Call Modal Overlay */}
-              {showVideo && (
-                <div className="absolute inset-0 z-50 bg-gray-900 flex flex-col">
-                  {/* Video Header */}
-                  <div className="p-4 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                      <span className="text-white text-sm font-medium">00:00</span>
-                    </div>
-                    <button onClick={() => setShowVideo(false)} className="text-white/80 hover:text-white p-2">
-                      <X size={24} />
-                    </button>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-text-muted">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-2xl mb-3">
+                    <MessageSquare size={28} className="text-gray-400" />
                   </div>
-                  
-                  {/* Video Area (Demo) */}
-                  <div className="flex-1 flex items-center justify-center relative">
-                    {/* Remote User Placeholder */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Avatar src={active.avatar} name={active.name} size="xl" className="w-32 h-32 mb-4 ring-4 ring-white/10" />
-                      <h3 className="text-white text-xl font-bold">{active.name}</h3>
-                      <p className="text-white/60 text-sm">Connecting...</p>
-                    </div>
-                    
-                    {/* Local User Mini Placeholder */}
-                    <div className="absolute bottom-6 right-6 w-32 h-44 bg-gray-800 rounded-2xl border-2 border-white/20 overflow-hidden shadow-xl flex items-center justify-center">
-                      <Avatar name="Ahmed" size="md" />
-                    </div>
-                  </div>
-
-                  {/* Video Controls */}
-                  <div className="p-6 pb-8 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-6">
-                    <button className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition-all">
-                      <MicOff size={20} />
-                    </button>
-                    <button 
-                      onClick={() => setShowVideo(false)}
-                      className="w-16 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all"
-                    >
-                      <PhoneOff size={24} />
-                    </button>
-                    <button className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition-all">
-                      <Video size={20} />
-                    </button>
-                  </div>
+                  <h3 className="font-extrabold text-base text-text-primary mb-1">اختر محادثة للبدء</h3>
+                  <p className="text-xs max-w-sm leading-relaxed mb-4">
+                    اختر زميلاً أو مساحة مشروع عملي من القائمة الجانبية لبدء المراسلة الفورية ومشاركة المنشورات.
+                  </p>
+                  <Link href="/peers">
+                    <Button variant="primary" size="sm" className="rounded-xl font-bold">
+                      <Users size={14} className="me-1" /> تواصل مع زملاء جدد
+                    </Button>
+                  </Link>
                 </div>
               )}
-
             </div>
           </div>
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }
 
 export default function MessagesPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Messages...</div>}>
+    <Suspense
+      fallback={
+        <AppLayout>
+          <div className="min-h-screen bg-bg-cream flex items-center justify-center">
+            <div className="w-8 h-8 border-3 border-brand-orange border-t-transparent rounded-full animate-spin" />
+          </div>
+        </AppLayout>
+      }
+    >
       <MessagesContent />
     </Suspense>
-  )
+  );
 }

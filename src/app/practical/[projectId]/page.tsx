@@ -15,6 +15,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 
 interface ProjectDetails {
   id: string;
@@ -40,6 +41,8 @@ interface ProjectDetails {
   tasksToSolve: string[];
   expectedDeliverables: string[];
   category: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface TeamMemberItem {
@@ -529,6 +532,11 @@ export default function ProjectWorkspacePage() {
                   {project.doctor && (
                     <span className="flex items-center gap-1 font-semibold text-white">
                       <Shield size={14} className="text-brand-orange" /> {project.doctor}
+                    </span>
+                  )}
+                  {project.createdAt && (
+                    <span className="flex items-center gap-1 text-orange-200 font-semibold" title={formatArabicTimeAgo(project.createdAt).exact}>
+                      <Clock size={14} className="text-brand-orange" /> نُشر في: {formatArabicTimeAgo(project.createdAt).exact} ({formatArabicTimeAgo(project.createdAt).relative})
                     </span>
                   )}
                   <span className="flex items-center gap-1">

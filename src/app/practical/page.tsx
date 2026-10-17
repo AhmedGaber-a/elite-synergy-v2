@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 
 export interface PracticalProjectItem {
   id: string;
@@ -27,6 +28,8 @@ export interface PracticalProjectItem {
   isMega: boolean;
   phases: string[];
   category: string;
+  createdAt?: string;
+  updatedAt?: string;
   teams?: Array<{
     id: string;
     name: string;
@@ -217,6 +220,16 @@ export default function PracticalPage() {
                         <div className="flex items-center justify-between text-text-muted">
                           <span>المشرف الأكاديمي:</span>
                           <span className="font-bold text-text-primary">{project.doctor}</span>
+                        </div>
+                      )}
+                      {project.createdAt && (
+                        <div className="flex items-center justify-between text-text-muted">
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} className="text-brand-orange" /> تاريخ النشر:
+                          </span>
+                          <span className="font-semibold text-text-primary text-[11px]" title={formatArabicTimeAgo(project.createdAt).exact}>
+                            {formatArabicTimeAgo(project.createdAt).exact} ({formatArabicTimeAgo(project.createdAt).relative})
+                          </span>
                         </div>
                       )}
                       <div className="flex items-center justify-between text-text-muted">

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -43,6 +45,26 @@ export async function POST(
         },
       });
       liked = true;
+
+      // Create notification for post author
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { authorId: true, content: true },
+      });
+
+      if (post && post.authorId !== userId) {
+        await prisma.notification.create({
+          data: {
+            userId: post.authorId,
+            senderId: userId,
+            category: 'community',
+            title: 'إعجاب جديد بمنشورك',
+            message: `${authUser.name} أُعجب بمنشورك.`,
+            messageAr: `${authUser.name} أُعجب بمنشورك.`,
+            actionUrl: `/community#post-${postId}`,
+          },
+        });
+      }
     }
 
     const totalLikes = await prisma.postLike.count({ where: { postId } });

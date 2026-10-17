@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/context/AuthContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui/Button'
+import { Avatar } from '@/components/ui/Avatar'
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -127,25 +128,40 @@ export function Navbar() {
                   <span className="absolute top-2 end-2 w-2.5 h-2.5 bg-brand-orange rounded-full ring-2 ring-white" />
                 </Link>
 
-                {/* Profile Dropdown (Cleaned: redundant notification removed) */}
+                {/* Profile Dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setProfileOpen((o) => !o)}
-                    className="flex items-center gap-2 bg-brand-orange text-white px-4 py-2 rounded-full hover:bg-brand-orange-dark transition-colors text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2"
+                    className="flex items-center gap-2 bg-brand-orange text-white ps-2 pe-3 py-1.5 rounded-full hover:bg-brand-orange-dark transition-colors text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2"
                     aria-label="Profile menu"
                     aria-expanded={profileOpen}
                   >
-                    <span>{user?.name ?? t('common.profile')}</span>
+                    <Avatar
+                      src={user?.avatar || user?.avatarUrl || ''}
+                      avatarType={user?.avatarType}
+                      name={user?.name || 'Student'}
+                      size="xs"
+                      className="border border-white/50"
+                    />
+                    <span className="max-w-[120px] truncate">{user?.name ?? t('common.profile')}</span>
                     <ChevronDown size={14} className={cn('transition-transform', profileOpen && 'rotate-180')} />
                   </button>
 
                   {profileOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setProfileOpen(false)} />
-                      <div className="absolute end-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-20 animate-in slide-in-from-top-2 duration-150">
-                        <div className="p-3 border-b border-gray-100">
-                          <p className="font-bold text-sm text-text-primary">{user?.name}</p>
-                          <p className="text-xs text-text-muted">{user?.college || 'Student'}</p>
+                      <div className="absolute end-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-20 animate-in slide-in-from-top-2 duration-150">
+                        <div className="p-3 border-b border-gray-100 flex items-center gap-2.5">
+                          <Avatar
+                            src={user?.avatar || user?.avatarUrl || ''}
+                            avatarType={user?.avatarType}
+                            name={user?.name || 'Student'}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm text-text-primary truncate">{user?.fullName || user?.name}</p>
+                            <p className="text-xs text-text-muted truncate">{user?.college || 'Student'}</p>
+                          </div>
                         </div>
                         <div className="p-1.5">
                           <Link href="/profile" className="block px-3 py-2 text-sm text-text-body hover:bg-orange-50 hover:text-brand-orange rounded-xl transition-colors font-medium">
@@ -237,9 +253,17 @@ export function Navbar() {
             <div className="border-t border-gray-100 mt-2 pt-3 space-y-1">
               {isAuthenticated ? (
                 <>
-                  <div className="px-4 py-2">
-                    <p className="font-bold text-sm text-text-primary">{user?.name ?? 'Student'}</p>
-                    <p className="text-xs text-text-muted">Student · BIS</p>
+                  <div className="px-4 py-2 flex items-center gap-3">
+                    <Avatar
+                      src={user?.avatar || user?.avatarUrl || ''}
+                      avatarType={user?.avatarType}
+                      name={user?.name || 'Student'}
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-text-primary truncate">{user?.fullName || user?.name ?? 'Student'}</p>
+                      <p className="text-xs text-text-muted truncate">{user?.college || 'Student'}</p>
+                    </div>
                   </div>
                   <Link
                     href="/profile"

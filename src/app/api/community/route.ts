@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,14 +55,38 @@ export async function GET() {
     const posts = await prisma.post.findMany({
       include: {
         author: true,
+        sharedPost: {
+          include: {
+            author: true,
+          },
+        },
         likes: {
           include: {
             user: true,
           },
         },
         comments: {
+          where: {
+            parentId: null, // Top-level comments only
+          },
           include: {
             author: true,
+            reactions: {
+              include: {
+                user: true,
+              },
+            },
+            nestedReplies: {
+              include: {
+                author: true,
+                reactions: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+              orderBy: { createdAt: 'asc' },
+            },
             replies: {
               include: {
                 author: true,
@@ -76,10 +101,7 @@ export async function GET() {
     });
 
     const formattedPosts = posts.map((post) => {
-      const diffMs = Date.now() - new Date(post.createdAt).getTime();
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const timeAgo = diffHours <= 0 ? 'Just now' : `${diffHours} hours ago`;
-      const timeAgoAr = diffHours <= 0 ? 'دلوقتي حالا' : `من ${diffHours} ساعات`;
+      const times = formatArabicTimeAgo(post.createdAt);
 
       return {
         id: post.id,
@@ -103,32 +125,99 @@ export async function GET() {
         mediaUrl: post.mediaUrl,
         fileName: post.fileName,
         fileUrl: post.fileUrl,
+        sharedPostId: post.sharedPostId,
+        sharedPost: post.sharedPost
+          ? {
+              id: post.sharedPost.id,
+              authorId: post.sharedPost.authorId,
+              author: post.sharedPost.author.name,
+              authorAvatar: post.sharedPost.author.avatar || '',
+              authorAvatarType: post.sharedPost.author.avatarType,
+              role: `${post.sharedPost.author.college} · ${post.sharedPost.author.specialty}`,
+              content: post.sharedPost.content,
+              mediaType: post.sharedPost.mediaType as 'image' | 'video' | 'file' | null | undefined,
+              mediaUrl: post.sharedPost.mediaUrl,
+              fileName: post.sharedPost.fileName,
+              fileUrl: post.sharedPost.fileUrl,
+              timeAgo: formatArabicTimeAgo(post.sharedPost.createdAt).timeAgoEn,
+              timeAgoAr: formatArabicTimeAgo(post.sharedPost.createdAt).relative,
+              exactDate: formatArabicTimeAgo(post.sharedPost.createdAt).exact,
+              createdAt: post.sharedPost.createdAt,
+            }
+          : null,
         likes: post.likes ? post.likes.map((like) => like.user?.name || '') : [],
         comments: post.comments
-          ? post.comments.map((comment) => ({
-              id: comment.id,
-              author: comment.author?.name || '',
-              authorAvatar: comment.author?.avatar || '',
-              authorAvatarType: comment.author?.avatarType,
-              text: comment.text,
-              textAr: comment.textAr,
-              timeAgo: 'Recently',
-              replies: comment.replies
-                ? comment.replies.map((reply) => ({
-                    id: reply.id,
-                    author: reply.author?.name || '',
-                    authorAvatar: reply.author?.avatar || '',
-                    authorAvatarType: reply.author?.avatarType,
-                    text: reply.text,
-                    textAr: reply.textAr,
-                  }))
-                : [],
-            }))
+          ? post.comments.map((comment) => {
+              const cTimes = formatArabicTimeAgo(comment.createdAt);
+
+              // Merge CommentReply items and PostComment nestedReplies
+              const combinedReplies = [
+                ...(comment.nestedReplies || []).map((nr) => {
+                  const rTimes = formatArabicTimeAgo(nr.createdAt);
+                  return {
+                    id: nr.id,
+                    authorId: nr.authorId,
+                    author: nr.author?.name || '',
+                    authorAvatar: nr.author?.avatar || '',
+                    authorAvatarType: nr.author?.avatarType,
+                    text: nr.text,
+                    textAr: nr.textAr,
+                    timeAgo: rTimes.timeAgoEn,
+                    timeAgoAr: rTimes.relative,
+                    exactDate: rTimes.exact,
+                    createdAt: nr.createdAt,
+                    reactions: (nr.reactions || []).map((rx) => ({
+                      type: rx.type,
+                      userId: rx.userId,
+                      userName: rx.user.name,
+                    })),
+                  };
+                }),
+                ...(comment.replies || []).map((r) => {
+                  const rTimes = formatArabicTimeAgo(r.createdAt);
+                  return {
+                    id: r.id,
+                    authorId: r.authorId,
+                    author: r.author?.name || '',
+                    authorAvatar: r.author?.avatar || '',
+                    authorAvatarType: r.author?.avatarType,
+                    text: r.text,
+                    textAr: r.textAr,
+                    timeAgo: rTimes.timeAgoEn,
+                    timeAgoAr: rTimes.relative,
+                    exactDate: rTimes.exact,
+                    createdAt: r.createdAt,
+                    reactions: [],
+                  };
+                }),
+              ];
+
+              return {
+                id: comment.id,
+                authorId: comment.authorId,
+                author: comment.author?.name || '',
+                authorAvatar: comment.author?.avatar || '',
+                authorAvatarType: comment.author?.avatarType,
+                text: comment.text,
+                textAr: comment.textAr,
+                timeAgo: cTimes.timeAgoEn,
+                timeAgoAr: cTimes.relative,
+                exactDate: cTimes.exact,
+                createdAt: comment.createdAt,
+                reactions: (comment.reactions || []).map((rx) => ({
+                  type: rx.type,
+                  userId: rx.userId,
+                  userName: rx.user.name,
+                })),
+                replies: combinedReplies,
+              };
+            })
           : [],
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
-        timeAgo,
-        timeAgoAr,
+        timeAgo: times.timeAgoEn,
+        timeAgoAr: times.relative,
+        exactDate: times.exact,
       };
     });
 
@@ -149,6 +238,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const content = body.content !== undefined ? body.content : body.text;
     const contentAr = body.contentAr;
+    const sharedPostId = body.sharedPostId || null;
     let mediaType = body.mediaType || (body.mediaUrl ? 'image' : null);
     let mediaUrl = body.mediaUrl || body.image || null;
     let fileName = body.fileName || null;
@@ -156,8 +246,9 @@ export async function POST(req: NextRequest) {
 
     const hasMedia = Boolean(mediaUrl || fileUrl);
     const hasContent = Boolean(content && typeof content === 'string' && content.trim());
+    const isSharing = Boolean(sharedPostId);
 
-    if (!hasContent && !hasMedia) {
+    if (!hasContent && !hasMedia && !isSharing) {
       return NextResponse.json({ error: 'يرجى كتابة نص المنشور أو إرفاق ملف/صورة/فيديو' }, { status: 400 });
     }
 
@@ -183,9 +274,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If mediaType is file and we have mediaUrl but no fileUrl, sync them
     if (mediaType === 'file' && !fileUrl && mediaUrl) {
       fileUrl = mediaUrl;
+    }
+
+    // If sharing, verify original post exists
+    let sharedPostData = null;
+    if (sharedPostId) {
+      const origPost = await prisma.post.findUnique({
+        where: { id: sharedPostId },
+        include: { author: true },
+      });
+      if (origPost) {
+        sharedPostData = origPost;
+        // Notify original author
+        if (origPost.authorId !== authUser.id) {
+          await prisma.notification.create({
+            data: {
+              userId: origPost.authorId,
+              senderId: authUser.id,
+              category: 'community',
+              title: 'مشاركة جديدة لمنشورك',
+              message: `${authUser.name} قام بمشاركة منشورك في مجتمع Elite Synergy.`,
+              messageAr: `${authUser.name} قام بمشاركة منشورك في مجتمع Elite Synergy.`,
+              actionUrl: `/community#post-${origPost.id}`,
+            },
+          });
+        }
+      }
     }
 
     const newPost = await prisma.post.create({
@@ -197,11 +313,19 @@ export async function POST(req: NextRequest) {
         mediaUrl: mediaUrl || null,
         fileName: fileName || null,
         fileUrl: fileUrl || null,
+        sharedPostId: sharedPostId || null,
       },
       include: {
         author: true,
+        sharedPost: {
+          include: {
+            author: true,
+          },
+        },
       },
     });
+
+    const times = formatArabicTimeAgo(newPost.createdAt);
 
     return NextResponse.json(
       {
@@ -227,10 +351,31 @@ export async function POST(req: NextRequest) {
         mediaUrl: newPost.mediaUrl,
         fileName: newPost.fileName,
         fileUrl: newPost.fileUrl,
+        sharedPostId: newPost.sharedPostId,
+        sharedPost: newPost.sharedPost
+          ? {
+              id: newPost.sharedPost.id,
+              authorId: newPost.sharedPost.authorId,
+              author: newPost.sharedPost.author.name,
+              authorAvatar: newPost.sharedPost.author.avatar || '',
+              authorAvatarType: newPost.sharedPost.author.avatarType,
+              role: `${newPost.sharedPost.author.college} · ${newPost.sharedPost.author.specialty}`,
+              content: newPost.sharedPost.content,
+              mediaType: newPost.sharedPost.mediaType as 'image' | 'video' | 'file' | null | undefined,
+              mediaUrl: newPost.sharedPost.mediaUrl,
+              fileName: newPost.sharedPost.fileName,
+              fileUrl: newPost.sharedPost.fileUrl,
+              timeAgo: formatArabicTimeAgo(newPost.sharedPost.createdAt).timeAgoEn,
+              timeAgoAr: formatArabicTimeAgo(newPost.sharedPost.createdAt).relative,
+              exactDate: formatArabicTimeAgo(newPost.sharedPost.createdAt).exact,
+              createdAt: newPost.sharedPost.createdAt,
+            }
+          : null,
         likes: [],
         comments: [],
-        timeAgo: 'Just now',
-        timeAgoAr: 'دلوقتي حالا',
+        timeAgo: times.timeAgoEn,
+        timeAgoAr: times.relative,
+        exactDate: times.exact,
         createdAt: newPost.createdAt,
         updatedAt: newPost.updatedAt,
       },

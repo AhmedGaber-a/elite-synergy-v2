@@ -1,52 +1,113 @@
 // src/app/notification/page.tsx
-'use client'
-import React, { useState } from 'react'
-import Link from 'next/link'
+'use client';
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   X, UserPlus, Mail, Users, BookOpen, CheckCircle2,
-  Briefcase, Heart, MessageSquare, ChevronRight, Check
-} from 'lucide-react'
-import { AppLayout } from '@/components/layout/AppLayout'
-import { Avatar } from '@/components/ui/Avatar'
-import { Button } from '@/components/ui/Button'
-import { NOTIFICATIONS, NotificationCategory, Notification } from '@/lib/data/notifications'
-import { useLanguage } from '@/lib/context/LanguageContext'
+  Briefcase, Heart, MessageSquare, ChevronRight, Check, Bell
+} from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
+import { useLanguage } from '@/lib/context/LanguageContext';
+import { useAuth } from '@/lib/context/AuthContext';
 
-const CATEGORY_ICONS: Record<NotificationCategory, React.ReactNode> = {
-  practical: <Briefcase size={16} className="text-brand-orange" />,
-  peers: <Users size={16} className="text-brand-teal" />,
-  community: <MessageSquare size={16} className="text-blue-500" />,
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  senderId?: string | null;
+  sender: string;
+  senderFullName?: string;
+  avatar?: string;
+  avatarType?: 'male' | 'female';
+  category: 'community' | 'peers' | 'practical';
+  title: string;
+  message: string;
+  messageAr?: string;
+  actionUrl?: string | null;
+  unread: boolean;
+  timeAgo: string;
+  timeAgoAr: string;
+  exactDate: string;
+  createdAt: string;
 }
 
+const CATEGORY_ICONS: Record<'practical' | 'peers' | 'community', React.ReactNode> = {
+  practical: <Briefcase size={16} className="text-brand-orange" />,
+  peers: <Users size={16} className="text-teal-600" />,
+  community: <MessageSquare size={16} className="text-blue-500" />,
+};
+
 export default function NotificationPage() {
-  const { lang, t } = useLanguage()
-  const [activeTab, setActiveTab] = useState<'all' | NotificationCategory>('all')
-  const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS)
+  const { lang, t } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState<'all' | 'practical' | 'peers' | 'community'>('all');
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const dismiss = (id: string) => setNotifications(prev => prev.filter(n => n.id !== id))
-  
-  const accept = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, unread: false } : n)
-    )
-  }
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+      }
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })))
-  }
+  useEffect(() => {
+    fetchNotifications();
+    // Smart polling every 8s for live notifications
+    const interval = setInterval(fetchNotifications, 8000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
-  const clearAll = () => setNotifications([])
+  const dismiss = async (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await fetch(`/api/notifications?id=${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Failed to dismiss notification:', err);
+    }
+  };
 
-  const filteredNotifications = activeTab === 'all'
-    ? notifications
-    : notifications.filter(n => n.category === activeTab)
+  const markAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_all_read' }),
+      });
+    } catch (err) {
+      console.error('Failed to mark all notifications read:', err);
+    }
+  };
+
+  const clearAll = async () => {
+    setNotifications([]);
+    try {
+      await fetch('/api/notifications?all=true', { method: 'DELETE' });
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+    }
+  };
+
+  const filteredNotifications =
+    activeTab === 'all'
+      ? notifications
+      : notifications.filter((n) => n.category === activeTab);
 
   const counts = {
     all: notifications.length,
-    practical: notifications.filter(n => n.category === 'practical').length,
-    peers: notifications.filter(n => n.category === 'peers').length,
-    community: notifications.filter(n => n.category === 'community').length,
-  }
+    practical: notifications.filter((n) => n.category === 'practical').length,
+    peers: notifications.filter((n) => n.category === 'peers').length,
+    community: notifications.filter((n) => n.category === 'community').length,
+  };
 
   return (
     <AppLayout>
@@ -83,7 +144,7 @@ export default function NotificationPage() {
             )}
           </div>
 
-          {/* 3 Distinct Category Tabs */}
+          {/* 4 Distinct Category Tabs (All, Practical, Peers, Community) */}
           <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
             <button
               onClick={() => setActiveTab('all')}
@@ -109,7 +170,7 @@ export default function NotificationPage() {
             >
               <Briefcase size={13} />
               <span>{t('notifications.practicalTab')}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'practical' ? 'bg-white/20' : 'bg-orange-100 text-brand-orange'}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'practical' ? 'bg-white/20' : 'bg-orange-100 text-brand-orange font-bold'}`}>
                 {counts.practical}
               </span>
             </button>
@@ -118,13 +179,13 @@ export default function NotificationPage() {
               onClick={() => setActiveTab('peers')}
               className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === 'peers'
-                  ? 'bg-brand-teal text-white shadow-sm'
-                  : 'bg-white text-text-muted border border-gray-200 hover:border-brand-teal'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-white text-text-muted border border-gray-200 hover:border-teal-600'
               }`}
             >
               <Users size={13} />
               <span>{t('notifications.peersTab')}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'peers' ? 'bg-white/20' : 'bg-teal-100 text-teal-700'}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'peers' ? 'bg-white/20' : 'bg-teal-100 text-teal-700 font-bold'}`}>
                 {counts.peers}
               </span>
             </button>
@@ -139,30 +200,37 @@ export default function NotificationPage() {
             >
               <MessageSquare size={13} />
               <span>{t('notifications.communityTab')}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'community' ? 'bg-white/20' : 'bg-blue-100 text-blue-700'}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'community' ? 'bg-white/20' : 'bg-blue-100 text-blue-700 font-bold'}`}>
                 {counts.community}
               </span>
             </button>
           </div>
 
           {/* Notifications List */}
-          {filteredNotifications.length === 0 ? (
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs font-bold text-text-muted">جاري تحميل الإشعارات من قاعدة البيانات...</p>
+            </div>
+          ) : filteredNotifications.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
-              <p className="text-5xl mb-4">🔔</p>
+              <div className="w-16 h-16 bg-orange-50 text-brand-orange rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                🔔
+              </div>
               <h3 className="font-bold text-base text-text-primary mb-1">
                 {t('notifications.allCaughtUp')}
               </h3>
               <p className="text-xs text-text-muted max-w-sm mx-auto">
                 {lang === 'ar'
-                  ? 'مفيش إشعارات في القسم ده حالياً. أي نشاط جديد هيظهرلك هنا على طول.'
-                  : 'No active notifications in this section right now. New activity will appear here.'}
+                  ? 'لا توجد إشعارات في هذا القسم حالياً. أي نشاط جديد من زملائك أو أساتذتك سيظهر هنا فوراً.'
+                  : 'No active notifications in this section right now. New activity will appear here in real time.'}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredNotifications.map(n => {
-                const messageText = (lang === 'ar' && n.messageAr) ? n.messageAr : n.message
-                const timeText = (lang === 'ar' && n.timeAgoAr) ? n.timeAgoAr : n.timeAgo
+              {filteredNotifications.map((n) => {
+                const messageText = (lang === 'ar' && n.messageAr) ? n.messageAr : n.message;
+                const timeText = (lang === 'ar' && n.timeAgoAr) ? n.timeAgoAr : n.timeAgo;
 
                 return (
                   <div
@@ -171,9 +239,9 @@ export default function NotificationPage() {
                       n.unread ? 'border-brand-orange/40 bg-orange-50/20' : 'border-gray-100'
                     }`}
                   >
-                    {/* Avatar with Category Badge */}
+                    {/* Live Sender Avatar with Category Badge */}
                     <div className="relative flex-shrink-0">
-                      <Avatar name={n.sender} avatarType={n.avatarType} size="md" />
+                      <Avatar name={n.sender} avatarType={n.avatarType} src={n.avatar} size="md" />
                       <span className="absolute -bottom-1 -end-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
                         {CATEGORY_ICONS[n.category]}
                       </span>
@@ -182,8 +250,8 @@ export default function NotificationPage() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-text-primary">{n.sender}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-text-primary">{n.senderFullName || n.sender}</p>
                           <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                             n.category === 'practical' ? 'bg-orange-100 text-brand-orange' :
                             n.category === 'peers' ? 'bg-teal-100 text-teal-700' :
@@ -192,7 +260,9 @@ export default function NotificationPage() {
                             {t(`notifications.${n.category}Tab` as any)}
                           </span>
                         </div>
-                        <span className="text-[11px] text-text-muted whitespace-nowrap">{timeText}</span>
+                        <span className="text-[11px] text-text-muted whitespace-nowrap" title={n.exactDate}>
+                          {timeText}
+                        </span>
                       </div>
 
                       <p className="text-xs md:text-sm text-text-body mt-1 leading-relaxed">
@@ -211,12 +281,6 @@ export default function NotificationPage() {
                           </Link>
                         )}
                         <button
-                          onClick={() => accept(n.id)}
-                          className="text-xs font-semibold text-text-primary hover:text-brand-orange transition-colors"
-                        >
-                          {t('notifications.accept')}
-                        </button>
-                        <button
                           onClick={() => dismiss(n.id)}
                           className="text-xs text-text-muted hover:text-red-500 transition-colors"
                         >
@@ -225,7 +289,7 @@ export default function NotificationPage() {
                       </div>
                     </div>
 
-                    {/* Close / Dismiss */}
+                    {/* Close / Dismiss button */}
                     <button
                       onClick={() => dismiss(n.id)}
                       className="text-gray-300 hover:text-gray-500 transition-colors p-1"
@@ -234,12 +298,12 @@ export default function NotificationPage() {
                       <X size={15} />
                     </button>
                   </div>
-                )
+                );
               })}
             </div>
           )}
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

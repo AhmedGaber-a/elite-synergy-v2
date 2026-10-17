@@ -49,33 +49,63 @@ function SuggestTeammatesModal({
   onClose: () => void;
   onConnect: (peerId: string) => void;
 }) {
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState('');
+  const [customSkills, setCustomSkills] = useState<string[]>([]);
   const [selectedDept, setSelectedDept] = useState('');
   const [results, setResults] = useState<PeerItem[] | null>(null);
 
-  const skillOptions = [
-    'React', 'Next.js', 'Flutter', 'IoT', 'ERP', 'Python', 'SQL',
-    'Power BI', 'SAP', 'Financial Modeling', 'Cloud Architecture', 'AWS'
-  ];
-
-  const toggleSkill = (skill: string) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
-    );
+  const addSkill = () => {
+    const trimmed = skillInput.trim();
+    if (!trimmed) return;
+    if (!customSkills.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      setCustomSkills((prev) => [...prev, trimmed]);
+    }
+    setSkillInput('');
   };
 
+  const removeSkill = (skillToRemove: string) => {
+    setCustomSkills((prev) => prev.filter((s) => s !== skillToRemove));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSkill();
+    }
+  };
+
+  const allActiveSkills = [...customSkills];
+  if (skillInput.trim() && !allActiveSkills.some((s) => s.toLowerCase() === skillInput.trim().toLowerCase())) {
+    allActiveSkills.push(skillInput.trim());
+  }
+
   const suggest = () => {
+    const querySkills = allActiveSkills;
+    if (querySkills.length === 0) return;
+
     const suggested = peers
-      .map((p) => ({
-        ...p,
-        calculatedScore:
-          p.skills.filter((s) =>
-            selectedSkills.some((sel) => s.toLowerCase().includes(sel.toLowerCase()))
-          ).length * 15 + (p.matchScore ?? 75),
-      }))
-      .filter((p) => !selectedDept || p.discipline.toLowerCase().includes(selectedDept.toLowerCase()) || p.college.toLowerCase().includes(selectedDept.toLowerCase()))
+      .map((p) => {
+        const matchingCount = p.skills.filter((s) =>
+          querySkills.some((qs) => s.toLowerCase().includes(qs.toLowerCase()) || qs.toLowerCase().includes(s.toLowerCase()))
+        ).length;
+
+        const calculatedScore = matchingCount * 20 + (p.matchScore ?? 75);
+        return {
+          ...p,
+          calculatedScore,
+          matchingCount,
+        };
+      })
+      .filter((p) => {
+        const matchesDept =
+          !selectedDept ||
+          p.discipline.toLowerCase().includes(selectedDept.toLowerCase()) ||
+          p.college.toLowerCase().includes(selectedDept.toLowerCase());
+        const hasSkillMatch = p.matchingCount > 0;
+        return matchesDept && hasSkillMatch;
+      })
       .sort((a, b) => b.calculatedScore - a.calculatedScore)
-      .slice(0, 4);
+      .slice(0, 6);
 
     setResults(suggested);
   };
@@ -100,24 +130,55 @@ function SuggestTeammatesModal({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Skills I need */}
+          {/* Free-Text Skill Search Input (No restricted presets) */}
           <div>
-            <label className="block text-sm font-bold text-text-primary mb-3">What skills do you need in your team?</label>
-            <div className="flex flex-wrap gap-2">
-              {skillOptions.map((skill) => (
-                <button
-                  key={skill}
-                  onClick={() => toggleSkill(skill)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    selectedSkills.includes(skill)
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                      : 'bg-gray-50 text-text-body border-gray-200 hover:border-purple-400 hover:text-purple-600'
-                  }`}
-                >
-                  {skill}
-                </button>
-              ))}
+            <label className="block text-sm font-bold text-text-primary mb-2">
+              اكتب المهارة التي تبحث عنها (Type skills you are looking for)
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input
+                  type="text"
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="e.g. Cybersecurity, Python, Linux, Marketing, AWS..."
+                  className="w-full ps-10 pe-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 bg-gray-50"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={addSkill}
+                disabled={!skillInput.trim()}
+                className="rounded-xl px-4 bg-purple-600 hover:bg-purple-700"
+              >
+                إضافة
+              </Button>
             </div>
+
+            {/* Selected Skills Chips */}
+            {customSkills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {customSkills.map((s) => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200"
+                  >
+                    <span>{s}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeSkill(s)}
+                      className="hover:text-red-600 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Department filter */}
@@ -140,8 +201,14 @@ function SuggestTeammatesModal({
             </div>
           </div>
 
-          <Button variant="primary" fullWidth className="rounded-xl" onClick={suggest} disabled={selectedSkills.length === 0}>
-            <Sparkles size={16} className="me-2" /> Suggest Teammates
+          <Button
+            variant="primary"
+            fullWidth
+            className="rounded-xl bg-purple-600 hover:bg-purple-700"
+            onClick={suggest}
+            disabled={allActiveSkills.length === 0}
+          >
+            <Sparkles size={16} className="me-2" /> بحث عن زملاء مطابقين للمهارات
           </Button>
 
           {/* Results */}

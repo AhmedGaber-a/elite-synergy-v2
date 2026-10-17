@@ -386,7 +386,7 @@ function RegisterContent() {
                       <Linkedin size={16} className="text-[#0077B5]" />
                     </div>
                     <input
-                      type="url"
+                      type="text"
                       className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0077B5]/40 bg-gray-50 text-sm transition-all"
                       placeholder="linkedin.com/in/your-profile"
                       value={linkedin}
@@ -400,7 +400,7 @@ function RegisterContent() {
                       <XIcon className="w-4 h-4 text-gray-800" />
                     </div>
                     <input
-                      type="url"
+                      type="text"
                       className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400/40 bg-gray-50 text-sm transition-all"
                       placeholder="x.com/your-handle"
                       value={twitter}
@@ -414,7 +414,7 @@ function RegisterContent() {
                       <Facebook size={16} className="text-[#1877F2]" />
                     </div>
                     <input
-                      type="url"
+                      type="text"
                       className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1877F2]/30 bg-gray-50 text-sm transition-all"
                       placeholder="facebook.com/your-profile"
                       value={facebook}

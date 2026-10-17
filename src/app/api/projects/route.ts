@@ -79,6 +79,8 @@ export async function GET(req: NextRequest) {
         members: t.members.map((m) => m.user.name),
       })),
       submissionsCount: p.soloSubmissions.length,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
     }));
 
     return NextResponse.json({ projects: formattedProjects });

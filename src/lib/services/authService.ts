@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'elite-synergy-jwt-production-secret-2026-key';
-const JWT_EXPIRES_IN = '7d';
+const JWT_EXPIRES_IN = '30d';
 
 export interface TokenPayload {
   userId: string;

@@ -86,13 +86,13 @@ export async function POST(req: NextRequest) {
       user: fullUserSafe,
     });
 
-    // Set HTTP-only cookie for secure browser sessions
+    // Set HTTP-only cookie for secure browser sessions (30-day persistent session)
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
     return response;
