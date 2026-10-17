@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   '/',
   '/about',
   '/auth/login',
+  '/auth/verify',
   '/onboarding/register',
   '/onboarding/skills',
   '/onboarding/projects',
@@ -17,7 +18,7 @@ const PUBLIC_ROUTES = [
 ]
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -27,19 +28,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (mounted && !isAuthenticated) {
-      // If the route is not public, redirect to login
-      const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/assets')
-      if (!isPublic) {
-        router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
+    if (mounted && !isLoading) {
+      const hasSession = isAuthenticated || !!user
+      if (!hasSession) {
+        // If the route is not public, redirect to login
+        const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/assets') || pathname.startsWith('/auth/verify')
+        if (!isPublic) {
+          router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
+        }
       }
     }
-  }, [isAuthenticated, pathname, router, mounted])
+  }, [isAuthenticated, isLoading, user, pathname, router, mounted])
 
   // Prevent flash of protected content
-  if (!mounted) return null
-  const isPublic = PUBLIC_ROUTES.includes(pathname)
-  if (!isAuthenticated && !isPublic) return null
+  if (!mounted || isLoading) return null
+  const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/assets') || pathname.startsWith('/auth/verify')
+  if (!isAuthenticated && !user && !isPublic) return null
 
   return (
     <>

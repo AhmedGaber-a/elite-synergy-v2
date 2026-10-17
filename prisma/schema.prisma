@@ -1,0 +1,401 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1. User & Profile Module
+// ─────────────────────────────────────────────────────────────
+
+enum AvatarType {
+  male
+  female
+  hijab
+  niqab
+}
+
+enum UserRole {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id          String     @id @default(cuid())
+  name        String
+  fullName    String
+  email       String     @unique
+  password    String? // Hashed bcrypt password
+  avatar      String?    @db.Text
+  avatarType  AvatarType @default(male)
+  role        String     @default("Student") // Display title (e.g. "Cloud Architect & Software Engineer")
+  userRole    UserRole   @default(STUDENT) // System permission
+  college     String     @default("Computer Science") // e.g. "Computer Science", "BIS", "Accounting"
+  specialty   String     @default("Cloud Architecture & Software Engineering")
+  discipline  String? // For peer filtering (e.g. "Computer Science", "Business Information System")
+  points      Int        @default(0)
+  skills      String[]   @default([])
+  bio         String?    @db.Text
+  resumeUrl   String?
+  age         Int?
+  address     String?
+  languages   Json? // [{ name: "Python", level: 90 }]
+  toolSkills  Json? // [{ name: "AWS Cloud Services", level: 90 }]
+  extraSkills String[]   @default([])
+  socialLinks Json? // { x: string, linkedin: string, facebook: string, github?: string }
+  isAvailable Boolean    @default(true)
+  matchScore  Int?       @default(95)
+  isVerified  Boolean    @default(false) // تمت إضافته للتحقق من الإيميل
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Practical Teams & Projects Relations
+  teamMemberships  TeamMember[]
+  priorProjects    PriorProject[]
+  platformProjects PlatformProject[]
+  uploadedFiles    TeamFile[]
+  soloSubmissions  SoloSubmission[]
+
+  // Community & Messaging Relations
+  posts          Post[]
+  postComments   PostComment[]
+  commentReplies CommentReply[]
+  postLikes      PostLike[]
+  conversations  ConversationParticipant[]
+  sentMessages   Message[]                 @relation("SentMessages")
+
+  // Peers Collaboration Relations
+  sentRequests     CollaborationRequest[] @relation("SentCollabRequests")
+  receivedRequests CollaborationRequest[] @relation("ReceivedCollabRequests")
+  peerProjects     PeerProject[]
+  TeamMessage      TeamMessage[]
+
+  @@index([email])
+  @@index([college])
+}
+
+// Portfolio projects uploaded during registration / prior experience
+model PriorProject {
+  id         String   @id @default(cuid())
+  title      String
+  desc       String   @db.Text
+  skill      String
+  emoji      String   @default("☁️")
+  uploadDate String
+  source     String   @default("registration")
+  fileUrl    String?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Projects completed within the Elite Synergy platform
+model PlatformProject {
+  id            String   @id @default(cuid())
+  title         String
+  desc          String   @db.Text
+  domain        String
+  role          String
+  teamName      String?
+  supervisor    String
+  grade         String
+  score         Int      @default(100)
+  completedDate String
+  status        String   @default("Completed") // "Completed" | "Verified"
+  badge         String   @default("Verified Elite Synergist 🏆")
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Peer showcase projects
+model PeerProject {
+  id          String   @id @default(cuid())
+  title       String
+  skill       String
+  description String   @db.Text
+  image       String   @default("/assets/illustrations/feature_practical.jpg")
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum ProjectType {
+  TEAM
+  SOLO
+}
+
+model Project {
+  id                   String      @id @default(cuid())
+  slug                 String      @unique
+  title                String
+  description          String      @db.Text
+  type                 ProjectType @default(TEAM)
+  maxTeams             Int         @default(5) // Number of available teams allowed under this project
+  domain               String // "IoT" | "Cloud" | "Security" | "Cross-Disciplinary"
+  forStudents          String? // e.g. "All Departments — Level 4"
+  level                Int         @default(4)
+  doctor               String? // e.g. "Dr. Romany & Dr. Radwa"
+  score                Int         @default(1000)
+  completionTime       String      @default("3 months")
+  maxSlots             Int         @default(11)
+  isMega               Boolean     @default(false)
+  megaDomains          String[]    @default([])
+  phases               String[]    @default([])
+  companyBackground    String?     @db.Text
+  businessProblem      String?     @db.Text
+  relevantData         String[]    @default([])
+  tasksToSolve         String[]    @default([])
+  expectedDeliverables String[]    @default([])
+  illustration         String?
+  category             String      @default("Cross-Disciplinary")
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  teams           Team[]
+  soloSubmissions SoloSubmission[]
+}
+
+model SoloSubmission {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  size      String
+  type      String   // pdf, code, zip, doc, etc.
+  url       String?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  slug      String?  @unique
+  name      String
+  emoji     String   @default("🚀")
+  slots     Int      @default(11) // Remaining open slots
+  maxSlots  Int      @default(11)
+  level     String   @default("All Levels")
+  goal      String?  @db.Text
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members  TeamMember[]
+  messages TeamMessage[]
+  files    TeamFile[]
+
+  @@index([projectId])
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String // e.g. "Team Lead", "Backend & Cloud Lead", "Hardware Dev", "Flutter Mobile Lead"
+  domain   String   @default("Engineering") // "IoT" | "Backend" | "Flutter" | "Cloud" | "Management" | "Design" | "QA"
+  online   Boolean  @default(false)
+  joinedAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model TeamMessage {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([teamId])
+}
+
+model TeamFile {
+  id           String   @id @default(cuid())
+  teamId       String
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  name         String
+  size         String
+  type         String // pdf, code, design, doc, pptx
+  url          String?
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([teamId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. Community & Messaging Module
+// ─────────────────────────────────────────────────────────────
+
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  contentAr String?  @db.Text
+  mediaType String? // 'image' | 'video' | 'file'
+  mediaUrl  String?  @db.Text
+  fileName  String?
+  fileUrl   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String   @db.Text
+  textAr    String?  @db.Text
+  createdAt DateTime @default(now())
+
+  replies CommentReply[]
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model CommentReply {
+  id        String      @id @default(cuid())
+  commentId String
+  comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String      @db.Text
+  textAr    String?     @db.Text
+  createdAt DateTime    @default(now())
+
+  @@index([commentId])
+  @@index([authorId])
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  name          String? // Group chat name or project title
+  isGroup       Boolean  @default(false)
+  role          String? // e.g. "11 Members · Mega Project"
+  avatarType    AvatarType?
+  lastMessage   String?  @db.Text
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  text           String       @db.Text
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. Peers Module & Collaboration Requests
+// ─────────────────────────────────────────────────────────────
+
+model CollaborationRequest {
+  id         String        @id @default(cuid())
+  senderId   String
+  sender     User          @relation("SentCollabRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User          @relation("ReceivedCollabRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     RequestStatus @default(PENDING)
+  message    String?       @db.Text
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. Authentication & Verification (تمت الإضافة)
+// ─────────────────────────────────────────────────────────────
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String   // الإيميل اللي مبعوتله الكود
+  token      String   @unique // كود التفعيل (مثلاً: 482910)
+  expires    DateTime // وقت انتهاء صلاحية الكود
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
+}

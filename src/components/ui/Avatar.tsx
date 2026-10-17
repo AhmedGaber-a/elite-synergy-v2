@@ -2,7 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
 
-export type AvatarType = 'niqab' | 'hijab' | 'male' | 'auto'
+export type AvatarType = 'niqab' | 'hijab' | 'male' | 'female' | 'auto'
 
 interface AvatarProps {
   src?: string
@@ -105,10 +105,12 @@ export function Avatar({ src, name, size = 'md', avatarType = 'auto', className 
   const s = sizes[size]
   const resolvedType = avatarType === 'auto' ? detectAvatarType(name) : avatarType
 
-  if (src && !src.includes('avatar-') && !src.includes('avatar_')) {
+  const isImageSrc = Boolean(src && (src.startsWith('data:') || src.startsWith('/') || src.startsWith('http') || src.includes('.')));
+  if (isImageSrc && src) {
     return (
       <div className={cn('relative rounded-full overflow-hidden flex-shrink-0', s.outer, className)}>
-        <Image src={src} alt={name} fill className="object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={name} className="w-full h-full object-cover" />
       </div>
     )
   }
@@ -117,7 +119,7 @@ export function Avatar({ src, name, size = 'md', avatarType = 'auto', className 
     <div className={cn('relative rounded-full overflow-hidden flex-shrink-0 select-none shadow-sm', s.outer, className)} title={name}>
       {resolvedType === 'niqab' ? (
         <NiqabSvg className="w-full h-full" />
-      ) : resolvedType === 'hijab' ? (
+      ) : resolvedType === 'hijab' || resolvedType === 'female' ? (
         <HijabSvg className="w-full h-full" />
       ) : resolvedType === 'male' ? (
         <MaleSvg className="w-full h-full" />

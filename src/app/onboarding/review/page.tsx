@@ -1,28 +1,70 @@
-'use client'
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle, FileText, Briefcase, Award, UserCheck } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { useOnboarding } from '@/lib/context/OnboardingContext'
-import { useAuth } from '@/lib/context/AuthContext'
+// src/app/onboarding/review/page.tsx
+'use client';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, CheckCircle, FileText, Briefcase, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { useOnboarding } from '@/lib/context/OnboardingContext';
 
 export default function ReviewPage() {
-  const router = useRouter()
-  const { state, reset } = useOnboarding()
-  const { login } = useAuth()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter();
+  const { state, reset } = useOnboarding();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleFinish = () => {
-    setIsSubmitting(true)
-    setTimeout(() => {
-      login(state.email || 'demo@elitesynergy.edu', 'mock-password', {
-        skills: state.skills.length > 0 ? state.skills : undefined,
-      })
-      reset()
-      router.push('/')
-    }, 1000)
-  }
+  const handleFinish = async () => {
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const allSkills = [...state.skills];
+      if (state.customSkill && !allSkills.includes(state.customSkill)) {
+        allSkills.push(state.customSkill);
+      }
+
+      const payload = {
+        name: state.name || state.fullName?.split(' ')[0] || 'Student',
+        fullName: state.fullName || 'Student',
+        email: state.email,
+        password: state.password || 'TemporaryPassword2026!',
+        college: state.college || 'Computer Science',
+        specialty: state.specialty || 'Cloud Architecture & Software Engineering',
+        skills: allSkills,
+        languages: state.languages,
+        bio: state.bio,
+        resumeUrl: state.cvUrl || state.cvFilename || null,
+        socialLinks: state.socialLinks,
+        priorProjects: state.projects.map((p) => ({
+          title: p.title,
+          desc: p.description,
+          skill: p.skill || allSkills[0] || 'General',
+          fileUrl: p.fileUrl || p.filename || null,
+        })),
+      };
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'فشل إتمام التسجيل، يرجى مراجعة البيانات');
+        setIsSubmitting(false);
+        return;
+      }
+
+      reset();
+      const redirectTarget = data.redirectUrl || `/auth/verify?email=${encodeURIComponent(state.email)}`;
+      router.push(redirectTarget);
+    } catch {
+      setError('حدث خطأ في الاتصال بالخادم');
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg-cream flex flex-col items-center px-4 py-12">
@@ -33,13 +75,20 @@ export default function ReviewPage() {
           <p className="text-text-body">Ensure your details are accurate before completing setup.</p>
         </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm mb-6 flex items-start gap-3">
+            <AlertCircle size={20} className="flex-shrink-0 mt-0.5 text-red-500" />
+            <p className="font-semibold">{error}</p>
+          </div>
+        )}
+
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-6 mb-8">
-          
           {/* Account */}
           <div className="flex items-start justify-between border-b border-gray-100 pb-4">
             <div>
-              <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">Account</span>
-              <p className="text-text-primary font-bold">{state.email || 'guest@example.com'}</p>
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">Account & College</span>
+              <p className="text-text-primary font-bold">{state.fullName || 'Student'} ({state.email || 'student@fa-hists.edu.eg'})</p>
+              <p className="text-xs text-text-muted mt-0.5">{state.college} · {state.specialty}</p>
             </div>
             <button onClick={() => router.push('/onboarding/register')} className="text-xs text-brand-orange hover:underline font-semibold">
               Edit
@@ -55,7 +104,7 @@ export default function ReviewPage() {
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {state.skills.map(s => (
+              {state.skills.map((s) => (
                 <Badge key={s} variant="orange" className="text-xs">{s}</Badge>
               ))}
               {state.customSkill && (
@@ -107,7 +156,6 @@ export default function ReviewPage() {
               <p className="text-xs text-text-muted">No file uploaded (skipped)</p>
             )}
           </div>
-
         </div>
 
         {/* Navigation */}
@@ -115,16 +163,17 @@ export default function ReviewPage() {
           <Button variant="ghost" onClick={() => router.push('/onboarding/cv')}>
             <ArrowLeft size={16} className="mr-2" /> Back
           </Button>
-          <Button 
-            variant="primary" 
-            size="lg" 
-            onClick={handleFinish} 
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleFinish}
             isLoading={isSubmitting}
+            className="rounded-xl px-8"
           >
-            Complete Setup <CheckCircle size={18} className="ml-2" />
+            Complete Setup & Verify <CheckCircle size={18} className="ml-2" />
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }

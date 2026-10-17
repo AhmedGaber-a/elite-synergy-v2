@@ -1,27 +1,28 @@
 // src/lib/data/messages.ts
+import { CURRENT_USER } from './mock-user';
 
 export interface Message {
-  id: string
-  text: string
-  sender: 'me' | 'them'
-  senderName: string
-  senderRole: string
-  timestamp: string
+  id: string;
+  text: string;
+  sender: 'me' | 'them';
+  senderName: string;
+  senderRole: string;
+  timestamp: string;
 }
 
 export interface Conversation {
-  id: string
-  name: string
-  role: string
-  avatar?: string
-  avatarType?: 'niqab' | 'hijab' | 'male'
-  lastMessage: string
-  time: string
-  unread: number
-  isOnline: boolean
-  isGroup: boolean
-  messages: Message[]
-  contextType?: 'peer' | 'project'
+  id: string;
+  name: string;
+  role: string;
+  avatar?: string;
+  avatarType?: 'niqab' | 'hijab' | 'male';
+  lastMessage: string;
+  time: string;
+  unread: number;
+  isOnline: boolean;
+  isGroup: boolean;
+  messages: Message[];
+  contextType?: 'peer' | 'project';
 }
 
 export const CONVERSATIONS: Conversation[] = [
@@ -36,10 +37,38 @@ export const CONVERSATIONS: Conversation[] = [
     isOnline: true,
     isGroup: false,
     messages: [
-      { id: 'm1', text: 'Hey Mohamed! Did you calibrate the sensor thresholds for the Mega Project?', sender: 'me', senderName: 'Mariem ahmed', senderRole: 'Cloud Architect', timestamp: '10:32 AM' },
-      { id: 'm2', text: 'Yes, I finished testing them on Arduino and pushed the topic definitions.', sender: 'them', senderName: 'Mohamed hamada', senderRole: 'IoT Engineer', timestamp: '10:35 AM' },
-      { id: 'm3', text: 'Awesome! I will connect our backend endpoint to read from those topics.', sender: 'me', senderName: 'Mariem ahmed', senderRole: 'Cloud Architect', timestamp: '10:38 AM' },
-      { id: 'm4', text: 'All set! The MQTT bridge is transmitting data to our server.', sender: 'them', senderName: 'Mohamed hamada', senderRole: 'IoT Engineer', timestamp: '10:41 AM' },
+      {
+        id: 'm1',
+        text: 'Hey Mohamed! Did you calibrate the sensor thresholds for the Mega Project?',
+        sender: 'me',
+        senderName: CURRENT_USER.name,
+        senderRole: CURRENT_USER.role,
+        timestamp: '10:32 AM',
+      },
+      {
+        id: 'm2',
+        text: 'Yes, I finished testing them on Arduino and pushed the topic definitions.',
+        sender: 'them',
+        senderName: 'Mohamed hamada',
+        senderRole: 'IoT Engineer',
+        timestamp: '10:35 AM',
+      },
+      {
+        id: 'm3',
+        text: 'Awesome! I will connect our backend endpoint to read from those topics.',
+        sender: 'me',
+        senderName: CURRENT_USER.name,
+        senderRole: CURRENT_USER.role,
+        timestamp: '10:38 AM',
+      },
+      {
+        id: 'm4',
+        text: 'All set! The MQTT bridge is transmitting data to our server.',
+        sender: 'them',
+        senderName: 'Mohamed hamada',
+        senderRole: 'IoT Engineer',
+        timestamp: '10:41 AM',
+      },
     ],
   },
   {
@@ -53,8 +82,22 @@ export const CONVERSATIONS: Conversation[] = [
     isOnline: true,
     isGroup: false,
     messages: [
-      { id: 'm1', text: 'Hey Basmalha, could you check the Power BI report schema?', sender: 'me', senderName: 'Mariem ahmed', senderRole: 'Cloud Architect', timestamp: 'Yesterday' },
-      { id: 'm2', text: 'I reviewed the charts, they look great!', sender: 'them', senderName: 'basmalha Ibrahim', senderRole: 'Data Analyst', timestamp: 'Yesterday' },
+      {
+        id: 'm1',
+        text: 'Hey Basmalha, could you check the Power BI report schema?',
+        sender: 'me',
+        senderName: CURRENT_USER.name,
+        senderRole: CURRENT_USER.role,
+        timestamp: 'Yesterday',
+      },
+      {
+        id: 'm2',
+        text: 'I reviewed the charts, they look great!',
+        sender: 'them',
+        senderName: 'basmalha Ibrahim',
+        senderRole: 'Data Analyst',
+        timestamp: 'Yesterday',
+      },
     ],
   },
   {
@@ -68,7 +111,22 @@ export const CONVERSATIONS: Conversation[] = [
     isOnline: true,
     isGroup: true,
     messages: [
-      { id: 'm1', text: 'Dr. Romany meeting scheduled for tomorrow at 3 PM', sender: 'them', senderName: 'Raneem Yasser', senderRole: 'Frontend Lead', timestamp: 'Yesterday' },
+      {
+        id: 'm1',
+        text: 'Dr. Romany meeting scheduled for tomorrow at 3 PM',
+        sender: 'them',
+        senderName: 'Raneem Yasser',
+        senderRole: 'Frontend Lead',
+        timestamp: 'Yesterday',
+      },
+      {
+        id: 'm2',
+        text: 'I will prepare the cloud architecture diagrams and the live API demo.',
+        sender: 'me',
+        senderName: CURRENT_USER.name,
+        senderRole: CURRENT_USER.role,
+        timestamp: 'Yesterday',
+      },
     ],
   },
   {
@@ -82,7 +140,16 @@ export const CONVERSATIONS: Conversation[] = [
     isOnline: false,
     isGroup: false,
     messages: [
-      { id: 'm1', text: 'The Flutter UI is connected to the API gateway now.', sender: 'them', senderName: 'Rahma', senderRole: 'Mobile Dev', timestamp: 'Tuesday' },
+      {
+        id: 'm1',
+        text: 'The Flutter UI is connected to the API gateway now.',
+        sender: 'them',
+        senderName: 'Rahma',
+        senderRole: 'Mobile Dev',
+        timestamp: 'Tuesday',
+      },
     ],
   },
-]
+];
+
+export const MOCK_CHATS = CONVERSATIONS;

@@ -145,7 +145,7 @@ export function Navbar() {
                       <div className="absolute end-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-20 animate-in slide-in-from-top-2 duration-150">
                         <div className="p-3 border-b border-gray-100">
                           <p className="font-bold text-sm text-text-primary">{user?.name}</p>
-                          <p className="text-xs text-text-muted">Student · BIS</p>
+                          <p className="text-xs text-text-muted">{user?.college || 'Student'}</p>
                         </div>
                         <div className="p-1.5">
                           <Link href="/profile" className="block px-3 py-2 text-sm text-text-body hover:bg-orange-50 hover:text-brand-orange rounded-xl transition-colors font-medium">
