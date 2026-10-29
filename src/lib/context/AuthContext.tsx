@@ -187,7 +187,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
       });
 
-      const data = await res.json();
+      // The server may answer with a non-JSON page (e.g. a crash page from the host).
+      // Read it as text first so we can show a useful message instead of a generic one.
+      const raw = await res.text();
+      let data: { error?: string; unverified?: boolean; notRegistered?: boolean; user?: User; token?: string } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        return {
+          success: false,
+          error: `الخادم رجّع رد غير متوقع (${res.status}). لو المشكلة مستمرة، اتأكد من متغيرات البيئة (Environment Variables) على Vercel.`,
+        };
+      }
 
       if (!res.ok) {
         return {

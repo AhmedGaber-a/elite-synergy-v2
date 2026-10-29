@@ -1,6 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { SectionHeader } from '@/components/ui/SectionHeader'
+import { useLanguage } from '@/lib/context/LanguageContext'
 
 const TESTIMONIALS = [
   {
@@ -27,10 +28,15 @@ const TESTIMONIALS = [
 ]
 
 export function TestimonialsSection() {
+  const { lang } = useLanguage()
+  const isAr = lang === 'ar'
   return (
     <section className="py-16 md:py-24 bg-white">
       <div className="section-container">
-        <SectionHeader title="What students say" subtitle="Real experiences from our community" />
+        <SectionHeader
+          title={isAr ? 'ماذا يقول الطلاب؟' : 'What students say'}
+          subtitle={isAr ? 'تجارب حقيقية من مجتمعنا' : 'Real experiences from our community'}
+        />
         
         <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           {TESTIMONIALS.map((testimonial) => (

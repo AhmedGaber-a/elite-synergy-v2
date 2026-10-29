@@ -3,7 +3,17 @@ import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'elite-synergy-jwt-production-secret-2026-key';
+/**
+ * The secret MUST come from the environment. There is intentionally no
+ * hardcoded fallback: a public fallback would let anyone forge valid tokens.
+ */
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return secret;
+}
 const JWT_EXPIRES_IN = '30d';
 
 export interface TokenPayload {
@@ -16,7 +26,7 @@ export interface TokenPayload {
  * Sign a JWT token for an authenticated user
  */
 export function signToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
@@ -24,7 +34,7 @@ export function signToken(payload: TokenPayload): string {
  */
 export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return jwt.verify(token, getJwtSecret()) as TokenPayload;
   } catch {
     return null;
   }
