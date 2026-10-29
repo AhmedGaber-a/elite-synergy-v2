@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { SectionHeader } from '@/components/ui/SectionHeader'
+import { TiltCard } from '@/components/3d/TiltCard'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 import { ArrowRight, BookOpen, Users, MessageSquare } from 'lucide-react'
@@ -46,19 +47,20 @@ export function FeaturesSection() {
   ]
 
   return (
-    <section className="py-16 md:py-24 bg-bg-cream">
+    <section className="py-16 md:py-24 bg-bg-cream/70 backdrop-blur-sm">
       <div className="section-container">
         <SectionHeader
           title={t('home.featuresTitle')}
           subtitle={t('home.featuresSubtitle')}
         />
 
-        <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 [perspective:1200px]">
           {FEATURES.map((feature) => {
             const href = isAuthenticated ? feature.authHref : '/auth/login'
             return (
               <Link key={feature.id} href={href} className="group block h-full">
-                <div className="bg-white rounded-3xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5">
+                <TiltCard className="h-full">
+                <div className="bg-white rounded-3xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-xl">
                   {/* High quality local asset image */}
                   <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden">
                     <Image
@@ -88,6 +90,7 @@ export function FeaturesSection() {
                     </div>
                   </div>
                 </div>
+                </TiltCard>
               </Link>
             )
           })}

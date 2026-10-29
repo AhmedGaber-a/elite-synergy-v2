@@ -1,18 +1,23 @@
 // src/components/home/HeroSection.tsx
 'use client'
 import React from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
+
+const HeroOrb = dynamic(() => import('@/components/3d/HeroOrb').then((m) => m.HeroOrb), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 animate-pulse bg-orange-50" />,
+})
 
 export function HeroSection() {
   const { isAuthenticated, user } = useAuth()
   const { t, lang } = useLanguage()
 
   return (
-    <section className="relative overflow-hidden bg-bg-cream">
+    <section className="relative overflow-hidden bg-transparent">
       <div className="section-container pt-2 pb-10 md:pt-4 md:pb-12 lg:pt-6 lg:pb-14">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left content */}
@@ -84,18 +89,14 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right Hero Image */}
-          <div className="order-2 lg:order-2 flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-lg lg:max-w-xl aspect-[16/10] flex items-center justify-center rounded-3xl overflow-hidden shadow-lg border border-orange-100/50 bg-white">
-              <Image
-                src="/Diverse Student Study Group.png"
-                alt="Diverse Student Study Group"
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 550px"
-              />
+          {/* Right: interactive 3D hero card (drag to rotate, wheel to zoom) */}
+          <div className="order-2 lg:order-2 flex flex-col items-center lg:items-end gap-3">
+            <div className="relative w-full max-w-lg lg:max-w-xl aspect-[16/10] rounded-3xl overflow-hidden shadow-lg border border-orange-100/50 bg-white/60 backdrop-blur-sm">
+              <HeroOrb />
             </div>
+            <p className="text-xs text-text-muted">
+              {lang === 'ar' ? 'اسحب لتدوير الصورة، واستخدم عجلة الماوس للزووم' : 'Drag to rotate, scroll wheel to zoom'}
+            </p>
           </div>
         </div>
       </div>

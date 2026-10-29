@@ -28,7 +28,7 @@ const TESTIMONIALS = [
 
 export function TestimonialsSection() {
   return (
-    <section className="py-16 md:py-24 bg-white">
+    <section className="py-16 md:py-24 bg-white/70 backdrop-blur-sm">
       <div className="section-container">
         <SectionHeader title="What students say" subtitle="Real experiences from our community" />
         

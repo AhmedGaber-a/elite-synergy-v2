@@ -7,6 +7,13 @@
   html {
     scroll-behavior: smooth;
   }
+  /* Lenis smooth scrolling (see components/3d/SmoothScroll.tsx) */
+  html.lenis, html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
   body {
     @apply bg-bg-cream text-text-primary font-sans antialiased;
   }
