@@ -17,7 +17,7 @@ export function Footer() {
       <div className="section-container py-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-4">
-            <Link href="/" className="inline-block relative h-12 w-40">
+            <Link href="/" className="inline-block relative h-16 w-44 rounded-2xl bg-white px-2 py-1 shadow-sm">
               <Image src="/assets/logo.png" alt="Elite Synergy Logo" fill className="object-contain object-left" />
             </Link>
             <p className="text-gray-400 text-sm">Build your future together.</p>
