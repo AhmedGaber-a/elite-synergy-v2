@@ -40,9 +40,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, user, pathname, router, mounted])
 
-  // Prevent flash of protected content
-  if (!mounted || isLoading) return null
+  // Wait for hydration (localStorage is only readable on the client).
+  if (!mounted) return null
   const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/assets') || pathname.startsWith('/auth/verify')
+  // Public pages render right away while the session check runs, so the first paint is not blank.
+  // Protected pages still wait, to avoid flashing private content.
+  if (isLoading && !isPublic) return null
   if (!isAuthenticated && !user && !isPublic) return null
 
   return (

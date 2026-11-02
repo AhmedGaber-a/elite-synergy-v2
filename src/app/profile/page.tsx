@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
 
 function XIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -105,11 +106,9 @@ function EditProfileModal({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, avatar: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
+    resizeImageToDataUrl(file, 256, 0.85).then((dataUrl) => {
+      setForm((prev) => ({ ...prev, avatar: dataUrl }));
+    });
   };
 
   const addSkill = () => {
@@ -564,12 +563,7 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      await handleUpdateProfile({ avatar: base64 });
-    };
-    reader.readAsDataURL(file);
+    resizeImageToDataUrl(file, 256, 0.85).then((base64) => handleUpdateProfile({ avatar: base64 }));
   };
 
   const handleAddPriorProject = async (proj: { title: string; desc: string; skill: string; fileUrl?: string; emoji?: string }) => {

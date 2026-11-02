@@ -36,7 +36,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
+        // Poppins is loaded once by next/font in app/layout.tsx (self-hosted, no extra request).
+        sans: ['var(--font-poppins)', 'Poppins', 'sans-serif'],
       },
       borderRadius: {
         'xl': '1rem',

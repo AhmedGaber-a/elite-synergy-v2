@@ -6,6 +6,17 @@ import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 
+// Only the fields the feed shows. Never load password hashes or private columns into list responses.
+const AUTHOR_FIELDS = {
+  id: true,
+  name: true,
+  fullName: true,
+  avatar: true,
+  avatarType: true,
+  college: true,
+  specialty: true,
+} as const;
+
 export const dynamic = 'force-dynamic';
 
 function saveBase64File(dataUrl: string, prefix = 'community'): { url: string; fileName: string } | null {
@@ -50,19 +61,22 @@ function saveBase64File(dataUrl: string, prefix = 'community'): { url: string; f
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 30, 1), 100);
+
     const posts = await prisma.post.findMany({
       include: {
-        author: true,
+        author: { select: AUTHOR_FIELDS },
         sharedPost: {
           include: {
-            author: true,
+            author: { select: AUTHOR_FIELDS },
           },
         },
         likes: {
           include: {
-            user: true,
+            user: { select: { name: true } },
           },
         },
         comments: {
@@ -70,18 +84,18 @@ export async function GET() {
             parentId: null, // Top-level comments only
           },
           include: {
-            author: true,
+            author: { select: AUTHOR_FIELDS },
             reactions: {
               include: {
-                user: true,
+                user: { select: { name: true } },
               },
             },
             nestedReplies: {
               include: {
-                author: true,
+                author: { select: AUTHOR_FIELDS },
                 reactions: {
                   include: {
-                    user: true,
+                    user: { select: { name: true } },
                   },
                 },
               },
@@ -89,7 +103,7 @@ export async function GET() {
             },
             replies: {
               include: {
-                author: true,
+                author: { select: AUTHOR_FIELDS },
               },
               orderBy: { createdAt: 'asc' },
             },
@@ -98,6 +112,7 @@ export async function GET() {
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: limit,
     });
 
     const formattedPosts = posts.map((post) => {

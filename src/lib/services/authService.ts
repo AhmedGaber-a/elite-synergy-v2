@@ -45,7 +45,7 @@ export function verifyToken(token: string): TokenPayload | null {
  * Supports 'Authorization: Bearer <token>' header or HTTP-only 'token' cookie.
  * Returns null if not authenticated.
  */
-export async function getAuthUser(req: NextRequest) {
+export function getAuthUserId(req: NextRequest): string | null {
   const authHeader = req.headers.get('authorization');
   let token: string | null = null;
 
@@ -60,11 +60,16 @@ export async function getAuthUser(req: NextRequest) {
   }
 
   const payload = verifyToken(token);
-  if (!payload || !payload.userId) {
+  return payload?.userId || null;
+}
+
+export async function getAuthUser(req: NextRequest) {
+  const userId = getAuthUserId(req);
+  if (!userId) {
     return null;
   }
 
   return await prisma.user.findUnique({
-    where: { id: payload.userId },
+    where: { id: userId },
   });
 }

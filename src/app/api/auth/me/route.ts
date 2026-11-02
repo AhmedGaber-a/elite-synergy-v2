@@ -1,20 +1,21 @@
 // src/app/api/auth/me/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getAuthUser } from '@/lib/services/authService';
+import { getAuthUserId } from '@/lib/services/authService';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const authUser = await getAuthUser(req);
+    // One database round trip: verify the token, then load the user with relations.
+    const userId = getAuthUserId(req);
 
-    if (!authUser) {
+    if (!userId) {
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
     const fullUser = await prisma.user.findUnique({
-      where: { id: authUser.id },
+      where: { id: userId },
       include: {
         priorProjects: true,
         platformProjects: true,

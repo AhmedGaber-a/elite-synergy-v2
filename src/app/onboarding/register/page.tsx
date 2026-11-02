@@ -7,6 +7,7 @@ import { ArrowRight, Camera, Linkedin, Facebook, User, Mail, Lock, Eye, EyeOff, 
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
+import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
 
 function XIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -51,9 +52,7 @@ function RegisterContent() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setProfilePreview(reader.result as string);
-      reader.readAsDataURL(file);
+      resizeImageToDataUrl(file, 256, 0.85).then(setProfilePreview);
     }
   };
 

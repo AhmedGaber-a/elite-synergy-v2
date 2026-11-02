@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
+import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
 
 export interface CommentReactionItem {
   id?: string;
@@ -134,11 +135,7 @@ function CreatePostModal({
     setError('');
     setFileName(f.name);
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFilePreview(reader.result as string);
-    };
-    reader.readAsDataURL(f);
+    resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
   };
 
   const submit = async () => {
@@ -363,11 +360,7 @@ function EditPostModal({
     setError('');
     setFileName(f.name);
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFilePreview(reader.result as string);
-    };
-    reader.readAsDataURL(f);
+    resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
   };
 
   const submitEdit = async () => {
