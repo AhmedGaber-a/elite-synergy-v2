@@ -52,11 +52,12 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange rounded-lg">
             <Image
-              src="/assets/logo.png"
+              src="/icon.png"
               alt="Elite Synergy Logo"
-              width={150}
-              height={50}
+              width={160}
+              height={90}
               priority
+              unoptimized
               className="object-contain h-9 md:h-11 w-auto"
             />
           </Link>
@@ -261,7 +262,7 @@ export function Navbar() {
                       size="sm"
                     />
                     <div className="min-w-0">
-                      <p className="font-bold text-sm text-text-primary truncate">{user?.fullName || user?.name ?? 'Student'}</p>
+                      <p className="font-bold text-sm text-text-primary truncate">{(user?.fullName || user?.name) ?? 'Student'}</p>
                       <p className="text-xs text-text-muted truncate">{user?.college || 'Student'}</p>
                     </div>
                   </div>

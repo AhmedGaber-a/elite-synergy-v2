@@ -12,7 +12,10 @@ export async function GET(
   try {
     const projectParam = params.id;
     const authUser = await getAuthUser(req);
-    const currentUserId = authUser?.id;
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+    const currentUserId = authUser.id;
 
     // Search project by slug or cuid id
     const project = await prisma.project.findFirst({
@@ -174,6 +177,13 @@ export async function GET(
         expectedDeliverables: project.expectedDeliverables,
         illustration: project.illustration,
         category: project.category,
+        source: project.source || 'INTERNAL',
+        erpReferenceId: project.erpReferenceId,
+        professorName: project.professorName || project.doctor,
+        courseCode: project.courseCode,
+        deadline: project.deadline,
+        attachments: project.attachments || [],
+        maxTeamSize: project.maxTeamSize || project.maxSlots || 11,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
       },

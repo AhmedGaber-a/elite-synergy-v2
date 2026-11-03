@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, UserPlus, Check, MessageCircle, GraduationCap, Briefcase, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, UserPlus, Check, MessageCircle, GraduationCap, Briefcase, Star, Sparkles, Clock } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
@@ -34,7 +34,7 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
   }, [params.id]);
 
   const handleConnect = async () => {
-    if (!peer || requesting || connected) return;
+    if (!peer || requesting || connected || peer.connectionStatus === 'PENDING') return;
     setRequesting(true);
     try {
       const res = await fetch('/api/peers', {
@@ -44,6 +44,7 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
       });
       if (res.ok) {
         setConnected(true);
+        setPeer((prev) => (prev ? { ...prev, connectionStatus: 'PENDING' } : null));
       }
     } catch (err) {
       console.error('Failed to connect:', err);
@@ -113,21 +114,44 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                 <Link href={`/messages?type=peer&id=${peer.id}`} className="flex-1 md:flex-initial">
                   <Button variant="outline" size="md" fullWidth><MessageCircle size={18} className="mr-2" /> Message</Button>
                 </Link>
-                {connected ? (
-                  <Button variant="navy" size="md" disabled className="flex-1 md:flex-initial">
-                    <Check size={18} className="mr-2 text-green-400" /> Request Sent
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={handleConnect}
-                    isLoading={requesting}
-                    className="flex-1 md:flex-initial"
-                  >
-                    <UserPlus size={18} className="mr-2" /> Connect
-                  </Button>
-                )}
+                {(() => {
+                  const status = (connected || peer.connectionStatus === 'PENDING') ? 'PENDING' : (peer.connectionStatus || 'NONE');
+                  if (status === 'PENDING') {
+                    return (
+                      <Button
+                        variant="outline"
+                        size="md"
+                        disabled
+                        className="flex-1 md:flex-initial border-amber-300 text-amber-700 bg-amber-50 cursor-not-allowed"
+                      >
+                        <Clock size={18} className="mr-2 text-amber-600" /> Pending (قيد الانتظار)
+                      </Button>
+                    );
+                  }
+                  if (status === 'CONNECTED') {
+                    return (
+                      <Button
+                        variant="outline"
+                        size="md"
+                        disabled
+                        className="flex-1 md:flex-initial border-green-300 text-green-700 bg-green-50 cursor-not-allowed"
+                      >
+                        <Check size={18} className="mr-2 text-green-600" /> Connected (متصل)
+                      </Button>
+                    );
+                  }
+                  return (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={handleConnect}
+                      isLoading={requesting}
+                      className="flex-1 md:flex-initial"
+                    >
+                      <UserPlus size={18} className="mr-2" /> Connect
+                    </Button>
+                  );
+                })()}
               </div>
             </div>
 

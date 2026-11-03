@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Heart, MessageCircle, Plus, FileText, Send,
   Image as ImageIcon, X, Film, Upload, Smile, Sparkles, AlertCircle, Users,
-  Share2, Pencil, CheckCircle2, Download, Trash2, CornerDownRight, Check
+  Share2, Pencil, CheckCircle2, Download, Trash2, CornerDownRight, Check, Maximize2
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Avatar } from '@/components/ui/Avatar';
@@ -769,6 +769,7 @@ function PostCard({
   onDelete,
   onShare,
   onShowToast,
+  onOpenLightbox,
 }: {
   post: PostItem;
   currentUser: { id?: string; name: string; avatar?: string | null; avatarUrl?: string | null; avatarType?: 'male' | 'female' | string } | null;
@@ -776,6 +777,7 @@ function PostCard({
   onDelete: (postId: string) => void;
   onShare: (post: PostItem) => void;
   onShowToast: (msg: string) => void;
+  onOpenLightbox: (media: { type: 'image' | 'video'; url: string; title?: string }) => void;
 }) {
   const { t } = useLanguage();
   const [liked, setLiked] = useState(
@@ -792,10 +794,96 @@ function PostCard({
   const [replyText, setReplyText] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
 
+  // Comment edit state
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
   // Sync comments if post prop changes
   useEffect(() => {
     setComments(post.comments || []);
   }, [post.comments]);
+
+  const startEditComment = (commentId: string, currentText: string) => {
+    setEditingCommentId(commentId);
+    setEditingText(currentText);
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingText('');
+  };
+
+  const saveEditComment = async (commentId: string) => {
+    if (!editingText.trim()) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/community/comments/${commentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: editingText.trim() }),
+      });
+      if (res.ok) {
+        setComments((prev) =>
+          prev.map((c) => {
+            if (c.id === commentId) {
+              return { ...c, text: editingText.trim() };
+            }
+            if (c.replies) {
+              return {
+                ...c,
+                replies: c.replies.map((r) =>
+                  r.id === commentId ? { ...r, text: editingText.trim() } : r
+                ),
+              };
+            }
+            return c;
+          })
+        );
+        setEditingCommentId(null);
+        setEditingText('');
+        onShowToast('تم تعديل التعليق بنجاح');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'فشل تعديل التعليق');
+      }
+    } catch (err) {
+      console.error('Failed to edit comment:', err);
+      alert('حدث خطأ أثناء تعديل التعليق');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!window.confirm('هل أنت متأكد من رغبتك في حذف هذا التعليق؟')) return;
+    setDeletingCommentId(commentId);
+    try {
+      const res = await fetch(`/api/community/comments/${commentId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setComments((prev) =>
+          prev
+            .filter((c) => c.id !== commentId)
+            .map((c) => ({
+              ...c,
+              replies: c.replies ? c.replies.filter((r) => r.id !== commentId) : [],
+            }))
+        );
+        onShowToast('تم حذف التعليق');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'فشل حذف التعليق');
+      }
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+      alert('حدث خطأ أثناء حذف التعليق');
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
 
   const isAuthor = Boolean(
     currentUser &&
@@ -1040,15 +1128,29 @@ function PostCard({
           </p>
 
           {post.sharedPost.mediaType === 'image' && post.sharedPost.mediaUrl && (
-            <div className="w-full max-h-72 bg-gray-50 rounded-xl overflow-hidden relative border border-gray-100 flex items-center justify-center">
+            <div
+              onClick={() => onOpenLightbox({ type: 'image', url: post.sharedPost!.mediaUrl!, title: post.sharedPost!.content })}
+              className="w-full max-h-72 bg-gray-50 rounded-xl overflow-hidden relative border border-gray-100 flex items-center justify-center cursor-pointer group/media"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.sharedPost.mediaUrl} alt="Shared Attachment" className="w-full h-auto max-h-72 object-contain rounded-xl" />
+              <img src={post.sharedPost.mediaUrl} alt="Shared Attachment" className="w-full h-auto max-h-72 object-contain rounded-xl group-hover/media:opacity-95 transition-opacity" />
+              <div className="absolute inset-0 bg-black/0 group-hover/media:bg-black/20 transition-colors rounded-xl flex items-center justify-center opacity-0 group-hover/media:opacity-100">
+                <span className="bg-black/70 text-white text-xs px-3 py-1 rounded-full font-bold backdrop-blur-sm">🔍 تكبير</span>
+              </div>
             </div>
           )}
 
           {post.sharedPost.mediaType === 'video' && post.sharedPost.mediaUrl && (
-            <div className="w-full max-h-72 bg-black rounded-xl overflow-hidden relative border border-gray-800 flex items-center justify-center">
+            <div className="w-full max-h-72 bg-black rounded-xl overflow-hidden relative border border-gray-800 flex items-center justify-center group/video">
               <video controls src={post.sharedPost.mediaUrl} className="w-full max-h-72 object-contain rounded-xl" />
+              <button
+                type="button"
+                onClick={() => onOpenLightbox({ type: 'video', url: post.sharedPost!.mediaUrl!, title: post.sharedPost!.content })}
+                className="absolute top-2.5 end-2.5 bg-black/70 hover:bg-black/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm opacity-90 hover:opacity-100 transition-all flex items-center gap-1 z-10 cursor-pointer"
+                title="تكبير الفيديو في شاشة كاملة"
+              >
+                <Maximize2 size={12} /> شاشة كاملة
+              </button>
             </div>
           )}
         </div>
@@ -1056,16 +1158,30 @@ function PostCard({
 
       {/* Media: Image */}
       {post.mediaType === 'image' && post.mediaUrl && (
-        <div className="w-full max-h-96 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative border border-gray-100 flex items-center justify-center">
+        <div
+          onClick={() => onOpenLightbox({ type: 'image', url: post.mediaUrl!, title: post.content })}
+          className="w-full max-h-96 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative border border-gray-100 flex items-center justify-center cursor-pointer group/media"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.mediaUrl} alt="Post Attachment" className="w-full h-auto max-h-96 object-contain rounded-2xl" />
+          <img src={post.mediaUrl} alt="Post Attachment" className="w-full h-auto max-h-96 object-contain rounded-2xl group-hover/media:opacity-95 transition-opacity" />
+          <div className="absolute inset-0 bg-black/0 group-hover/media:bg-black/20 transition-colors rounded-2xl flex items-center justify-center opacity-0 group-hover/media:opacity-100">
+            <span className="bg-black/70 text-white text-xs px-3 py-1.5 rounded-full font-bold backdrop-blur-sm">🔍 عرض بالحجم الكامل</span>
+          </div>
         </div>
       )}
 
       {/* Media: Video */}
       {post.mediaType === 'video' && post.mediaUrl && (
-        <div className="w-full max-h-96 bg-black rounded-2xl mb-4 overflow-hidden relative border border-gray-800 flex items-center justify-center">
+        <div className="w-full max-h-96 bg-black rounded-2xl mb-4 overflow-hidden relative border border-gray-800 flex items-center justify-center group/video">
           <video controls src={post.mediaUrl} className="w-full max-h-96 object-contain rounded-2xl" />
+          <button
+            type="button"
+            onClick={() => onOpenLightbox({ type: 'video', url: post.mediaUrl!, title: post.content })}
+            className="absolute top-3 end-3 bg-black/70 hover:bg-black/90 text-white text-xs font-bold px-3 py-1.5 rounded-xl backdrop-blur-sm opacity-90 hover:opacity-100 transition-all flex items-center gap-1.5 z-10 cursor-pointer shadow-md"
+            title="تكبير الفيديو في شاشة كاملة"
+          >
+            <Maximize2 size={13} /> شاشة كاملة
+          </button>
         </div>
       )}
 
@@ -1134,11 +1250,68 @@ function PostCard({
                       <div className="flex-1 bg-gray-50 rounded-2xl rounded-ss-none px-4 py-3 border border-gray-100">
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-bold text-xs text-text-primary">{c.author}</p>
-                          <span className="text-[10px] text-text-muted" title={commentTimes.exact}>
-                            {commentTimes.relative}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-text-muted" title={commentTimes.exact}>
+                              {commentTimes.relative}
+                            </span>
+                            {currentUser && (c.authorId === currentUser.id || c.author === currentUser.name) && (
+                              <div className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditComment(c.id, c.text)}
+                                  className="text-gray-400 hover:text-brand-orange p-1 rounded-md transition-colors cursor-pointer"
+                                  title="تعديل التعليق (Edit)"
+                                >
+                                  <Pencil size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteComment(c.id)}
+                                  disabled={deletingCommentId === c.id}
+                                  className="text-gray-400 hover:text-red-500 p-1 rounded-md transition-colors disabled:opacity-40 cursor-pointer"
+                                  title="حذف التعليق (Delete)"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm text-text-body leading-relaxed mb-2">{c.text}</p>
+
+                        {editingCommentId === c.id ? (
+                          <div className="mt-2 space-y-2">
+                            <input
+                              type="text"
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveEditComment(c.id);
+                                if (e.key === 'Escape') cancelEditComment();
+                              }}
+                              className="w-full text-xs border border-brand-orange/60 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                              autoFocus
+                            />
+                            <div className="flex items-center gap-2 justify-end">
+                              <button
+                                type="button"
+                                onClick={cancelEditComment}
+                                className="text-[11px] text-gray-500 hover:text-gray-700 px-2 py-1 rounded"
+                              >
+                                إلغاء
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => saveEditComment(c.id)}
+                                disabled={!editingText.trim() || savingEdit}
+                                className="text-[11px] bg-brand-orange text-white font-bold px-3 py-1 rounded-lg hover:bg-brand-orange-dark transition-all disabled:opacity-50"
+                              >
+                                {savingEdit ? 'جاري الحفظ...' : 'حفظ'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-text-body leading-relaxed mb-2">{c.text}</p>
+                        )}
 
                         {/* Reaction and Reply Action Bar */}
                         <div className="flex items-center gap-3 pt-1 border-t border-gray-100/70 text-xs text-text-muted flex-wrap">
@@ -1192,11 +1365,68 @@ function PostCard({
                               <div className="flex-1 bg-white rounded-2xl rounded-ss-none px-3.5 py-2.5 border border-gray-100 shadow-xs">
                                 <div className="flex items-center justify-between mb-0.5">
                                   <p className="font-bold text-xs text-text-primary">{reply.author}</p>
-                                  <span className="text-[10px] text-text-muted" title={replyTimes.exact}>
-                                    {replyTimes.relative}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-text-muted" title={replyTimes.exact}>
+                                      {replyTimes.relative}
+                                    </span>
+                                    {currentUser && (reply.authorId === currentUser.id || reply.author === currentUser.name) && (
+                                      <div className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                                        <button
+                                          type="button"
+                                          onClick={() => startEditComment(reply.id, reply.text)}
+                                          className="text-gray-400 hover:text-brand-orange p-0.5 rounded transition-colors cursor-pointer"
+                                          title="تعديل (Edit)"
+                                        >
+                                          <Pencil size={11} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => deleteComment(reply.id)}
+                                          disabled={deletingCommentId === reply.id}
+                                          className="text-gray-400 hover:text-red-500 p-0.5 rounded transition-colors disabled:opacity-40 cursor-pointer"
+                                          title="حذف (Delete)"
+                                        >
+                                          <Trash2 size={11} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-xs text-text-body leading-relaxed mb-1.5">{reply.text}</p>
+
+                                {editingCommentId === reply.id ? (
+                                  <div className="mt-1.5 space-y-1.5">
+                                    <input
+                                      type="text"
+                                      value={editingText}
+                                      onChange={(e) => setEditingText(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') saveEditComment(reply.id);
+                                        if (e.key === 'Escape') cancelEditComment();
+                                      }}
+                                      className="w-full text-xs border border-brand-orange/60 rounded-xl px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                                      autoFocus
+                                    />
+                                    <div className="flex items-center gap-2 justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={cancelEditComment}
+                                        className="text-[10px] text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded"
+                                      >
+                                        إلغاء
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => saveEditComment(reply.id)}
+                                        disabled={!editingText.trim() || savingEdit}
+                                        className="text-[10px] bg-brand-orange text-white font-bold px-2.5 py-0.5 rounded-lg hover:bg-brand-orange-dark transition-all disabled:opacity-50"
+                                      >
+                                        {savingEdit ? 'جاري الحفظ...' : 'حفظ'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-text-body leading-relaxed mb-1.5">{reply.text}</p>
+                                )}
 
                                 {/* Reply Reactions */}
                                 <div className="flex items-center gap-1">
@@ -1299,6 +1529,17 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<{ type: 'image' | 'video'; url: string; title?: string } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxMedia(null);
+    };
+    if (lightboxMedia) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxMedia]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1529,6 +1770,7 @@ export default function CommunityPage() {
                       onDelete={handlePostDeleted}
                       onShare={(p) => setSharingPost(p)}
                       onShowToast={showToast}
+                      onOpenLightbox={(m) => setLightboxMedia(m)}
                     />
                   ))}
                 </div>
@@ -1552,6 +1794,49 @@ export default function CommunityPage() {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Media Lightbox Modal */}
+      {lightboxMedia && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8 animate-in fade-in"
+          onClick={() => setLightboxMedia(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxMedia(null)}
+            className="absolute top-5 right-5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all z-20 cursor-pointer shadow-lg"
+            aria-label="Close Lightbox"
+          >
+            <X size={24} />
+          </button>
+
+          <div
+            className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {lightboxMedia.type === 'image' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={lightboxMedia.url}
+                alt="Full resolution media preview"
+                className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl transition-all"
+              />
+            ) : (
+              <video
+                controls
+                autoPlay
+                src={lightboxMedia.url}
+                className="max-h-[85vh] max-w-[90vw] rounded-2xl shadow-2xl bg-black"
+              />
+            )}
+            {lightboxMedia.title && (
+              <p className="text-white/80 text-xs text-center mt-3 max-w-lg truncate px-4 py-1.5 bg-black/50 rounded-full">
+                {lightboxMedia.title}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

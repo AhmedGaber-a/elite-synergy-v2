@@ -9,8 +9,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password } = body;
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
+        { status: 401 }
+      );
     }
 
     const trimmedEmail = email.toLowerCase().trim();
@@ -32,23 +35,23 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!user) {
+    // Timing attack prevention with dummy comparison
+    const DUMMY_HASH = '$2a$10$wT9tUjM/YnUomk0oXUeL7.J5y3g6wF5U5U5U5U5U5U5U5U5U5U5U5';
+    let isValid = false;
+
+    if (user && user.password && password) {
+      isValid = await bcrypt.compare(password, user.password);
+    } else {
+      await bcrypt.compare(password || 'dummyPassword', DUMMY_HASH);
+    }
+
+    if (!user || !isValid) {
       return NextResponse.json(
         {
-          error: 'هذا الحساب غير مسجل على المنصة. يرجى إنشاء حساب جديد (Sign Up) أولاً ثم تسجيل الدخول.',
-          notRegistered: true,
+          error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
         },
-        { status: 404 }
+        { status: 401 }
       );
-    }
-
-    if (!password || !user.password) {
-      return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
-    }
-
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
     }
 
     // --- شرط الحماية لمنع الدخول قبل تفعيل الإيميل ---

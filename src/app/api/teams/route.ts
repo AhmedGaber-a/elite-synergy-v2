@@ -8,7 +8,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    const currentUserId = authUser?.id;
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+    const currentUserId = authUser.id;
     const { searchParams } = new URL(req.url);
     const projectIdParam = searchParams.get('projectId');
 

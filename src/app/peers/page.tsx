@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, UserPlus, MessageCircle, FilterX, Sparkles, X, Users, Check, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, MessageCircle, FilterX, Sparkles, X, Users, Check, AlertCircle, Clock } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
@@ -24,6 +24,8 @@ export interface PeerItem {
   bio: string;
   points: number;
   matchScore: number;
+  isFriend?: boolean;
+  connectionStatus?: 'NONE' | 'PENDING' | 'CONNECTED';
   projects: Array<{
     id: string;
     title: string;
@@ -44,10 +46,12 @@ function SuggestTeammatesModal({
   peers,
   onClose,
   onConnect,
+  connectedIds,
 }: {
   peers: PeerItem[];
   onClose: () => void;
   onConnect: (peerId: string) => void;
+  connectedIds?: Record<string, boolean>;
 }) {
   const [skillInput, setSkillInput] = useState('');
   const [customSkills, setCustomSkills] = useState<string[]>([]);
@@ -229,7 +233,7 @@ function SuggestTeammatesModal({
                           <span
                             key={s}
                             className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              selectedSkills.some((sel) => s.toLowerCase().includes(sel.toLowerCase()))
+                              allActiveSkills.some((sel: string) => s.toLowerCase().includes(sel.toLowerCase()))
                                 ? 'bg-purple-200 text-purple-800'
                                 : 'bg-gray-100 text-gray-600'
                             }`}
@@ -247,14 +251,43 @@ function SuggestTeammatesModal({
                         <Link href={`/peers/${peer.id}`}>
                           <Button variant="ghost" size="sm" className="text-xs px-2.5 py-1 h-auto">Profile</Button>
                         </Link>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="text-xs px-2.5 py-1 h-auto"
-                          onClick={() => onConnect(peer.id)}
-                        >
-                          Connect
-                        </Button>
+                        {(() => {
+                          const status = (connectedIds && connectedIds[peer.id]) ? 'PENDING' : (peer.connectionStatus || 'NONE');
+                          if (status === 'PENDING') {
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs px-2.5 py-1 h-auto border-amber-300 text-amber-700 bg-amber-50 cursor-not-allowed"
+                                disabled
+                              >
+                                Pending (قيد الانتظار)
+                              </Button>
+                            );
+                          }
+                          if (status === 'CONNECTED') {
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs px-2.5 py-1 h-auto border-green-300 text-green-700 bg-green-50 cursor-not-allowed"
+                                disabled
+                              >
+                                Connected (متصل)
+                              </Button>
+                            );
+                          }
+                          return (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="text-xs px-2.5 py-1 h-auto"
+                              onClick={() => onConnect(peer.id)}
+                            >
+                              Connect
+                            </Button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -319,6 +352,9 @@ export default function PeersPage() {
       const data = await res.json();
       if (res.ok) {
         setConnectedIds((prev) => ({ ...prev, [peerId]: true }));
+        setPeers((prev) =>
+          prev.map((p) => (p.id === peerId ? { ...p, connectionStatus: 'PENDING' } : p))
+        );
         setNotification('تم إرسال طلب التواصل بنجاح! سيتم إخطار زميلك.');
         setTimeout(() => setNotification(null), 4000);
       } else {
@@ -540,23 +576,43 @@ export default function PeersPage() {
                             View Profile
                           </Button>
                         </Link>
-                        <Button
-                          variant={connectedIds[peer.id] ? 'outline' : 'primary'}
-                          size="sm"
-                          className="px-3 py-1.5 text-xs font-bold rounded-xl"
-                          onClick={() => handleConnect(peer.id)}
-                          disabled={connectedIds[peer.id]}
-                        >
-                          {connectedIds[peer.id] ? (
-                            <>
-                              <Check size={13} className="me-1 text-green-600" /> Requested
-                            </>
-                          ) : (
-                            <>
+                        {(() => {
+                          const status = connectedIds[peer.id] ? 'PENDING' : (peer.connectionStatus || 'NONE');
+                          if (status === 'PENDING') {
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="px-3 py-1.5 text-xs font-bold rounded-xl border-amber-300 text-amber-700 bg-amber-50 cursor-not-allowed"
+                                disabled
+                              >
+                                <Clock size={13} className="me-1 text-amber-600" /> Pending (قيد الانتظار)
+                              </Button>
+                            );
+                          }
+                          if (status === 'CONNECTED') {
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="px-3 py-1.5 text-xs font-bold rounded-xl border-green-300 text-green-700 bg-green-50 cursor-not-allowed"
+                                disabled
+                              >
+                                <Check size={13} className="me-1 text-green-600" /> Connected (متصل)
+                              </Button>
+                            );
+                          }
+                          return (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="px-3 py-1.5 text-xs font-bold rounded-xl"
+                              onClick={() => handleConnect(peer.id)}
+                            >
                               <UserPlus size={13} className="me-1" /> Connect
-                            </>
-                          )}
-                        </Button>
+                            </Button>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -572,6 +628,7 @@ export default function PeersPage() {
             peers={peers}
             onClose={() => setShowSuggest(false)}
             onConnect={handleConnect}
+            connectedIds={connectedIds}
           />
         )}
       </div>

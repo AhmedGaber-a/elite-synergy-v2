@@ -1,44 +1,41 @@
-// src/app/layout.tsx
-import type { Metadata, Viewport } from 'next'
-import { Poppins } from 'next/font/google'
+import type { Metadata, Viewport } from 'next';
+import { Cairo } from 'next/font/google';
+import './globals.css';
 
-// الاستدعاءات بالمسارات النسبية الصحيحة
-import './globals.css'
-import { AuthProvider } from '../lib/context/AuthContext'
-import { OnboardingProvider } from '../lib/context/OnboardingContext'
-import { LanguageProvider } from '../lib/context/LanguageContext'
+const cairo = Cairo({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-cairo',
+  display: 'swap',
+});
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-poppins',
-})
-
-// إعدادات الـ Metadata شاملة ملف الـ Manifest للـ PWA
 export const metadata: Metadata = {
-  title: 'Elite Synergy — Best Learning Education Platform',
-  description:
-    'A collaborative platform where students build real projects together, earn credits, and grow through peer-to-peer learning.',
+  title: 'Elite Synergy | المنصة الأكاديمية التعاونية',
+  description: 'منصة التعاون الطلابي والمشاريع التطبيقية',
   manifest: '/manifest.json',
-}
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
+};
 
-// إعدادات لون المتصفح للموبايل
 export const viewport: Viewport = {
-  themeColor: '#000000',
-}
+  themeColor: '#ea580c',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body className={`${poppins.variable} font-sans bg-bg-cream`}>
-        <AuthProvider>
-          <OnboardingProvider>
-            <LanguageProvider>
-              {children}
-            </LanguageProvider>
-          </OnboardingProvider>
-        </AuthProvider>
+    <html lang="ar" dir="rtl" className={cairo.variable}>
+      <body className={`${cairo.className} bg-slate-50 text-slate-900 antialiased selection:bg-orange-500 selection:text-white`}>
+        {children}
       </body>
     </html>
-  )
+  );
 }

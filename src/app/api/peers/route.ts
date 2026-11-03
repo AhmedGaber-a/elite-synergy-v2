@@ -8,12 +8,15 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
 
     const search = searchParams.get('search') || '';
     const collegeParam = searchParams.get('college') || searchParams.get('discipline') || '';
     const skill = searchParams.get('skill') || '';
-    const currentUserId = authUser?.id || searchParams.get('currentUserId') || null;
+    const currentUserId = authUser.id;
 
     // Fetch only verified students from PostgreSQL, strictly excluding current logged-in user
     const users = await prisma.user.findMany({
@@ -37,29 +40,58 @@ export async function GET(req: NextRequest) {
       orderBy: { points: 'desc' },
     });
 
-    const peers = users.map((u) => ({
-      id: u.id,
-      name: u.name,
-      fullName: u.fullName,
-      email: u.email,
-      discipline: u.discipline || u.college,
-      specialty: u.specialty,
-      college: u.college,
-      avatar: u.avatar || '',
-      avatarType: u.avatarType,
-      skills: u.skills || [],
-      bio: u.bio || '',
-      points: u.points,
-      matchScore: u.matchScore ?? 85,
-      isFriend: false,
-      projects: u.priorProjects.map((p) => ({
-        id: p.id,
-        title: p.title,
-        skill: p.skill,
-        description: p.desc,
-        image: '/assets/illustrations/feature_practical.jpg',
-      })),
-    }));
+    const effectiveUserId = authUser?.id || currentUserId;
+    const requestMap = new Map<string, 'PENDING' | 'CONNECTED'>();
+
+    if (effectiveUserId) {
+      const requests = await prisma.collaborationRequest.findMany({
+        where: {
+          OR: [
+            { senderId: effectiveUserId },
+            { receiverId: effectiveUserId },
+          ],
+        },
+      });
+
+      for (const r of requests) {
+        const peerKey = r.senderId === effectiveUserId ? r.receiverId : r.senderId;
+        if (r.status === 'ACCEPTED') {
+          requestMap.set(peerKey, 'CONNECTED');
+        } else if (r.status === 'PENDING') {
+          if (requestMap.get(peerKey) !== 'CONNECTED') {
+            requestMap.set(peerKey, 'PENDING');
+          }
+        }
+      }
+    }
+
+    const peers = users.map((u) => {
+      const connStatus = requestMap.get(u.id) || 'NONE';
+      return {
+        id: u.id,
+        name: u.name,
+        fullName: u.fullName,
+        email: u.email,
+        discipline: u.discipline || u.college,
+        specialty: u.specialty,
+        college: u.college,
+        avatar: u.avatar || '',
+        avatarType: u.avatarType,
+        skills: u.skills || [],
+        bio: u.bio || '',
+        points: u.points,
+        matchScore: u.matchScore ?? 85,
+        isFriend: connStatus === 'CONNECTED',
+        connectionStatus: connStatus,
+        projects: u.priorProjects.map((p) => ({
+          id: p.id,
+          title: p.title,
+          skill: p.skill,
+          description: p.desc,
+          image: '/assets/illustrations/feature_practical.jpg',
+        })),
+      };
+    });
 
     // Dynamic case-insensitive free-text filter for skills & search
     let filteredPeers = peers;

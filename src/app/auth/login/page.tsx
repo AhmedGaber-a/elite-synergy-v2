@@ -22,7 +22,6 @@ function LoginForm() {
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [notRegistered, setNotRegistered] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +32,6 @@ function LoginForm() {
     }
     setIsLoading(true);
     setError('');
-    setNotRegistered(false);
     setUnverifiedEmail(null);
 
     const result = await login(email, password);
@@ -41,8 +39,7 @@ function LoginForm() {
     if (result.success) {
       router.push(redirectTo);
     } else {
-      setError(result.error || 'فشل تسجيل الدخول');
-      setNotRegistered(!!result.notRegistered);
+      setError(result.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
       if (result.unverified) {
         setUnverifiedEmail(email.toLowerCase().trim());
       }
@@ -71,17 +68,6 @@ function LoginForm() {
                 <AlertCircle size={16} className="mt-0.5 flex-shrink-0 text-red-500" />
                 <span className="font-semibold leading-relaxed">{error}</span>
               </div>
-
-              {notRegistered && (
-                <div className="pt-2">
-                  <Link
-                    href={`/onboarding/register?email=${encodeURIComponent(email)}`}
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-brand-orange text-white rounded-xl font-bold text-xs hover:bg-brand-orange-dark transition-all shadow-md"
-                  >
-                    إنشاء حساب جديد (Sign Up) <ArrowRight size={14} />
-                  </Link>
-                </div>
-              )}
 
               {unverifiedEmail && (
                 <div className="pt-2 border-t border-red-200/60">
@@ -157,7 +143,15 @@ function LoginForm() {
       {/* Right branding panel (Clean Logo Only - No subtitle text) */}
       <div className="hidden lg:flex w-[45%] bg-bg-cream flex-col items-center justify-center p-12 border-l border-orange-100">
         <div className="relative w-full max-w-md aspect-[16/9]">
-          <Image src="/assets/logo.png" alt="Elite Synergy Logo" fill className="object-contain" priority />
+          <Image
+            src="/icon.png"
+            alt="Elite Synergy Logo"
+            width={640}
+            height={360}
+            unoptimized
+            className="object-contain w-full h-auto"
+            priority
+          />
         </div>
       </div>
     </div>

@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const typeParam = searchParams.get('type');
     const domain = searchParams.get('domain');
@@ -67,6 +72,13 @@ export async function GET(req: NextRequest) {
       isMega: p.isMega,
       phases: p.phases,
       category: p.category,
+      source: p.source || 'INTERNAL',
+      erpReferenceId: p.erpReferenceId,
+      professorName: p.professorName || p.doctor,
+      courseCode: p.courseCode,
+      deadline: p.deadline,
+      attachments: p.attachments || [],
+      maxTeamSize: p.maxTeamSize || p.maxSlots || 11,
       teams: p.teams.map((t) => ({
         id: t.slug || t.id,
         dbId: t.id,

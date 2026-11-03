@@ -161,3 +161,97 @@ export async function POST(
     return NextResponse.json({ error: 'فشل إضافة التعليق' }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const body = await req.json();
+    const commentId = body.commentId || searchParams.get('commentId');
+    const { text } = body;
+
+    if (!commentId) {
+      return NextResponse.json({ error: 'معرف التعليق مطلوب' }, { status: 400 });
+    }
+
+    if (!text || !text.trim()) {
+      return NextResponse.json({ error: 'نص التعليق مطلوب' }, { status: 400 });
+    }
+
+    const comment = await prisma.postComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      return NextResponse.json({ error: 'التعليق غير موجود' }, { status: 404 });
+    }
+
+    if (comment.authorId !== authUser.id && authUser.userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا التعليق' }, { status: 403 });
+    }
+
+    const updated = await prisma.postComment.update({
+      where: { id: commentId },
+      data: { text: text.trim() },
+    });
+
+    return NextResponse.json({
+      success: true,
+      comment: updated,
+    });
+  } catch (error) {
+    console.error('Update comment error:', error);
+    return NextResponse.json({ error: 'فشل تعديل التعليق' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const body = await req.json().catch(() => ({}));
+    const commentId = body.commentId || searchParams.get('commentId');
+
+    if (!commentId) {
+      return NextResponse.json({ error: 'معرف التعليق مطلوب' }, { status: 400 });
+    }
+
+    const comment = await prisma.postComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      return NextResponse.json({ error: 'التعليق غير موجود' }, { status: 404 });
+    }
+
+    if (comment.authorId !== authUser.id && authUser.userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف هذا التعليق' }, { status: 403 });
+    }
+
+    await prisma.postComment.delete({
+      where: { id: commentId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'تم حذف التعليق بنجاح',
+    });
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    return NextResponse.json({ error: 'فشل حذف التعليق' }, { status: 500 });
+  }
+}

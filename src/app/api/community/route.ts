@@ -50,8 +50,13 @@ function saveBase64File(dataUrl: string, prefix = 'community'): { url: string; f
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+
     const posts = await prisma.post.findMany({
       include: {
         author: true,

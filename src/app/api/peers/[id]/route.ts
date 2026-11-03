@@ -1,6 +1,7 @@
 // src/app/api/peers/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getAuthUser } from '@/lib/services/authService';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,10 @@ export async function GET(
 ) {
   try {
     const peerId = params.id;
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
 
     const user = await prisma.user.findFirst({
       where: {
@@ -26,6 +31,26 @@ export async function GET(
       return NextResponse.json({ error: 'Peer not found' }, { status: 404 });
     }
 
+    let connectionStatus: 'NONE' | 'PENDING' | 'CONNECTED' = 'NONE';
+    if (authUser) {
+      const existingRequest = await prisma.collaborationRequest.findFirst({
+        where: {
+          OR: [
+            { senderId: authUser.id, receiverId: peerId },
+            { senderId: peerId, receiverId: authUser.id },
+          ],
+        },
+      });
+
+      if (existingRequest) {
+        if (existingRequest.status === 'ACCEPTED') {
+          connectionStatus = 'CONNECTED';
+        } else if (existingRequest.status === 'PENDING') {
+          connectionStatus = 'PENDING';
+        }
+      }
+    }
+
     const peer = {
       id: user.id,
       name: user.name,
@@ -40,7 +65,8 @@ export async function GET(
       bio: user.bio || '',
       points: user.points,
       matchScore: user.matchScore ?? 85,
-      isFriend: false,
+      isFriend: connectionStatus === 'CONNECTED',
+      connectionStatus,
       projects: user.priorProjects.map((p) => ({
         id: p.id,
         title: p.title,

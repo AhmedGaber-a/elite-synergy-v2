@@ -36,7 +36,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
+        sans: ['var(--font-cairo)', 'Cairo', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         'xl': '1rem',

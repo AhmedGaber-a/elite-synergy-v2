@@ -12,7 +12,10 @@ export async function GET(
   try {
     const teamParam = params.id;
     const authUser = await getAuthUser(req);
-    const currentUserId = authUser?.id;
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+    const currentUserId = authUser.id;
 
     // Search by slug first (e.g. 'alpha', 'gamma') or by cuid id
     const team = await prisma.team.findFirst({

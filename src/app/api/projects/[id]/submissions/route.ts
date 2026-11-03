@@ -25,9 +25,9 @@ export async function POST(
       return NextResponse.json({ error: 'المشروع غير موجود' }, { status: 404 });
     }
 
-    if (project.type !== 'SOLO') {
+    if (project.type !== 'SOLO' && project.source !== 'ERP') {
       return NextResponse.json(
-        { error: 'رفع الملفات الفردية مخصص فقط للمشاريع الفردية (SOLO)' },
+        { error: 'رفع الملفات مخصص فقط للمشاريع الفردية (SOLO) أو مشاريع الـ ERP الأكاديمية' },
         { status: 400 }
       );
     }

@@ -18,7 +18,14 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-4">
             <Link href="/" className="inline-block relative h-12 w-40">
-              <Image src="/assets/logo.png" alt="Elite Synergy Logo" fill className="object-contain object-left" />
+              <Image
+                src="/icon.png"
+                alt="Elite Synergy Logo"
+                width={160}
+                height={90}
+                unoptimized
+                className="object-contain object-left h-12 w-auto"
+              />
             </Link>
             <p className="text-gray-400 text-sm">Build your future together.</p>
           </div>

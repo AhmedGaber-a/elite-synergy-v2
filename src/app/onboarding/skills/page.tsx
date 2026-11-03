@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Search, ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useOnboarding } from '@/lib/context/OnboardingContext'
+import { useAuth } from '@/lib/context/AuthContext'
 
 const SKILLS = [
   { id: 'prog', label: 'Programming', icon: '💻', color: 'border-blue-400 text-blue-600' },
@@ -25,6 +26,7 @@ const SKILLS = [
 
 export default function SkillsPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const { state, updateState } = useOnboarding()
   const [selected, setSelected] = useState<string[]>(state.skills)
   const [query, setQuery] = useState('')
@@ -33,8 +35,41 @@ export default function SkillsPage() {
   const toggle = (label: string) => setSelected(s => s.includes(label) ? s.filter(x => x !== label) : [...s, label])
   const filtered = SKILLS.filter(s => s.label.toLowerCase().includes(query.toLowerCase()))
 
-  const handleNext = () => {
-    updateState({ skills: selected, customSkill })
+  const handleSkip = async () => {
+    setSelected([])
+    setCustomSkill('')
+    updateState({ skills: [], customSkill: '' })
+    if (user) {
+      try {
+        await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skills: [] }),
+        })
+      } catch (err) {
+        console.error('Failed to sync skipped skills to profile:', err)
+      }
+    }
+    router.push('/onboarding/projects')
+  }
+
+  const handleNext = async () => {
+    const finalSkills = [...selected]
+    if (customSkill.trim() && !finalSkills.includes(customSkill.trim())) {
+      finalSkills.push(customSkill.trim())
+    }
+    updateState({ skills: finalSkills, customSkill })
+    if (user) {
+      try {
+        await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skills: finalSkills }),
+        })
+      } catch (err) {
+        console.error('Failed to sync skills to profile:', err)
+      }
+    }
     router.push('/onboarding/projects')
   }
 
@@ -105,13 +140,22 @@ export default function SkillsPage() {
           <Button variant="ghost" onClick={() => router.push('/onboarding/register')}>
             <ArrowLeft size={16} className="mr-2" /> Back
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleNext} 
-            disabled={selected.length === 0 && !customSkill.trim()}
-          >
-            Continue <ArrowRight size={16} className="ml-2" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSkip}
+              className="border-gray-300 text-text-muted hover:text-text-primary hover:bg-gray-100 font-semibold"
+            >
+              Skip for now (تخطي الآن)
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={handleNext}
+            >
+              Continue <ArrowRight size={16} className="ml-2" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

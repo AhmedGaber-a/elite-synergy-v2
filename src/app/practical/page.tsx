@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Users, User, ArrowRight, Clock, BookOpen, Shield, ChevronRight, Zap, FolderGit2 } from 'lucide-react';
+import { Users, User, ArrowRight, Clock, BookOpen, Shield, ChevronRight, Zap, FolderGit2, Sparkles, Paperclip, Calendar } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +15,13 @@ export interface PracticalProjectItem {
   title: string;
   description: string;
   type: 'TEAM' | 'SOLO';
+  source?: 'INTERNAL' | 'ERP' | string;
+  erpReferenceId?: string;
+  professorName?: string;
+  courseCode?: string;
+  deadline?: string;
+  attachments?: string[];
+  maxTeamSize?: number;
   maxTeams: number;
   teamsCount: number;
   availableTeamsCount: number;
@@ -39,6 +46,29 @@ export interface PracticalProjectItem {
     membersCount: number;
   }>;
   submissionsCount?: number;
+}
+
+function formatDeadlineCountdown(deadlineStr?: string | null): {
+  text: string;
+  isExpired: boolean;
+  days: number;
+  hours: number;
+} | null {
+  if (!deadlineStr) return null;
+  const deadline = new Date(deadlineStr).getTime();
+  if (isNaN(deadline)) return null;
+  const now = Date.now();
+  const diff = deadline - now;
+  if (diff <= 0) {
+    return { text: 'انتهى موعد التسليم', isExpired: true, days: 0, hours: 0 };
+  }
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (days > 0) {
+    return { text: `متبقي ${days} يوم و ${hours} ساعة`, isExpired: false, days, hours };
+  }
+  return { text: `متبقي ${hours} ساعة و ${minutes} دقيقة`, isExpired: false, days, hours };
 }
 
 export default function PracticalPage() {
@@ -66,7 +96,8 @@ export default function PracticalPage() {
     loadProjects();
   }, [loadProjects]);
 
-  const filteredProjects = projects.filter((p) => p.type === activeTab);
+  const erpProjects = projects.filter((p) => p.source === 'ERP');
+  const filteredProjects = projects.filter((p) => (p.source !== 'ERP' ? p.type === activeTab : false));
 
   return (
     <AppLayout>
@@ -99,7 +130,7 @@ export default function PracticalPage() {
                 <Users size={18} />
                 <span>{lang === 'ar' ? 'مشاريع الفرق (Team Projects)' : 'Team Projects'}</span>
                 <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full font-mono">
-                  {projects.filter((p) => p.type === 'TEAM').length}
+                  {projects.filter((p) => (p.source !== 'ERP' ? p.type === 'TEAM' : false)).length}
                 </span>
               </button>
 
@@ -114,7 +145,7 @@ export default function PracticalPage() {
                 <User size={18} />
                 <span>{lang === 'ar' ? 'المشاريع الفردية (Solo Projects)' : 'Solo Projects'}</span>
                 <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full font-mono">
-                  {projects.filter((p) => p.type === 'SOLO').length}
+                  {projects.filter((p) => (p.source !== 'ERP' ? p.type === 'SOLO' : false)).length}
                 </span>
               </button>
             </div>
@@ -123,6 +154,154 @@ export default function PracticalPage() {
 
         {/* Content Section */}
         <div className="section-container py-10">
+          {/* Conditional ERP Projects Section: Strictly rendered ONLY when source === "ERP" projects exist in database */}
+          {erpProjects.length > 0 && (
+            <div className="mb-14">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-gradient-to-r from-brand-navy via-brand-blue to-indigo-900 p-6 rounded-3xl text-white shadow-md border border-white/10">
+                <div>
+                  <div className="inline-flex items-center gap-2 bg-brand-orange/20 text-orange-300 text-xs font-bold px-3 py-1 rounded-full mb-2 border border-brand-orange/30">
+                    <Sparkles size={13} />
+                    <span>{lang === 'ar' ? 'ربط مباشر مع نظام الـ ERP الأكاديمي' : 'Live Sync with Academic ERP'}</span>
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-black">
+                    {lang === 'ar' ? 'مشاريع الـ ERP والتكليفات الأكاديمية الرسمية' : 'Official Faculty ERP Projects'}
+                  </h2>
+                  <p className="text-xs md:text-sm text-blue-200 mt-1">
+                    {lang === 'ar'
+                      ? 'مشاريع عملية معتمدة تم إرسالها وتكليفها مباشرة من أساتذة الكلية عبر نظام الـ ERP. تتضمن متطلبات وتكليفات رسمية ومواعيد تسليم نهائية محددة.'
+                      : 'Accredited coursework pushed directly by department professors via ERP. Includes deliverables & strict deadlines.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold bg-white/10 px-4 py-2 rounded-2xl border border-white/20 whitespace-nowrap">
+                    {erpProjects.length} {lang === 'ar' ? 'مشاريع ERP نشطة' : 'Active ERP Projects'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {erpProjects.map((project) => {
+                  const countdown = formatDeadlineCountdown(project.deadline);
+                  return (
+                    <div
+                      key={project.id}
+                      className="bg-white rounded-3xl p-6 border-2 border-indigo-100 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-brand-orange via-blue-500 to-brand-navy" />
+
+                      <div>
+                        {/* Header badges */}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {project.courseCode && (
+                              <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60 font-mono">
+                                {project.courseCode}
+                              </span>
+                            )}
+                            <Badge variant="navy" className="text-xs bg-blue-50 text-brand-navy border-none font-bold">
+                              {project.category || project.domain}
+                            </Badge>
+                          </div>
+
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-orange-50 text-brand-orange border border-orange-200/50">
+                            {project.type === 'TEAM'
+                              ? (lang === 'ar' ? 'مشروع جماعي' : 'Team')
+                              : (lang === 'ar' ? 'تسليم فردي' : 'Solo')}
+                          </span>
+                        </div>
+
+                        <h3 className="font-extrabold text-lg text-text-primary mb-2 group-hover:text-brand-orange transition-colors line-clamp-2">
+                          {project.title}
+                        </h3>
+                        <p className="text-xs text-text-body mb-4 line-clamp-3 leading-relaxed">
+                          {project.description}
+                        </p>
+
+                        {/* Metadata Box */}
+                        <div className="bg-slate-50/80 rounded-2xl p-3.5 mb-4 space-y-2 text-xs border border-gray-100">
+                          {project.professorName && (
+                            <div className="flex items-center justify-between text-text-muted">
+                              <span className="flex items-center gap-1">
+                                <Shield size={12} className="text-brand-orange" /> الأستاذ المشرف:
+                              </span>
+                              <span className="font-bold text-text-primary">{project.professorName}</span>
+                            </div>
+                          )}
+
+                          {project.erpReferenceId && (
+                            <div className="flex items-center justify-between text-text-muted">
+                              <span>معرف الـ ERP:</span>
+                              <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 font-semibold text-text-primary">
+                                {project.erpReferenceId}
+                              </span>
+                            </div>
+                          )}
+
+                          {countdown && (
+                            <div className="flex items-center justify-between text-text-muted">
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} className={countdown.isExpired ? 'text-red-500' : 'text-green-600'} /> الموعد النهائي:
+                              </span>
+                              <span
+                                className={`font-bold text-[11px] px-2 py-0.5 rounded-full ${
+                                  countdown.isExpired
+                                    ? 'bg-red-50 text-red-600'
+                                    : countdown.days < 3
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : 'bg-green-50 text-green-700'
+                                }`}
+                              >
+                                {countdown.text}
+                              </span>
+                            </div>
+                          )}
+
+                          {project.type === 'TEAM' && (
+                            <div className="flex items-center justify-between text-text-muted pt-1 border-t border-gray-200/50">
+                              <span>حالة فرق العمل:</span>
+                              <span className="font-bold text-text-primary">
+                                {project.teamsCount} من {project.maxTeams} فرق (حد الفريق {project.maxTeamSize || project.maxSlots || 5} طلاب)
+                              </span>
+                            </div>
+                          )}
+
+                          {project.attachments && project.attachments.length > 0 && (
+                            <div className="flex items-center justify-between text-text-muted pt-1 border-t border-gray-200/50">
+                              <span className="flex items-center gap-1">
+                                <Paperclip size={12} /> مرفقات المقرر:
+                              </span>
+                              <span className="font-semibold text-text-primary">
+                                {project.attachments.length} ملفات رسمية
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Link */}
+                      <div className="pt-3 border-t border-gray-100">
+                        <Link href={`/practical/${project.slug || project.id}`}>
+                          <Button
+                            variant="primary"
+                            fullWidth
+                            className="rounded-xl py-3 font-bold text-xs flex items-center justify-center gap-2 group-hover:shadow-md transition-all bg-gradient-to-r from-brand-orange to-amber-600"
+                          >
+                            <span>
+                              {project.type === 'TEAM'
+                                ? (lang === 'ar' ? 'عرض تفاصيل الـ ERP وفرق العمل' : 'View ERP Project & Teams')
+                                : (lang === 'ar' ? 'عرض تفاصيل الـ ERP ومساحة التسليم' : 'View ERP Project & Submit')}
+                            </span>
+                            <ArrowRight size={14} className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-xl md:text-2xl font-black text-text-primary">

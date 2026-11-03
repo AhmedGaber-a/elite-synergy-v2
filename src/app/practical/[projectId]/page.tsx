@@ -23,6 +23,13 @@ interface ProjectDetails {
   title: string;
   description: string;
   type: 'TEAM' | 'SOLO';
+  source?: 'INTERNAL' | 'ERP' | string;
+  erpReferenceId?: string;
+  professorName?: string;
+  courseCode?: string;
+  deadline?: string;
+  attachments?: string[];
+  maxTeamSize?: number;
   maxTeams: number;
   teamsCount: number;
   availableTeamsCount: number;
@@ -43,6 +50,29 @@ interface ProjectDetails {
   category: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+function formatDeadlineCountdown(deadlineStr?: string | null): {
+  text: string;
+  isExpired: boolean;
+  days: number;
+  hours: number;
+} | null {
+  if (!deadlineStr) return null;
+  const deadline = new Date(deadlineStr).getTime();
+  if (isNaN(deadline)) return null;
+  const now = Date.now();
+  const diff = deadline - now;
+  if (diff <= 0) {
+    return { text: 'انتهى موعد التسليم', isExpired: true, days: 0, hours: 0 };
+  }
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (days > 0) {
+    return { text: `متبقي ${days} يوم و ${hours} ساعة`, isExpired: false, days, hours };
+  }
+  return { text: `متبقي ${hours} ساعة و ${minutes} دقيقة`, isExpired: false, days, hours };
 }
 
 interface TeamMemberItem {
@@ -468,6 +498,9 @@ export default function ProjectWorkspacePage() {
     );
   }
 
+  const isErpProject = project.source === 'ERP';
+  const erpCountdown = formatDeadlineCountdown(project.deadline);
+
   return (
     <AppLayout>
       {createTeamModalOpen && (
@@ -493,7 +526,11 @@ export default function ProjectWorkspacePage() {
               <Link href="/practical" className="hover:text-white">المشاريع العملية</Link>
               <ChevronRight size={12} className="rtl:rotate-180" />
               <span className="text-brand-orange font-bold">
-                {project.type === 'TEAM' ? 'مشروع جماعي (Team)' : 'مشروع فردي (Solo)'}
+                {project.source === 'ERP'
+                  ? 'مشروع ERP أكاديمي معتمد'
+                  : project.type === 'TEAM'
+                  ? 'مشروع جماعي (Team)'
+                  : 'مشروع فردي (Solo)'}
               </span>
               <ChevronRight size={12} className="rtl:rotate-180" />
               <span className="text-white/90 line-clamp-1">{project.title}</span>
@@ -502,6 +539,21 @@ export default function ProjectWorkspacePage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
+                  {project.source === 'ERP' && (
+                    <span className="text-xs bg-indigo-500/25 text-indigo-200 px-3 py-0.5 rounded-full font-bold border border-indigo-400/40 flex items-center gap-1.5">
+                      <Sparkles size={12} className="text-brand-orange" /> نظام الـ ERP الأكاديمي
+                    </span>
+                  )}
+                  {project.courseCode && (
+                    <span className="text-xs bg-white/20 text-white font-mono px-2.5 py-0.5 rounded-md font-bold">
+                      {project.courseCode}
+                    </span>
+                  )}
+                  {project.erpReferenceId && (
+                    <span className="text-[11px] bg-black/25 text-blue-200 font-mono px-2 py-0.5 rounded">
+                      Ref: #{project.erpReferenceId}
+                    </span>
+                  )}
                   <Badge variant="orange" className="text-xs">
                     {project.category || project.domain}
                   </Badge>
@@ -529,9 +581,9 @@ export default function ProjectWorkspacePage() {
                 </h1>
 
                 <div className="flex flex-wrap gap-4 text-xs md:text-sm text-blue-200">
-                  {project.doctor && (
+                  {(project.professorName || project.doctor) && (
                     <span className="flex items-center gap-1 font-semibold text-white">
-                      <Shield size={14} className="text-brand-orange" /> {project.doctor}
+                      <Shield size={14} className="text-brand-orange" /> {project.professorName || project.doctor}
                     </span>
                   )}
                   {project.createdAt && (
@@ -614,8 +666,568 @@ export default function ProjectWorkspacePage() {
           </div>
         )}
 
+        {/* ─── CASE C: ERP ACADEMIC PROJECT ─────────────────────────────────── */}
+        {isErpProject && (
+          <div className="section-container py-8 space-y-8">
+            {/* If enrolled in team, provide banner with direct jump or workspace toggle */}
+            {myTeam && (
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-5 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-sm">
+                    {myTeam.emoji}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                        فريقك المسجل للمشروع
+                      </span>
+                      <span className="text-xs text-text-muted">({myTeam.members.length}/{myTeam.maxSlots} أعضاء)</span>
+                    </div>
+                    <h4 className="font-extrabold text-base text-text-primary mt-0.5">{myTeam.name}</h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={teamTab === 'chat' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTeamTab(teamTab === 'chat' ? 'overview' : 'chat')}
+                    className="rounded-xl text-xs font-bold"
+                  >
+                    <MessageCircle size={14} className="me-1.5" />
+                    {teamTab === 'chat' ? 'إخفاء محادثة الفريق' : `محادثة الفريق (${myTeam.messages.length})`}
+                  </Button>
+                  <Button
+                    variant={teamTab === 'files' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTeamTab(teamTab === 'files' ? 'overview' : 'files')}
+                    className="rounded-xl text-xs font-bold"
+                  >
+                    <Upload size={14} className="me-1.5" />
+                    {teamTab === 'files' ? 'إخفاء ملفات الفريق' : `ملفات الفريق (${myTeam.files.length})`}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* If user clicked teamTab === 'chat' or 'files' when enrolled, show team workspace inline */}
+            {myTeam && teamTab === 'chat' && (
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[520px]">
+                <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{myTeam.emoji}</span>
+                    <h3 className="font-extrabold text-sm text-text-primary">{myTeam.name} — المحادثة الجماعية</h3>
+                  </div>
+                  <span className="text-xs bg-white px-3 py-1 rounded-full border border-gray-200 font-bold text-text-muted">
+                    {myTeam.members.length} أعضاء
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/50">
+                  {myTeam.messages.length === 0 ? (
+                    <div className="text-center py-20 text-text-muted text-xs">
+                      💬 لا توجد رسائل سابقة. ابدأ المحادثة مع أعضاء فريقك!
+                    </div>
+                  ) : (
+                    myTeam.messages.map((msg) => (
+                      <div key={msg.id} className={`flex items-end gap-2 ${msg.isMe ? 'flex-row-reverse' : ''}`}>
+                        {!msg.isMe && (
+                          <Avatar
+                            src={msg.authorAvatar}
+                            avatarType={msg.authorAvatarType}
+                            name={msg.author}
+                            size="xs"
+                            className="flex-shrink-0 mb-1"
+                          />
+                        )}
+                        <div className={`max-w-[75%] ${msg.isMe ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
+                          {!msg.isMe && <span className="text-[11px] font-bold text-text-muted px-1">{msg.author}</span>}
+                          <div
+                            className={`px-4 py-2.5 rounded-2xl text-xs md:text-sm shadow-xs leading-relaxed ${
+                              msg.isMe
+                                ? 'bg-brand-orange text-white rounded-ee-none'
+                                : 'bg-white border border-gray-100 text-text-primary rounded-ss-none'
+                            }`}
+                          >
+                            {msg.text}
+                          </div>
+                          <span className="text-[9px] text-text-muted px-1">{msg.time}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
+                <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-100 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    placeholder="اكتب رسالة لأعضاء الفريق..."
+                    className="flex-1 px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                  />
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={!messageInput.trim() || sendingMessage}
+                    className="rounded-full px-5 py-2.5 font-bold text-xs"
+                  >
+                    <Send size={15} className="me-1 rtl:rotate-180" /> إرسال
+                  </Button>
+                </form>
+              </div>
+            )}
+
+            {myTeam && teamTab === 'files' && (
+              <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                  <div>
+                    <h3 className="font-extrabold text-base text-text-primary">ملفات ومخرجات الفريق ({myTeam.files.length})</h3>
+                    <p className="text-xs text-text-muted">الملفات المشتركة بين أعضاء الفريق للمشروع الأكاديمي</p>
+                  </div>
+                  <input type="file" ref={teamFileInputRef} onChange={handleUploadTeamFile} className="hidden" />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => teamFileInputRef.current?.click()}
+                    disabled={uploadingTeamFile}
+                    className="rounded-xl font-bold text-xs"
+                  >
+                    <Upload size={14} className="me-1.5" />
+                    {uploadingTeamFile ? 'جاري الرفع...' : 'رفع ملف جديد للفريق'}
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {myTeam.files.length === 0 ? (
+                    <div className="text-center py-12 text-text-muted text-xs">
+                      📁 لم يتم رفع ملفات من قبل أعضاء الفريق بعد.
+                    </div>
+                  ) : (
+                    myTeam.files.map((file) => (
+                      <div key={file.id} className="p-4 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100 text-xs">
+                        <div className="flex items-center gap-3">
+                          <FileText size={20} className="text-brand-orange" />
+                          <div>
+                            <p className="font-bold text-text-primary">{file.name}</p>
+                            <p className="text-[10px] text-text-muted">
+                              {file.size} · رُفع بواسطة {file.uploadedBy} · {file.time}
+                            </p>
+                          </div>
+                        </div>
+                        {file.url && (
+                          <a href={file.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                              <Download size={14} className="me-1" /> تحميل
+                            </Button>
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Main 2-Column Responsive Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left 2 Columns: 1. Project Brief Card & 2. Available Teams View */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* 1. PROJECT BRIEF CARD */}
+                <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-indigo-100/70 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-orange via-indigo-600 to-brand-navy" />
+
+                  {/* Header info */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-5 border-b border-gray-100">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-xl font-bold font-mono border border-indigo-200">
+                        كود المقرر: {project.courseCode || 'ERP-ACAD'}
+                      </span>
+                      {project.erpReferenceId && (
+                        <span className="text-xs bg-gray-100 text-text-body px-2.5 py-1 rounded-xl font-mono font-bold">
+                          ERP Ref: #{project.erpReferenceId}
+                        </span>
+                      )}
+                      <span className="text-xs bg-orange-50 text-brand-orange px-2.5 py-1 rounded-xl font-bold">
+                        Level {project.level}
+                      </span>
+                    </div>
+
+                    {(project.professorName || project.doctor) && (
+                      <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-1.5 rounded-xl border border-gray-200">
+                        <Shield size={14} className="text-brand-orange" />
+                        <span className="text-xs text-text-muted">أستاذ المادة:</span>
+                        <span className="text-xs font-extrabold text-text-primary">
+                          {project.professorName || project.doctor}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <h2 className="text-xl md:text-2xl font-black text-text-primary mb-3">
+                    {project.title}
+                  </h2>
+                  <p className="text-sm text-text-body leading-relaxed mb-6">
+                    {project.description}
+                  </p>
+
+                  {/* Context & Problem */}
+                  {project.companyBackground && (
+                    <div className="bg-slate-50/90 p-5 rounded-2xl border border-gray-200/60 mb-4">
+                      <h3 className="font-bold text-xs uppercase tracking-wider text-text-muted mb-1 flex items-center gap-1.5">
+                        <BookOpen size={14} className="text-brand-orange" /> سياق وخلفية التكليف
+                      </h3>
+                      <p className="text-xs md:text-sm text-text-body leading-relaxed">{project.companyBackground}</p>
+                    </div>
+                  )}
+
+                  {project.businessProblem && (
+                    <div className="bg-orange-50/50 p-5 rounded-2xl border border-orange-100 mb-6">
+                      <h3 className="font-bold text-xs uppercase tracking-wider text-brand-orange mb-1 flex items-center gap-1.5">
+                        <AlertCircle size={14} /> المشكلة والتحدي المستهدف
+                      </h3>
+                      <p className="text-xs md:text-sm text-text-body leading-relaxed">{project.businessProblem}</p>
+                    </div>
+                  )}
+
+                  {/* Requirements / Tasks */}
+                  {project.tasksToSolve?.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-extrabold text-sm text-text-primary mb-3">
+                        📋 المهام والتكليفات المطلوب إنجازها
+                      </h3>
+                      <div className="space-y-2.5">
+                        {project.tasksToSolve.map((task, i) => (
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50/70 border border-gray-100 text-xs md:text-sm text-text-body">
+                            <span className="w-5 h-5 bg-brand-orange text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 shadow-xs">
+                              {i + 1}
+                            </span>
+                            <span className="leading-relaxed">{task}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Deliverables Checklist */}
+                  {project.expectedDeliverables?.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-extrabold text-sm text-text-primary mb-3">
+                        📦 المخرجات المطلوبة للتسليم والتقييم
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {project.expectedDeliverables.map((item, i) => (
+                          <div key={i} className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs text-text-primary font-medium">
+                            <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Official Professor Attachments */}
+                  {project.attachments && project.attachments.length > 0 && (
+                    <div className="pt-4 border-t border-gray-100">
+                      <h3 className="font-extrabold text-sm text-text-primary mb-3 flex items-center gap-1.5">
+                        <Paperclip size={16} className="text-brand-orange" />
+                        <span>الملفات والمرفقات الرسمية من أستاذ المادة ({project.attachments.length})</span>
+                      </h3>
+                      <div className="space-y-2">
+                        {project.attachments.map((att, i) => (
+                          <div key={i} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-2xl border border-gray-100 text-xs">
+                            <div className="flex items-center gap-2.5">
+                              <FileText size={18} className="text-brand-navy" />
+                              <span className="font-bold text-text-primary truncate max-w-xs">{att}</span>
+                            </div>
+                            <a href={att.startsWith('http') ? att : `#`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                                <Download size={13} className="me-1" /> تحميل الملف
+                              </Button>
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. AVAILABLE TEAMS VIEW */}
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-orange mb-1">
+                        <Users size={14} /> فرق العمل المعتمدة للمشروع
+                      </div>
+                      <h3 className="text-lg font-black text-text-primary">
+                        قائمة الفرق المسجلة ({teams.length} من أصل {project.maxTeams} فرق)
+                      </h3>
+                      <p className="text-xs text-text-muted mt-0.5">
+                        الحد الأقصى لأعضاء الفريق الواحد: <strong>{project.maxTeamSize || project.maxSlots || 5} طلاب</strong>
+                      </p>
+                    </div>
+
+                    {!myTeam && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            router.push(`/auth/login?redirect=/practical/${projectId}`);
+                            return;
+                          }
+                          setCreateTeamModalOpen(true);
+                        }}
+                        disabled={availableTeamsCount <= 0}
+                        className="rounded-xl font-bold text-xs shadow-md whitespace-nowrap"
+                      >
+                        <Plus size={15} className="me-1" />
+                        {availableTeamsCount > 0 ? 'تأسيس فريق جديد' : 'اكتملت الفرق'}
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Teams List */}
+                  {teams.length === 0 ? (
+                    <div className="bg-slate-50 rounded-2xl p-8 text-center border border-dashed border-gray-200">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 text-2xl shadow-xs">
+                        🤝
+                      </div>
+                      <h4 className="font-bold text-sm text-text-primary mb-1">لا توجد فرق عمل مسجلة حتى الآن</h4>
+                      <p className="text-xs text-text-muted max-w-sm mx-auto mb-4">
+                        كن أول طالب يؤسس فريقاً لهذا المشروع وادعُ زملاءك للانضمام معك.
+                      </p>
+                      {!myTeam && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => {
+                            if (!isAuthenticated) {
+                              router.push(`/auth/login?redirect=/practical/${projectId}`);
+                              return;
+                            }
+                            setCreateTeamModalOpen(true);
+                          }}
+                          className="rounded-xl font-bold text-xs"
+                        >
+                          <Plus size={14} className="me-1" /> تأسيس الفريق الأول
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {teams.map((tItem) => {
+                        const isUserInThisTeam = myTeam?.id === tItem.id;
+                        return (
+                          <div
+                            key={tItem.id}
+                            className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                              isUserInThisTeam
+                                ? 'bg-emerald-50/50 border-emerald-300 ring-2 ring-emerald-500/20'
+                                : 'bg-gray-50/70 border-gray-200/70 hover:border-brand-orange/40'
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-2xl p-2 bg-white rounded-xl shadow-xs">{tItem.emoji}</span>
+                                  <div>
+                                    <h4 className="font-extrabold text-sm text-text-primary">{tItem.name}</h4>
+                                    <p className="text-[11px] text-text-muted">
+                                      {tItem.membersCount} من أصل {tItem.maxSlots} أعضاء
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    tItem.slots > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                  }`}
+                                >
+                                  {tItem.slots > 0 ? `${tItem.slots} شواغر` : 'مكتمل'}
+                                </span>
+                              </div>
+
+                              {tItem.goal && (
+                                <p className="text-xs text-text-body line-clamp-2 italic mb-3 bg-white/70 p-2 rounded-lg border border-gray-100">
+                                  &ldquo;{tItem.goal}&rdquo;
+                                </p>
+                              )}
+
+                              {tItem.members && tItem.members.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-4">
+                                  {tItem.members.map((m: any, idx: number) => (
+                                    <span key={idx} className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-gray-200 font-semibold text-text-body">
+                                      {m.name || m}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              {isUserInThisTeam ? (
+                                <div className="text-center py-2 text-xs font-bold text-emerald-700 bg-emerald-100/60 rounded-xl">
+                                  ✓ أنت عضو في هذا الفريق
+                                </div>
+                              ) : (
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  fullWidth
+                                  disabled={tItem.slots <= 0 || joiningTeamId === tItem.id || !!myTeam}
+                                  isLoading={joiningTeamId === tItem.id}
+                                  onClick={() => handleJoinTeam(tItem.dbId || tItem.id)}
+                                  className="rounded-xl text-xs font-bold"
+                                >
+                                  {myTeam ? 'مسجل في فريق آخر' : 'الانضمام لهذا الفريق'}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: 1. Deadline Countdown & 3. Project Submission View */}
+              <div className="space-y-6">
+                {/* 1. DEADLINE COUNTDOWN CARD */}
+                {erpCountdown && (
+                  <div className={`rounded-3xl p-6 border shadow-sm ${
+                    erpCountdown.isExpired
+                      ? 'bg-red-50/90 border-red-200 text-red-950'
+                      : erpCountdown.days < 3
+                      ? 'bg-amber-50/90 border-amber-200 text-amber-950'
+                      : 'bg-gradient-to-br from-indigo-900 to-brand-navy text-white'
+                  }`}>
+                    <div className="flex items-center gap-2 text-xs font-bold mb-2 opacity-80">
+                      <Clock size={14} /> الموعد النهائي المحدد من الأستاذ
+                    </div>
+                    <div className="text-2xl font-black mb-1">
+                      {erpCountdown.text}
+                    </div>
+                    <p className="text-xs opacity-75">
+                      {project.deadline
+                        ? new Date(project.deadline).toLocaleString('ar-EG', { dateStyle: 'full', timeStyle: 'short' })
+                        : 'وفق الجدول الأكاديمي'}
+                    </p>
+                  </div>
+                )}
+
+                {/* 3. PROJECT SUBMISSION VIEW */}
+                <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-brand-orange flex items-center justify-center font-bold">
+                      <Upload size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-text-primary">تسليم مخرجات الـ ERP</h3>
+                      <p className="text-[11px] text-text-muted">رفع الحل النهائي مباشرة لقاعدة بيانات المقرر</p>
+                    </div>
+                  </div>
+
+                  {!isAuthenticated ? (
+                    <div className="text-center py-6 space-y-3">
+                      <p className="text-xs text-text-muted">
+                        يجب تسجيل الدخول بحسابك الجامعي لرفع وتسليم مخرجات التكليف.
+                      </p>
+                      <Link href={`/auth/login?redirect=/practical/${projectId}`}>
+                        <Button variant="primary" size="sm" fullWidth className="rounded-xl font-bold">
+                          تسجيل الدخول للتسليم
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Notes / Explanation */}
+                      <div>
+                        <label className="block text-xs font-bold text-text-primary mb-1">
+                          شرح موجز للحل أو رابط المستودع / العرض (GitHub / Drive)
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={soloNote}
+                          onChange={(e) => setSoloNote(e.target.value)}
+                          placeholder="اكتب نبذة عن الحل، رابط GitHub، أو أي ملاحظات للمشرف الأكاديمي..."
+                          className="w-full text-xs p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange resize-none"
+                        />
+                      </div>
+
+                      {/* File selector dropzone */}
+                      <input
+                        type="file"
+                        ref={soloFileInputRef}
+                        onChange={handleUploadSoloFile}
+                        className="hidden"
+                      />
+                      <div
+                        onClick={() => soloFileInputRef.current?.click()}
+                        className="border-2 border-dashed border-gray-200 hover:border-brand-orange rounded-2xl p-6 text-center cursor-pointer bg-gray-50/50 hover:bg-orange-50/30 transition-all"
+                      >
+                        <Upload size={24} className="mx-auto text-brand-orange mb-2" />
+                        <p className="text-xs font-bold text-text-primary">اضغط هنا لاختيار ورفع ملف المخرجات</p>
+                        <p className="text-[10px] text-text-muted mt-1">PDF, DOCX, ZIP, PPTX — Max 50MB</p>
+                      </div>
+
+                      {submittingSolo && (
+                        <div className="flex items-center justify-center gap-2 text-xs text-brand-orange font-bold">
+                          <span className="w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full animate-spin" />
+                          <span>جاري تسليم وتوثيق الملف في نظام الـ ERP...</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Submissions History for ERP Project */}
+                <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-xs text-text-muted uppercase tracking-wider">
+                      سجل تسليماتك للمشروع ({mySubmissions.length})
+                    </h4>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
+                      ربط ERP نشط
+                    </span>
+                  </div>
+
+                  {mySubmissions.length === 0 ? (
+                    <p className="text-xs text-text-muted py-4 text-center">
+                      لم تقم بتسليم أي ملفات بعد لهذا التكليف الأكاديمي.
+                    </p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {mySubmissions.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-xs space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-text-primary truncate max-w-[170px]">{sub.name}</span>
+                            <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                              تم التوثيق في الـ ERP ✓
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-text-muted">
+                            {sub.size} · {new Date(sub.createdAt).toLocaleDateString()}
+                          </p>
+                          {sub.notes && (
+                            <p className="text-[11px] text-text-body bg-white p-2 rounded-lg border border-gray-100">
+                              {sub.notes}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── CASE A: TEAM PROJECT ────────────────────────────────────────── */}
-        {project.type === 'TEAM' && (
+        {!isErpProject && project.type === 'TEAM' && (
           <div className="section-container py-8">
             {/* If Student is Enrolled in a Team: Render Team Workspace Tabs */}
             {myTeam ? (
@@ -1028,7 +1640,7 @@ export default function ProjectWorkspacePage() {
         )}
 
         {/* ─── CASE B: SOLO PROJECT ────────────────────────────────────────── */}
-        {project.type === 'SOLO' && (
+        {!isErpProject && project.type === 'SOLO' && (
           <div className="section-container py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left 2 Cols: Project Requirements uploaded by Professor */}
