@@ -1,6 +1,7 @@
 // src/app/api/peers/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getAuthUser } from '@/lib/services/authService';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Student profiles are for logged-in students only.
+    const viewer = await getAuthUser(req);
+    if (!viewer) {
+      return NextResponse.json({ error: 'سجّل دخولك عشان تشوف البروفايل' }, { status: 401 });
+    }
+
     const peerId = params.id;
 
     const user = await prisma.user.findFirst({
@@ -30,7 +37,6 @@ export async function GET(
       id: user.id,
       name: user.name,
       fullName: user.fullName,
-      email: user.email,
       discipline: user.discipline || user.college,
       specialty: user.specialty,
       college: user.college,

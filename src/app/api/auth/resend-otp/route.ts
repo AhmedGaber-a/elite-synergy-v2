@@ -35,6 +35,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'الحساب مفعل بالفعل، يمكنك تسجيل الدخول مباشرة' }, { status: 400 });
     }
 
+    // Cooldown: a new code can only be requested once a minute. Without this, each resend
+    // creates a fresh token with 0 failed attempts, which would let an attacker keep guessing.
+    const latest = await prisma.verificationToken.findFirst({
+      where: { identifier: trimmedEmail },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (latest && Date.now() - latest.createdAt.getTime() < 60 * 1000) {
+      return NextResponse.json({ error: 'استنى دقيقة قبل ما تطلب كود جديد' }, { status: 429 });
+    }
+
     // Delete existing tokens for this email
     await prisma.verificationToken.deleteMany({
       where: { identifier: trimmedEmail },
