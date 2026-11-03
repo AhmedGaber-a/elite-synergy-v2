@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { canUseCommunity } from '@/lib/departments';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 
 export const dynamic = 'force-dynamic';
@@ -31,11 +32,14 @@ export async function POST(
     // Verify post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true, authorId: true, content: true },
+      select: { id: true, authorId: true, content: true, community: true },
     });
 
     if (!post) {
       return NextResponse.json({ error: 'المنشور غير موجود' }, { status: 404 });
+    }
+    if (!canUseCommunity(authUser.college, post.community)) {
+      return NextResponse.json({ error: 'هذا المنشور في مجتمع قسم آخر' }, { status: 403 });
     }
 
     // If parentId/commentId is provided, this is a nested Reply

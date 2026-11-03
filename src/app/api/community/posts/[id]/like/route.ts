@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { canUseCommunity } from '@/lib/departments';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,14 @@ export async function POST(
       return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً للإعجاب' }, { status: 401 });
     }
     const userId = authUser.id;
+
+    const target = await prisma.post.findUnique({ where: { id: postId }, select: { community: true } });
+    if (!target) {
+      return NextResponse.json({ error: 'المنشور غير موجود' }, { status: 404 });
+    }
+    if (!canUseCommunity(authUser.college, target.community)) {
+      return NextResponse.json({ error: 'هذا المنشور في مجتمع قسم آخر' }, { status: 403 });
+    }
 
     const existing = await prisma.postLike.findUnique({
       where: {

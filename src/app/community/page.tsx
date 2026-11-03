@@ -12,6 +12,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/lib/context/AuthContext';
+import { CommunityKey, GENERAL_COMMUNITY, departmentOf, getDepartment } from '@/lib/departments';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
@@ -107,9 +108,11 @@ export interface PostItem {
 function CreatePostModal({
   onClose,
   onPostCreated,
+  community,
 }: {
   onClose: () => void;
   onPostCreated: (post: PostItem) => void;
+  community: CommunityKey;
 }) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -154,6 +157,7 @@ function CreatePostModal({
         credentials: 'include',
         body: JSON.stringify({
           content: text.trim(),
+          community,
           mediaType: activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null,
           mediaUrl: filePreview,
           fileName: fileName || null,
@@ -1286,6 +1290,10 @@ export default function CommunityPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user, isAuthenticated } = useAuth();
+  // Each department has its own community; "GENERAL" is the shared one for everyone.
+  const myDepartment = departmentOf(user?.college);
+  const [communityChoice, setCommunityChoice] = useState<CommunityKey | null>(null);
+  const activeCommunity: CommunityKey = communityChoice ?? myDepartment ?? GENERAL_COMMUNITY;
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<PostItem | null>(null);
   const [sharingPost, setSharingPost] = useState<PostItem | null>(null);
@@ -1303,17 +1311,19 @@ export default function CommunityPage() {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/community', { cache: 'no-store' });
+      const res = await fetch(`/api/community?community=${activeCommunity}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setPosts(Array.isArray(data) ? data : []);
+      } else {
+        setPosts([]);
       }
     } catch (err) {
       console.error('Failed to load community posts:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeCommunity]);
 
   useEffect(() => {
     fetchPosts();
@@ -1339,6 +1349,7 @@ export default function CommunityPage() {
         <CreatePostModal
           onClose={() => setModalOpen(false)}
           onPostCreated={handlePostCreated}
+          community={activeCommunity}
         />
       )}
 
@@ -1463,6 +1474,34 @@ export default function CommunityPage() {
                       <FileText size={18} /> {t('community.addFile')}
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* Community switcher: own department or the shared community */}
+              {isAuthenticated && (
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {myDepartment && (
+                    <button
+                      onClick={() => setCommunityChoice(myDepartment)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                        activeCommunity === myDepartment
+                          ? 'bg-brand-orange text-white shadow-sm'
+                          : 'bg-white text-text-body border border-gray-100 hover:bg-orange-50'
+                      }`}
+                    >
+                      مجتمع {getDepartment(myDepartment)?.labelAr}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setCommunityChoice(GENERAL_COMMUNITY)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                      activeCommunity === GENERAL_COMMUNITY
+                        ? 'bg-brand-navy text-white shadow-sm'
+                        : 'bg-white text-text-body border border-gray-100 hover:bg-orange-50'
+                    }`}
+                  >
+                    المجتمع الشامل (كل الأقسام)
+                  </button>
                 </div>
               )}
 

@@ -303,8 +303,10 @@ model Post {
   @@index([createdAt])
   @@index([sharedPostId])
   moderationStatus ModerationStatus @default(APPROVED)
+  community        String           @default("GENERAL") // "GENERAL" or a department key: CS | BIS | ACC_EN | ACC_AR
   moderationNote   String?           @db.Text
   @@index([moderationStatus])
+  @@index([community])
 }
 
 model PostLike {

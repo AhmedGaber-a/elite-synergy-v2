@@ -18,6 +18,37 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [unread, setUnread] = useState({ messages: 0, notifications: 0 })
+
+  // Real unread counts only: refreshed on navigation, every minute, and when the tab becomes visible again.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnread({ messages: 0, notifications: 0 })
+      return
+    }
+    let cancelled = false
+    const load = () => {
+      fetch('/api/unread', { credentials: 'include', cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!cancelled && d) {
+            setUnread({ messages: Number(d.messages) || 0, notifications: Number(d.notifications) || 0 })
+          }
+        })
+        .catch(() => {})
+    }
+    load()
+    const interval = setInterval(load, 60000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [isAuthenticated, pathname])
 
   const NAV_LINKS = [
     { href: '/', label: t('nav.home') },
@@ -112,9 +143,11 @@ export function Navbar() {
                   title="Messages"
                 >
                   <MessageSquare size={20} />
-                  <span className="absolute top-1.5 end-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-brand-orange text-[9px] font-bold text-white">
-                    2
-                  </span>
+                  {unread.messages > 0 && (
+                    <span className="absolute top-1.5 end-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-brand-orange text-[9px] font-bold text-white">
+                      {unread.messages > 9 ? '9+' : unread.messages}
+                    </span>
+                  )}
                 </Link>
 
                 {/* Notifications: Single consolidated Bell in Navbar */}
@@ -125,7 +158,11 @@ export function Navbar() {
                   title="Notifications"
                 >
                   <Bell size={20} />
-                  <span className="absolute top-2 end-2 w-2.5 h-2.5 bg-brand-orange rounded-full ring-2 ring-white" />
+                  {unread.notifications > 0 && (
+                    <span className="absolute top-1.5 end-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-brand-orange text-[9px] font-bold text-white ring-2 ring-white">
+                      {unread.notifications > 9 ? '9+' : unread.notifications}
+                    </span>
+                  )}
                 </Link>
 
                 {/* Profile Dropdown */}
@@ -207,11 +244,19 @@ export function Navbar() {
               <>
                 <Link href="/messages" className="relative p-2 text-text-body" aria-label="Messages">
                   <MessageSquare size={19} />
-                  <span className="absolute top-1 end-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-brand-orange text-[8px] font-bold text-white">2</span>
+                  {unread.messages > 0 && (
+                    <span className="absolute top-1 end-1 min-w-[14px] h-3.5 px-0.5 flex items-center justify-center rounded-full bg-brand-orange text-[8px] font-bold text-white">
+                      {unread.messages > 9 ? '9+' : unread.messages}
+                    </span>
+                  )}
                 </Link>
                 <Link href="/notification" className="relative p-2 text-text-body" aria-label="Notifications">
                   <Bell size={19} />
-                  <span className="absolute top-1.5 end-1.5 w-2 h-2 rounded-full bg-brand-orange ring-1 ring-white" />
+                  {unread.notifications > 0 && (
+                    <span className="absolute top-1 end-1 min-w-[14px] h-3.5 px-0.5 flex items-center justify-center rounded-full bg-brand-orange text-[8px] font-bold text-white ring-1 ring-white">
+                      {unread.notifications > 9 ? '9+' : unread.notifications}
+                    </span>
+                  )}
                 </Link>
               </>
             )}

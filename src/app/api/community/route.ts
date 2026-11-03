@@ -5,6 +5,7 @@ import path from 'path';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
+import { canUseCommunity, departmentOf, GENERAL_COMMUNITY, isCommunityKey } from '@/lib/departments';
 
 // Only the fields the feed shows. Never load password hashes or private columns into list responses.
 const AUTHOR_FIELDS = {
@@ -70,8 +71,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 30, 1), 100);
 
+    // Default to the viewer's own department; "GENERAL" is the shared community for all departments.
+    const requested = searchParams.get('community') || departmentOf(viewer.college) || GENERAL_COMMUNITY;
+    if (!isCommunityKey(requested) || !canUseCommunity(viewer.college, requested)) {
+      return NextResponse.json({ error: 'لا يمكنك دخول مجتمع قسم آخر' }, { status: 403 });
+    }
+
     const posts = await prisma.post.findMany({
       where: {
+        community: requested,
         OR: [{ moderationStatus: 'APPROVED' }, { authorId: viewer.id }],
       },
       include: {
@@ -258,6 +266,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // Post into the requested community (default: the author's own department).
+    const community = body.community || departmentOf(authUser.college) || GENERAL_COMMUNITY;
+    if (!isCommunityKey(community) || !canUseCommunity(authUser.college, community)) {
+      return NextResponse.json({ error: 'لا يمكنك النشر في مجتمع قسم آخر' }, { status: 403 });
+    }
+
     const content = body.content !== undefined ? body.content : body.text;
     const contentAr = body.contentAr;
     const sharedPostId = body.sharedPostId || null;
@@ -308,6 +323,10 @@ export async function POST(req: NextRequest) {
         include: { author: true },
       });
       if (origPost) {
+        // Never embed a post from a community the author cannot read.
+        if (!canUseCommunity(authUser.college, origPost.community)) {
+          return NextResponse.json({ error: 'لا يمكنك مشاركة منشور من مجتمع قسم آخر' }, { status: 403 });
+        }
         sharedPostData = origPost;
         // Notify original author
         if (origPost.authorId !== authUser.id) {
@@ -329,6 +348,7 @@ export async function POST(req: NextRequest) {
     const newPost = await prisma.post.create({
       data: {
         authorId: authUser.id,
+        community,
         content: content && typeof content === 'string' ? content.trim() : '',
         contentAr: contentAr && typeof contentAr === 'string' ? contentAr.trim() : null,
         mediaType: mediaType || null,

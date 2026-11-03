@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { canUseCommunity } from '@/lib/departments';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,11 @@ export async function POST(
 
     if (!comment) {
       return NextResponse.json({ error: 'التعليق غير موجود' }, { status: 404 });
+    }
+
+    const parentPost = await prisma.post.findUnique({ where: { id: comment.postId }, select: { community: true } });
+    if (!parentPost || !canUseCommunity(authUser.college, parentPost.community)) {
+      return NextResponse.json({ error: 'هذا المنشور في مجتمع قسم آخر' }, { status: 403 });
     }
 
     // Check if user already reacted to this comment

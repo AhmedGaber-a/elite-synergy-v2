@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { DEPARTMENTS, getDepartment } from '@/lib/departments';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
     const collegeParam = searchParams.get('college') || searchParams.get('discipline') || '';
     const skill = searchParams.get('skill') || '';
     const currentUserId = authUser?.id || searchParams.get('currentUserId') || null;
+    // Department split: exact match on the registered college value. "ALL" or empty = every department.
+    const department = getDepartment(searchParams.get('department'));
 
     // Fetch only verified students from PostgreSQL, strictly excluding current logged-in user
     const users = await prisma.user.findMany({
@@ -21,6 +24,7 @@ export async function GET(req: NextRequest) {
         isVerified: true,
         // CRITICAL RULE: Exclude the currently logged-in user from the response
         ...(currentUserId ? { id: { not: currentUserId } } : {}),
+        ...(department ? { college: department.label } : {}),
         ...(collegeParam
           ? {
               OR: [
@@ -82,7 +86,23 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ peers: filteredPeers });
+    // Student counts per department, for the sidebar (ignores the current filters, excludes the viewer).
+    const grouped = await prisma.user.groupBy({
+      by: ['college'],
+      where: {
+        isVerified: true,
+        ...(currentUserId ? { id: { not: currentUserId } } : {}),
+      },
+      _count: { _all: true },
+    });
+    const departmentCounts: Record<string, number> = {};
+    for (const d of DEPARTMENTS) {
+      departmentCounts[d.key] = grouped
+        .filter((g) => g.college === d.label)
+        .reduce((sum, g) => sum + g._count._all, 0);
+    }
+
+    return NextResponse.json({ peers: filteredPeers, departmentCounts });
   } catch (error) {
     console.error('Fetch peers error:', error);
     return NextResponse.json({ error: 'Failed to fetch peers' }, { status: 500 });

@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, UserPlus, MessageCircle, FilterX, Sparkles, X, Users, Check, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, MessageCircle, Sparkles, X, Users, Check, AlertCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
@@ -35,12 +35,9 @@ export interface PeerItem {
   }>;
 }
 
-const DISCIPLINES = [
-  'Computer Science',
-  'Business Information System',
-  'Accounting (English)',
-  'Accounting (Arabic)',
-];
+import { DEPARTMENTS, departmentOf, getDepartment, type DepartmentKey } from '@/lib/departments';
+
+const DISCIPLINES = DEPARTMENTS.map((d) => d.label);
 
 function SuggestTeammatesModal({
   peers,
@@ -271,12 +268,15 @@ function SuggestTeammatesModal({
 }
 
 export default function PeersPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { user } = useAuth();
   const [peers, setPeers] = useState<PeerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
+  // null = the viewer's own department (default); 'ALL' = every department.
+  const [selectedDept, setSelectedDept] = useState<DepartmentKey | 'ALL' | null>(null);
+  const [deptCounts, setDeptCounts] = useState<Record<string, number>>({});
+  const activeDept: DepartmentKey | 'ALL' = selectedDept ?? departmentOf(user?.college) ?? 'ALL';
   const [showSuggest, setShowSuggest] = useState(false);
   const [connectedIds, setConnectedIds] = useState<Record<string, boolean>>({});
   const [notification, setNotification] = useState<string | null>(null);
@@ -297,12 +297,13 @@ export default function PeersPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (selectedDiscipline) params.set('discipline', selectedDiscipline);
+      if (activeDept !== 'ALL') params.set('department', activeDept);
       if (user?.id) params.set('currentUserId', user.id);
 
       const res = await fetch(`/api/peers?${params.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
+        setDeptCounts(data.departmentCounts || {});
         // CRITICAL RULE: Ensure current user is never included in peers view
         const verifiedPeers = (data.peers || []).filter((p: PeerItem) => (user ? p.id !== user.id : true));
         setPeers(verifiedPeers);
@@ -312,7 +313,7 @@ export default function PeersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedDiscipline, user]);
+  }, [search, activeDept, user]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -423,45 +424,35 @@ export default function PeersPage() {
 
           {activeTab === 'explore' ? (
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Filter Sidebar */}
+            {/* Filter Sidebar: students split by department */}
             <div className="w-full lg:w-64 flex-shrink-0">
               <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-24">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-text-primary text-base">{t('peers.disciplines')}</h3>
-                  {selectedDiscipline && (
-                    <button
-                      onClick={() => setSelectedDiscipline(null)}
-                      className="text-xs text-brand-orange hover:underline flex items-center gap-1 font-bold"
-                    >
-                      <FilterX size={14} /> Clear
-                    </button>
-                  )}
-                </div>
+                <h3 className="font-bold text-text-primary text-base mb-4">{t('peers.disciplines')}</h3>
                 <div className="flex flex-col gap-1.5">
-                  <button
-                    onClick={() => setSelectedDiscipline(null)}
-                    className={`text-start px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
-                      !selectedDiscipline ? 'bg-brand-orange text-white shadow-sm' : 'text-text-body hover:bg-orange-50'
-                    }`}
-                  >
-                    {t('peers.allDisciplines')}
-                    <span className="ms-2 opacity-75">({peers.length})</span>
-                  </button>
-                  {DISCIPLINES.map((disc) => {
-                    const count = peers.filter((p) => p.discipline.toLowerCase().includes(disc.toLowerCase()) || p.college.toLowerCase().includes(disc.toLowerCase())).length;
+                  {DEPARTMENTS.map((d) => {
+                    const isActive = activeDept === d.key;
                     return (
                       <button
-                        key={disc}
-                        onClick={() => setSelectedDiscipline(disc)}
+                        key={d.key}
+                        onClick={() => setSelectedDept(d.key)}
                         className={`text-start px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
-                          selectedDiscipline === disc ? 'bg-brand-orange text-white shadow-sm' : 'text-text-body hover:bg-orange-50'
+                          isActive ? 'bg-brand-orange text-white shadow-sm' : 'text-text-body hover:bg-orange-50'
                         }`}
                       >
-                        {disc}
-                        <span className="ms-2 opacity-75">({count})</span>
+                        {lang === 'ar' ? d.labelAr : d.label}
+                        <span className="ms-2 opacity-75">({deptCounts[d.key] ?? 0})</span>
                       </button>
                     );
                   })}
+                  <button
+                    onClick={() => setSelectedDept('ALL')}
+                    className={`text-start px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
+                      activeDept === 'ALL' ? 'bg-brand-orange text-white shadow-sm' : 'text-text-body hover:bg-orange-50'
+                    }`}
+                  >
+                    {t('peers.allDisciplines')}
+                    <span className="ms-2 opacity-75">({Object.values(deptCounts).reduce((a, b) => a + b, 0)})</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -470,7 +461,11 @@ export default function PeersPage() {
             <div className="flex-1">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-black text-text-primary">
-                  {selectedDiscipline ?? 'Verified Peers'}
+                  {activeDept === 'ALL'
+                    ? t('peers.allDisciplines')
+                    : lang === 'ar'
+                      ? getDepartment(activeDept)?.labelAr
+                      : getDepartment(activeDept)?.label}
                   <span className="text-text-muted text-sm font-medium ms-2">({peers.length})</span>
                 </h2>
               </div>
@@ -487,21 +482,21 @@ export default function PeersPage() {
                     👥
                   </div>
                   <h3 className="text-xl font-extrabold text-text-primary mb-2">
-                    {search || selectedDiscipline ? 'No Matching Peers Found' : 'لا يوجد زملاء مسجلون حالياً (0 Peers)'}
+                    {search || activeDept !== 'ALL' ? 'No Matching Peers Found' : 'لا يوجد زملاء مسجلون حالياً (0 Peers)'}
                   </h3>
                   <p className="text-sm text-text-muted max-w-md mx-auto mb-6 leading-relaxed">
-                    {search || selectedDiscipline
+                    {search || activeDept !== 'ALL'
                       ? 'Try clearing your filters or search query to see all verified students.'
                       : 'أنت أول من يستكشف المنصة! بمجرد قيام طلاب آخرين بالتسجيل وتأكيد حساباتهم الرسمية، ستظهر بطاقاتهم الأكاديمية هنا للتعاون وتكوين الفرق.'}
                   </p>
                   <div className="flex justify-center gap-3">
-                    {(search || selectedDiscipline) && (
+                    {(search || activeDept !== 'ALL') && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
                           setSearch('');
-                          setSelectedDiscipline(null);
+                          setSelectedDept('ALL');
                         }}
                         className="rounded-xl"
                       >
