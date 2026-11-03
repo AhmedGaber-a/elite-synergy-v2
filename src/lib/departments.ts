@@ -3,7 +3,7 @@
 
 export const DEPARTMENTS = [
   { key: 'CS', label: 'Computer Science', labelAr: 'علوم الحاسب' },
-  { key: 'BIS', label: 'Business Information System', labelAr: 'نظم المعلومات الإدارية' },
+  { key: 'BIS', label: 'Business Information System', labelAr: 'نظم معلومات الأعمال' },
   { key: 'ACC_EN', label: 'Accounting (English)', labelAr: 'المحاسبة (إنجليزي)' },
   { key: 'ACC_AR', label: 'Accounting (Arabic)', labelAr: 'المحاسبة (عربي)' },
 ] as const;
