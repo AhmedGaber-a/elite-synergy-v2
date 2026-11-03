@@ -457,6 +457,7 @@ model VerificationToken {
   identifier String   // الإيميل اللي مبعوتله الكود
   token      String   @unique // كود التفعيل (مثلاً: 482910)
   expires    DateTime // وقت انتهاء صلاحية الكود
+  attempts   Int      @default(0) // عدد المحاولات الخاطئة (بنقفل بعد 5)
   createdAt  DateTime @default(now())
 
   @@unique([identifier, token])

@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 // src/app/api/auth/resend-otp/route.ts
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     });
 
     // Generate new OTP (15-min expiry)
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await prisma.verificationToken.create({

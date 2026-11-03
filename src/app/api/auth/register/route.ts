@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 // src/app/api/auth/register/route.ts
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
         // If user registered but never verified, we can refresh OTP
         // Clean old tokens
         await prisma.verificationToken.deleteMany({ where: { identifier: trimmedEmail } });
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = randomInt(100000, 1000000).toString();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
         await prisma.verificationToken.create({
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
     });
 
     // 4. Generate 6-digit OTP (15-min expiry)
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await prisma.verificationToken.create({
