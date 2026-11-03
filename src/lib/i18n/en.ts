@@ -187,6 +187,9 @@ export const en = {
   'peers.chat': 'Chat',
   'peers.connect': 'Connect',
   'peers.connected': 'Connected ✓',
+  'peers.tabExplore': 'Explore peers',
+  'peers.tabPoints': 'My points & skills',
+  'peers.teach': 'Teach a skill',
 
   // Community
   'community.title': 'College & Community Feed',

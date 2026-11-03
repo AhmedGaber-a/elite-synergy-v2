@@ -189,6 +189,9 @@ export const ar: Record<TranslationKey, string> = {
   'peers.chat': 'محادثة',
   'peers.connect': 'تواصل',
   'peers.connected': 'تم التواصل ✓',
+  'peers.tabExplore': 'استكشف الزملاء',
+  'peers.tabPoints': 'نقاطي ومهاراتي',
+  'peers.teach': 'علّم مهارة',
 
   // Community
   'community.title': 'خلاصة المجتمع الجامعي',

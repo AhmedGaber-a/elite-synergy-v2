@@ -44,6 +44,21 @@ export async function POST(req: NextRequest) {
   const learner = await prisma.user.findUnique({ where: { id: learnerId }, select: { id: true, isVerified: true } });
   if (!learner || !learner.isVerified) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
 
+  // Teaching only happens between students who accepted each other's connection request.
+  const connection = await prisma.collaborationRequest.findFirst({
+    where: {
+      status: 'ACCEPTED',
+      OR: [
+        { senderId: teacher.id, receiverId: learnerId },
+        { senderId: learnerId, receiverId: teacher.id },
+      ],
+    },
+    select: { id: true },
+  });
+  if (!connection) {
+    return NextResponse.json({ error: 'Connect with this peer first' }, { status: 403 });
+  }
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const todayCount = await prisma.skillEndorsement.count({

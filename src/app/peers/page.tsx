@@ -9,6 +9,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useAuth } from '@/lib/context/AuthContext';
+import { PointsPanel } from '@/components/peers/PointsPanel';
+import { EndorseModal } from '@/components/peers/EndorseModal';
 
 export interface PeerItem {
   id: string;
@@ -278,6 +280,17 @@ export default function PeersPage() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [connectedIds, setConnectedIds] = useState<Record<string, boolean>>({});
   const [notification, setNotification] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'explore' | 'points'>('explore');
+  const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
+  const [teaching, setTeaching] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/peers/connections', { credentials: 'include', cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { ids: [] }))
+      .then((d) => setAcceptedIds(d.ids || []))
+      .catch(() => setAcceptedIds([]));
+  }, [user]);
 
   const fetchPeers = useCallback(async () => {
     try {
@@ -394,6 +407,21 @@ export default function PeersPage() {
             </Button>
           </div>
 
+          <div className="flex gap-2 mb-8 border-b border-orange-100">
+            {(['explore', 'points'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-3 text-sm font-bold -mb-px border-b-2 transition-colors ${
+                  activeTab === tab ? 'border-brand-orange text-brand-orange' : 'border-transparent text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {tab === 'explore' ? t('peers.tabExplore') : t('peers.tabPoints')}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'explore' ? (
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Filter Sidebar */}
             <div className="w-full lg:w-64 flex-shrink-0">
@@ -535,6 +563,16 @@ export default function PeersPage() {
                       </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
+                        {acceptedIds.includes(peer.id) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl"
+                            onClick={() => setTeaching({ id: peer.id, name: peer.name })}
+                          >
+                            {t('peers.teach')}
+                          </Button>
+                        )}
                         <Link href={`/peers/${peer.id}`}>
                           <Button variant="ghost" size="sm" className="px-2.5 py-1 text-xs font-bold text-text-muted hover:text-brand-orange">
                             View Profile
@@ -564,7 +602,19 @@ export default function PeersPage() {
               )}
             </div>
           </div>
+          ) : (
+            <PointsPanel />
+          )}
         </div>
+
+        {/* Teach modal */}
+        {teaching && (
+          <EndorseModal
+            learnerId={teaching.id}
+            learnerName={teaching.name}
+            onClose={() => setTeaching(null)}
+          />
+        )}
 
         {/* Suggest modal */}
         {showSuggest && (

@@ -1,6 +1,5 @@
 'use client'
 import React, { useCallback, useEffect, useState } from 'react'
-import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/Button'
 import { useLanguage } from '@/lib/context/LanguageContext'
 
@@ -16,7 +15,7 @@ interface Dashboard {
 
 const MAX_ATTEMPTS = 2
 
-export default function PointsPage() {
+export function PointsPanel() {
   const { t, lang } = useLanguage()
   const [data, setData] = useState<Dashboard | null>(null)
   const [answers, setAnswers] = useState<Record<string, number[]>>({})
@@ -57,10 +56,8 @@ export default function PointsPage() {
   }
 
   return (
-    <AppLayout>
-      <div className="bg-bg-cream min-h-screen">
-        <div className="section-container py-12 max-w-4xl">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary mb-2">{t('points.title')}</h1>
+    <div>
+          <h2 className="text-2xl font-extrabold text-text-primary mb-2">{t('points.title')}</h2>
           <p className="text-text-body mb-8">{t('points.subtitle')}</p>
 
           <div className="bg-brand-navy text-white rounded-3xl p-6 mb-10 flex items-center justify-between">
@@ -171,8 +168,6 @@ export default function PointsPage() {
               </ul>
             )}
           </section>
-        </div>
-      </div>
-    </AppLayout>
+    </div>
   )
 }
