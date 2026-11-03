@@ -59,6 +59,8 @@ model User {
   isAvailable Boolean    @default(true)
   matchScore  Int?       @default(95)
   isVerified  Boolean    @default(false) // تمت إضافته للتحقق من الإيميل
+  failedLoginAttempts Int    @default(0)
+  lockedUntil         DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -87,6 +89,9 @@ model User {
   receivedRequests CollaborationRequest[] @relation("ReceivedCollabRequests")
   peerProjects     PeerProject[]
   TeamMessage      TeamMessage[]
+  pointTransactions PointTransaction[] @relation("PointTransactions")
+  endorsementsGiven    SkillEndorsement[] @relation("EndorsementsGiven")
+  endorsementsReceived SkillEndorsement[] @relation("EndorsementsReceived")
 
   @@index([email])
   @@index([college])
@@ -191,10 +196,16 @@ model SoloSubmission {
   type      String   // pdf, code, zip, doc, etc.
   url       String?
   notes     String?  @db.Text
+  status      SubmissionStatus @default(PENDING)
+  grade       Int?
+  feedback    String?          @db.Text
+  reviewedBy  String?
+  reviewedAt  DateTime?
   createdAt DateTime @default(now())
 
   @@index([projectId])
   @@index([userId])
+  @@index([status])
 }
 
 model Team {
@@ -214,6 +225,7 @@ model Team {
   members  TeamMember[]
   messages TeamMessage[]
   files    TeamFile[]
+  submissions TeamSubmission[]
 
   @@index([projectId])
 }
@@ -290,6 +302,9 @@ model Post {
   @@index([authorId])
   @@index([createdAt])
   @@index([sharedPostId])
+  moderationStatus ModerationStatus @default(APPROVED)
+  moderationNote   String?           @db.Text
+  @@index([moderationStatus])
 }
 
 model PostLike {
@@ -461,4 +476,96 @@ model VerificationToken {
   createdAt  DateTime @default(now())
 
   @@unique([identifier, token])
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ModerationStatus {
+  APPROVED
+  PENDING
+  REMOVED
+}
+
+enum PointSource {
+  PRACTICAL
+  PEER
+  COMMUNITY
+  MANUAL
+}
+
+enum EndorsementStatus {
+  EXAM_PENDING
+  PASSED
+  FAILED
+}
+
+// Points ledger: every point change is a row, so ERP can audit and adjust.
+model PointTransaction {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation("PointTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int
+  reason      String
+  source      PointSource
+  referenceId String?
+  createdBy   String?     // ERP staff id or "system"
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([source, referenceId])
+}
+
+// Team submissions for TEAM practical projects (SoloSubmission already covers SOLO).
+model TeamSubmission {
+  id          String           @id @default(cuid())
+  teamId      String
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  submittedBy String
+  url         String?
+  notes       String?          @db.Text
+  status      SubmissionStatus @default(PENDING)
+  grade       Int?
+  feedback    String?          @db.Text
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@index([teamId])
+  @@index([status])
+}
+
+// Peer skill endorsement: a student teaches a skill; the learner must pass an AI-generated exam.
+model SkillEndorsement {
+  id          String            @id @default(cuid())
+  teacherId   String
+  teacher     User              @relation("EndorsementsGiven", fields: [teacherId], references: [id], onDelete: Cascade)
+  learnerId   String
+  learner     User              @relation("EndorsementsReceived", fields: [learnerId], references: [id], onDelete: Cascade)
+  skill       String
+  status      EndorsementStatus @default(EXAM_PENDING)
+  questions   Json              // exam questions WITHOUT answers, sent to the learner
+  answerKey   Json              // correct option index per question, never sent to clients
+  attempts    Int               @default(0)
+  score       Int?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([teacherId, learnerId, skill])
+  @@index([learnerId])
+}
+
+// Every ERP action is recorded here.
+model ErpAuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  target    String?
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/services/authService';
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_MINUTES = 15;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -46,9 +49,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
     }
 
+    // Account lock after repeated wrong passwords (brute-force protection).
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutes = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      return NextResponse.json(
+        { error: `تم قفل الحساب مؤقتاً بسبب محاولات كتير. حاول بعد ${minutes} دقيقة.`, locked: true },
+        { status: 429 }
+      );
+    }
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
+      const attempts = user.failedLoginAttempts + 1;
+      const shouldLock = attempts >= MAX_LOGIN_ATTEMPTS;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: shouldLock ? 0 : attempts,
+          lockedUntil: shouldLock ? new Date(Date.now() + LOCK_MINUTES * 60 * 1000) : null,
+        },
+      });
+      if (shouldLock) {
+        return NextResponse.json(
+          { error: `تم قفل الحساب ${LOCK_MINUTES} دقيقة بسبب محاولات كتير.`, locked: true },
+          { status: 429 }
+        );
+      }
       return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
+    }
+
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      });
     }
 
     // --- شرط الحماية لمنع الدخول قبل تفعيل الإيميل ---

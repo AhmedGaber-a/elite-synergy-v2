@@ -5,6 +5,7 @@ import path from 'path';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
+import { classifyCommunityPost } from '@/lib/services/aiModeration';
 
 // Only the fields the feed shows. Never load password hashes or private columns into list responses.
 const AUTHOR_FIELDS = {
@@ -63,10 +64,17 @@ function saveBase64File(dataUrl: string, prefix = 'community'): { url: string; f
 
 export async function GET(req: NextRequest) {
   try {
+    const viewer = await getAuthUser(req);
+    if (!viewer) {
+      return NextResponse.json({ error: 'سجّل دخولك عشان تشوف المجتمع' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 30, 1), 100);
 
     const posts = await prisma.post.findMany({
+      where: {
+        OR: [{ moderationStatus: 'APPROVED' }, { authorId: viewer.id }],
+      },
       include: {
         author: { select: AUTHOR_FIELDS },
         sharedPost: {
@@ -319,9 +327,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const screening = content && typeof content === 'string' && content.trim()
+      ? await classifyCommunityPost(content)
+      : { verdict: 'UNCERTAIN' as const, reason: '' };
+    const holdForReview = screening.verdict === 'NOT_SCIENTIFIC';
+
     const newPost = await prisma.post.create({
       data: {
         authorId: authUser.id,
+        moderationStatus: holdForReview ? 'PENDING' : 'APPROVED',
+        moderationNote: holdForReview ? `AI: ${screening.reason || 'not academic content'}` : null,
         content: content && typeof content === 'string' ? content.trim() : '',
         contentAr: contentAr && typeof contentAr === 'string' ? contentAr.trim() : null,
         mediaType: mediaType || null,
