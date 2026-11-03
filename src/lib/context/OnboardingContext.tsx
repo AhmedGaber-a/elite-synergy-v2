@@ -17,6 +17,8 @@ export interface OnboardingState {
   email: string;
   password: string;
   college: string;
+  university: string;
+  academicYear: number | null;
   specialty: string;
   avatarType?: 'male' | 'female';
   skills: string[];
@@ -45,7 +47,9 @@ const defaultState: OnboardingState = {
   fullName: '',
   email: '',
   password: '',
-  college: 'Computer Science',
+  college: '',
+  university: '',
+  academicYear: null,
   specialty: 'Computer Science & Software Systems',
   avatarType: 'male',
   skills: [],

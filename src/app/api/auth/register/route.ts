@@ -24,6 +24,8 @@ export async function POST(request: Request) {
       email,
       password,
       college = 'Computer Science',
+      university = null,
+      academicYear = null,
       specialty = 'Computer Science & Software Systems',
       skills = [],
       languages = [],
@@ -40,10 +42,10 @@ export async function POST(request: Request) {
     const trimmedEmail = (email || '').toLowerCase().trim();
 
     // 1. Strict university email validation
-    const emailRegex = /^[a-zA-Z0-9._-]+@fa-hists\.edu\.eg$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu\.eg$/;
     if (!emailRegex.test(trimmedEmail)) {
       return NextResponse.json(
-        { error: 'عذراً، التسجيل مسموح فقط بالإيميل الجامعي الرسمي @fa-hists.edu.eg' },
+        { error: 'عذراً، التسجيل مسموح فقط بالإيميل الجامعي (.edu.eg)' },
         { status: 400 }
       );
     }
@@ -111,6 +113,8 @@ export async function POST(request: Request) {
         email: trimmedEmail,
         password: hashedPassword,
         college,
+        university: typeof university === 'string' && university.trim() ? university.trim().slice(0, 150) : null,
+        academicYear: Number.isInteger(academicYear) && academicYear >= 1 && academicYear <= 5 ? academicYear : null,
         specialty,
         discipline: college,
         skills: Array.isArray(skills) ? skills : [],

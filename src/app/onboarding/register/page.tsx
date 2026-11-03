@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
 import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
+import { EGYPT_UNIVERSITY_GROUPS, OTHER_UNIVERSITY } from '@/lib/data/egyptUniversities';
+import { EGYPT_FACULTIES, OTHER_FACULTY } from '@/lib/data/egyptFaculties';
 
 function XIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -29,7 +31,12 @@ function RegisterContent() {
   const [email, setEmail] = useState(queryEmail || state.email || '');
   const [fullName, setFullName] = useState(state.fullName || '');
   const [avatarType, setAvatarType] = useState<'male' | 'female'>(state.avatarType || 'male');
-  const [college, setCollege] = useState(state.college || 'Computer Science');
+  const [college, setCollege] = useState(state.college || '');
+  const [universityChoice, setUniversityChoice] = useState('');
+  const [otherUniversity, setOtherUniversity] = useState('');
+  const [facultyChoice, setFacultyChoice] = useState(college && (EGYPT_FACULTIES as readonly string[]).includes(college) ? college : '');
+  const [otherFaculty, setOtherFaculty] = useState(college && !(EGYPT_FACULTIES as readonly string[]).includes(college) ? college : '');
+  const [academicYear, setAcademicYear] = useState<number | null>(state.academicYear ?? null);
   const [specialty, setSpecialty] = useState(state.specialty || 'Cloud Architecture & Software Engineering');
   const [password, setPassword] = useState(state.password || '');
   const [confirmPassword, setConfirmPassword] = useState(state.password || '');
@@ -68,9 +75,9 @@ function RegisterContent() {
     }
 
     // Strict institutional email regex verification
-    const emailRegex = /^[a-zA-Z0-9._-]+@fa-hists\.edu\.eg$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu\.eg$/;
     if (!emailRegex.test(cleanEmail)) {
-      setError('عذراً، التسجيل مسموح فقط بالإيميل الجامعي الرسمي @fa-hists.edu.eg');
+      setError('عذراً، التسجيل مسموح فقط بالإيميل الجامعي (.edu.eg)');
       return;
     }
 
@@ -84,6 +91,13 @@ function RegisterContent() {
       return;
     }
 
+    const finalUniversity = universityChoice === OTHER_UNIVERSITY ? otherUniversity.trim() : universityChoice;
+    const finalFaculty = facultyChoice === OTHER_FACULTY ? otherFaculty.trim() : facultyChoice;
+    if (!finalUniversity || !finalFaculty || !academicYear) {
+      setError('اختار الجامعة والكلية والفرقة الدراسية');
+      return;
+    }
+
     setLoading(true);
 
     const firstName = fullName.trim().split(' ')[0] || 'Student';
@@ -93,7 +107,9 @@ function RegisterContent() {
       fullName: fullName.trim(),
       email: cleanEmail,
       password,
-      college,
+      college: finalFaculty,
+      university: finalUniversity,
+      academicYear,
       specialty,
       avatarType,
       socialLinks: {
@@ -260,12 +276,61 @@ function RegisterContent() {
                     type="email"
                     required
                     className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-sm transition-all dir-ltr"
-                    placeholder="student@fa-hists.edu.eg"
+                    placeholder="name@university.edu.eg"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <p className="text-[11px] text-text-muted mt-1">يجب أن ينتهي بالامتداد: @fa-hists.edu.eg</p>
+                <p className="text-[11px] text-text-muted mt-1">يجب أن ينتهي بالامتداد: .edu.eg (إيميل جامعتك الرسمي)</p>
+              </div>
+
+              {/* University & academic year */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-text-primary mb-1.5">
+                    الجامعة / المعهد <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={universityChoice}
+                    onChange={(e) => setUniversityChoice(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
+                  >
+                    <option value="">اختر الجامعة</option>
+                    {EGYPT_UNIVERSITY_GROUPS.map((g) => (
+                      <optgroup key={g.key} label={g.label}>
+                        {g.items.map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                    <option value={OTHER_UNIVERSITY}>أخرى (اكتب اسمها)</option>
+                  </select>
+                  {universityChoice === OTHER_UNIVERSITY && (
+                    <input
+                      type="text"
+                      value={otherUniversity}
+                      onChange={(e) => setOtherUniversity(e.target.value)}
+                      placeholder="اسم الجامعة أو المعهد"
+                      className="mt-2 w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-text-primary mb-1.5">
+                    الفرقة الدراسية <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={academicYear ?? ''}
+                    onChange={(e) => setAcademicYear(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
+                  >
+                    <option value="">اختر الفرقة</option>
+                    {['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة'].map((label, i) => (
+                      <option key={i + 1} value={i + 1}>الفرقة {label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* College & Specialization */}
@@ -276,15 +341,25 @@ function RegisterContent() {
                   </label>
                   <div className="relative">
                     <select
-                      value={college}
-                      onChange={(e) => setCollege(e.target.value)}
-                      className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm font-medium"
+                      value={facultyChoice}
+                      onChange={(e) => setFacultyChoice(e.target.value)}
+                      className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
                     >
-                      <option value="Computer Science">Computer Science</option>
-                      <option value="Business Information System">BIS (Business Info System)</option>
-                      <option value="Accounting (English)">Accounting (English)</option>
-                      <option value="Accounting (Arabic)">Accounting (Arabic)</option>
+                      <option value="">اختر الكلية</option>
+                      {EGYPT_FACULTIES.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                      <option value={OTHER_FACULTY}>أخرى (اكتب اسمها)</option>
                     </select>
+                    {facultyChoice === OTHER_FACULTY && (
+                      <input
+                        type="text"
+                        value={otherFaculty}
+                        onChange={(e) => setOtherFaculty(e.target.value)}
+                        placeholder="اسم الكلية"
+                        className="mt-2 w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
+                      />
+                    )}
                   </div>
                 </div>
 

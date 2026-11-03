@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { ensureYearGroup } from '@/lib/services/yearGroups';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,9 @@ export async function GET(req: NextRequest) {
     if (!authUser) {
       return NextResponse.json({ conversations: [] });
     }
+
+    // Put the student in the group chat for their year (created on first use).
+    await ensureYearGroup(authUser);
 
     const { searchParams } = new URL(req.url);
     const categoryParam = searchParams.get('category'); // 'peers' | 'practical' | null

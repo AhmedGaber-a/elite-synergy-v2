@@ -20,10 +20,15 @@ export function checkUploadSize(file: File, kind: UploadKind): string | null {
 // Uploads the file to Vercel Blob and resolves with its public URL.
 export async function uploadCommunityFile(file: File, kind: UploadKind): Promise<string> {
   const safeName = file.name.replace(/[^\w.-]+/g, '_');
-  const blob = await upload(`community/${kind}/${safeName}`, file, {
-    access: 'public',
-    handleUploadUrl: '/api/community/upload',
-    clientPayload: kind,
-  });
-  return blob.url;
+  try {
+    const blob = await upload(`community/${kind}/${safeName}`, file, {
+      access: 'public',
+      handleUploadUrl: '/api/community/upload',
+      clientPayload: kind,
+    });
+    return blob.url;
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : '';
+    throw new Error(`تعذر رفع الملف${reason ? `: ${reason}` : ''}`);
+  }
 }

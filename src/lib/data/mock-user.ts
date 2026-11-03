@@ -30,7 +30,7 @@ export const CURRENT_USER = {
   id: 'current-user',
   name: 'Student',
   fullName: 'Academic Student',
-  email: 'student@fa-hists.edu.eg',
+  email: 'student@university.edu.eg',
   avatarType: 'male' as const,
   role: 'Student',
 };

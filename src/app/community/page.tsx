@@ -195,8 +195,8 @@ function CreatePostModal({
 
       onPostCreated(data);
       onClose();
-    } catch {
-      setError('حدث خطأ في الاتصال بالخادم');
+    } catch (err) {
+      setError(err instanceof Error && err.message.startsWith('تعذر رفع') ? err.message : 'حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
@@ -428,8 +428,8 @@ function EditPostModal({
 
       onPostUpdated(data);
       onClose();
-    } catch {
-      setError('حدث خطأ في الاتصال بالخادم');
+    } catch (err) {
+      setError(err instanceof Error && err.message.startsWith('تعذر رفع') ? err.message : 'حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
@@ -1519,7 +1519,7 @@ export default function CommunityPage() {
                           : 'bg-white text-text-body border border-gray-100 hover:bg-orange-50'
                       }`}
                     >
-                      مجتمع {getDepartment(myDepartment)?.labelAr}
+                      مجتمع {getDepartment(myDepartment)?.labelAr ?? user?.college}
                     </button>
                   )}
                   <button

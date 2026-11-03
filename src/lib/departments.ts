@@ -1,5 +1,6 @@
 // src/lib/departments.ts
-// The four departments a student can register in. `label` is the exact value stored in User.college.
+// Communities: one per faculty, plus one shared community ("GENERAL") for every student.
+// The four original departments keep their fixed keys. Any other faculty gets a key derived from its name.
 
 export const DEPARTMENTS = [
   { key: 'CS', label: 'Computer Science', labelAr: 'علوم الحاسب' },
@@ -10,31 +11,37 @@ export const DEPARTMENTS = [
 
 export type DepartmentKey = (typeof DEPARTMENTS)[number]['key'];
 
-// Shared community that every department can read and post in.
 export const GENERAL_COMMUNITY = 'GENERAL' as const;
-export type CommunityKey = DepartmentKey | typeof GENERAL_COMMUNITY;
+export type CommunityKey = string;
 
 export function getDepartment(key: string | null | undefined) {
   return DEPARTMENTS.find((d) => d.key === key) ?? null;
 }
 
+// Community key for any faculty name, e.g. "Faculty of Law" -> "F_FACULTY_OF_LAW".
+export function facultyKey(name: string): string {
+  const slug = name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60);
+  return `F_${slug}`;
+}
+
 export function isCommunityKey(value: unknown): value is CommunityKey {
-  return value === GENERAL_COMMUNITY || DEPARTMENTS.some((d) => d.key === value);
+  if (typeof value !== 'string') return false;
+  return value === GENERAL_COMMUNITY || DEPARTMENTS.some((d) => d.key === value) || /^F_[A-Z0-9_]{1,60}$/.test(value);
 }
 
-// Maps a stored User.college value to a department key. Returns null when the value is not one of the four.
-export function departmentOf(college: string | null | undefined): DepartmentKey | null {
-  if (!college) return null;
+// Maps a stored User.college (faculty name) to its community key. Returns null when there is no faculty.
+export function departmentOf(college: string | null | undefined): string | null {
+  if (!college || !college.trim()) return null;
   const c = college.trim().toLowerCase();
-  if (c === 'computer science' || /\bcomputer\b/.test(c)) return 'CS';
-  if (/\bbis\b/.test(c) || c.includes('business')) return 'BIS';
+  if (c === 'computer science' || /\bcomputer science\b/.test(c)) return 'CS';
+  if (/\bbis\b/.test(c) || c.includes('business information')) return 'BIS';
   if (c.includes('accounting')) return c.includes('arab') ? 'ACC_AR' : 'ACC_EN';
-  return null;
+  return facultyKey(college);
 }
 
-// A student may read or post in their own department and in the shared community. Nothing else.
+// A student may read or post in their own faculty community and in the shared community. Nothing else.
 export function canUseCommunity(college: string | null | undefined, community: string): boolean {
   if (community === GENERAL_COMMUNITY) return true;
-  const dept = departmentOf(college);
-  return dept !== null && dept === community;
+  const own = departmentOf(college);
+  return own !== null && own === community;
 }

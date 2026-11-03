@@ -35,7 +35,7 @@ export interface PeerItem {
   }>;
 }
 
-import { DEPARTMENTS, departmentOf, getDepartment, type DepartmentKey } from '@/lib/departments';
+import { DEPARTMENTS, departmentOf, getDepartment } from '@/lib/departments';
 
 const DISCIPLINES = DEPARTMENTS.map((d) => d.label);
 
@@ -228,7 +228,7 @@ function SuggestTeammatesModal({
                           <span
                             key={s}
                             className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              selectedSkills.some((sel) => s.toLowerCase().includes(sel.toLowerCase()))
+                              customSkills.some((sel) => s.toLowerCase().includes(sel.toLowerCase()))
                                 ? 'bg-purple-200 text-purple-800'
                                 : 'bg-gray-100 text-gray-600'
                             }`}
@@ -274,9 +274,9 @@ export default function PeersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   // null = the viewer's own department (default); 'ALL' = every department.
-  const [selectedDept, setSelectedDept] = useState<DepartmentKey | 'ALL' | null>(null);
+  const [selectedDept, setSelectedDept] = useState<string | null>(null);
   const [deptCounts, setDeptCounts] = useState<Record<string, number>>({});
-  const activeDept: DepartmentKey | 'ALL' = selectedDept ?? departmentOf(user?.college) ?? 'ALL';
+  const activeDept: string = selectedDept ?? departmentOf(user?.college) ?? 'ALL';
   const [showSuggest, setShowSuggest] = useState(false);
   const [connectedIds, setConnectedIds] = useState<Record<string, boolean>>({});
   const [notification, setNotification] = useState<string | null>(null);
@@ -297,7 +297,10 @@ export default function PeersPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (activeDept !== 'ALL') params.set('department', activeDept);
+      if (activeDept !== 'ALL') {
+        if (getDepartment(activeDept)) params.set('department', activeDept);
+        else if (user?.college) params.set('college', user.college);
+      }
       if (user?.id) params.set('currentUserId', user.id);
 
       const res = await fetch(`/api/peers?${params.toString()}`, { cache: 'no-store' });
@@ -451,7 +454,7 @@ export default function PeersPage() {
                     }`}
                   >
                     {t('peers.allDisciplines')}
-                    <span className="ms-2 opacity-75">({Object.values(deptCounts).reduce((a, b) => a + b, 0)})</span>
+                    <span className="ms-2 opacity-75">({Object.values(deptCounts).reduce((a: number, b: number) => a + b, 0)})</span>
                   </button>
                 </div>
               </div>
