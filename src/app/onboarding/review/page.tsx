@@ -29,7 +29,6 @@ export default function ReviewPage() {
         email: state.email,
         password: state.password || 'TemporaryPassword2026!',
         college: state.college || 'Computer Science',
-        university: state.university || null,
         academicYear: state.academicYear,
         specialty: state.specialty || 'Cloud Architecture & Software Engineering',
         avatarType: state.avatarType === 'female' ? 'female' : 'male',

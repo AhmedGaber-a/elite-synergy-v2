@@ -43,7 +43,6 @@ model User {
   avatarType  AvatarType @default(male)
   role        String     @default("Student") // Display title (e.g. "Cloud Architect & Software Engineer")
   userRole    UserRole   @default(STUDENT) // System permission
-  university  String?    // Chosen at registration from the Egyptian universities list
   academicYear Int?      // 1..5, the year (فرقة) the student is in
   college     String     @default("Computer Science") // e.g. "Computer Science", "BIS", "Accounting"
   specialty   String     @default("Cloud Architecture & Software Engineering")

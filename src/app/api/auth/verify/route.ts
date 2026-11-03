@@ -1,6 +1,7 @@
 // src/app/api/auth/verify/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ensureYearGroup } from '@/lib/services/yearGroups';
 
 const MAX_ATTEMPTS = 5;
 
@@ -47,6 +48,12 @@ export async function POST(request: Request) {
       prisma.user.updateMany({ where: { email: trimmedEmail }, data: { isVerified: true } }),
       prisma.verificationToken.deleteMany({ where: { identifier: trimmedEmail } }),
     ]);
+
+    // Put the student in the group chat for their year as soon as the account is active.
+    const verifiedUser = await prisma.user.findUnique({ where: { email: trimmedEmail } });
+    if (verifiedUser) {
+      await ensureYearGroup(verifiedUser).catch((err) => console.error('Year group error:', err));
+    }
 
     return NextResponse.json(
       {
