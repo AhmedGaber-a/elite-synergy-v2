@@ -16,6 +16,7 @@ import { CommunityKey, GENERAL_COMMUNITY, departmentOf, getDepartment } from '@/
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
+import { checkUploadSize, uploadCommunityFile, type UploadKind } from '@/lib/utils/communityUpload';
 
 export interface CommentReactionItem {
   id?: string;
@@ -119,6 +120,7 @@ function CreatePostModal({
   const [text, setText] = useState('');
   const [activeTab, setActiveTab] = useState<'text' | 'photo' | 'video' | 'file'>('text');
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -127,18 +129,29 @@ function CreatePostModal({
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-
-    // Strict 4MB payload limit to prevent Vercel 413 / timeout
-    if (f.size > 4 * 1024 * 1024) {
-      setError('حجم الملف يتجاوز الحد الأقصى 4 ميجابايت لتجنب بطء الرفع (File exceeds 4MB limit)');
+    const kind: UploadKind = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : 'file';
+    const sizeError = checkUploadSize(f, kind);
+    if (sizeError) {
+      setError(sizeError);
       if (fileRef.current) fileRef.current.value = '';
       return;
     }
 
     setError('');
     setFileName(f.name);
+    setPendingFile(f);
+    if (kind === 'image') {
+      resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
+    } else {
+      setFilePreview(URL.createObjectURL(f));
+    }
+  };
 
-    resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
+  // Uploads the chosen file (if any) and returns its URL; an existing URL is kept as is.
+  const resolveMediaUrl = async (): Promise<string | null> => {
+    const kind: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
+    if (pendingFile && kind) return uploadCommunityFile(pendingFile, kind);
+    return filePreview && !filePreview.startsWith('data:') && !filePreview.startsWith('blob:') ? filePreview : null;
   };
 
   const submit = async () => {
@@ -147,6 +160,7 @@ function CreatePostModal({
     setError('');
 
     try {
+      const mediaUrl = await resolveMediaUrl();
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -159,9 +173,9 @@ function CreatePostModal({
           content: text.trim(),
           community,
           mediaType: activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null,
-          mediaUrl: filePreview,
+          mediaUrl,
           fileName: fileName || null,
-          fileUrl: activeTab === 'file' ? filePreview : null,
+          fileUrl: activeTab === 'file' ? mediaUrl : null,
         }),
       });
 
@@ -172,7 +186,7 @@ function CreatePostModal({
       }
 
       setText('');
-      setFilePreview(null);
+      setFilePreview(null); setPendingFile(null);
       setFileName('');
       setActiveTab('text');
       if (fileRef.current) {
@@ -265,7 +279,7 @@ function CreatePostModal({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setFilePreview(null);
+                      setFilePreview(null); setPendingFile(null);
                       setFileName('');
                       if (fileRef.current) fileRef.current.value = '';
                     }}
@@ -348,6 +362,7 @@ function EditPostModal({
     post.mediaType === 'image' ? 'photo' : post.mediaType === 'video' ? 'video' : post.mediaType === 'file' ? 'file' : 'text'
   );
   const [filePreview, setFilePreview] = useState<string | null>(post.mediaUrl || post.fileUrl || null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>(post.fileName || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -356,15 +371,29 @@ function EditPostModal({
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 4 * 1024 * 1024) {
-      setError('حجم الملف يتجاوز الحد الأقصى 4 ميجابايت لتجنب بطء الرفع (File exceeds 4MB limit)');
+    const kind: UploadKind = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : 'file';
+    const sizeError = checkUploadSize(f, kind);
+    if (sizeError) {
+      setError(sizeError);
       if (fileRef.current) fileRef.current.value = '';
       return;
     }
+
     setError('');
     setFileName(f.name);
+    setPendingFile(f);
+    if (kind === 'image') {
+      resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
+    } else {
+      setFilePreview(URL.createObjectURL(f));
+    }
+  };
 
-    resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
+  // Uploads the chosen file (if any) and returns its URL; an existing URL is kept as is.
+  const resolveMediaUrl = async (): Promise<string | null> => {
+    const kind: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
+    if (pendingFile && kind) return uploadCommunityFile(pendingFile, kind);
+    return filePreview && !filePreview.startsWith('data:') && !filePreview.startsWith('blob:') ? filePreview : null;
   };
 
   const submitEdit = async () => {
@@ -373,6 +402,7 @@ function EditPostModal({
     setError('');
 
     try {
+      const mediaUrl = await resolveMediaUrl();
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -384,9 +414,9 @@ function EditPostModal({
         body: JSON.stringify({
           content: text.trim(),
           mediaType: activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null,
-          mediaUrl: filePreview,
+          mediaUrl,
           fileName: fileName || null,
-          fileUrl: activeTab === 'file' ? filePreview : null,
+          fileUrl: activeTab === 'file' ? mediaUrl : null,
         }),
       });
 
@@ -467,7 +497,7 @@ function EditPostModal({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setFilePreview(null);
+                      setFilePreview(null); setPendingFile(null);
                       setFileName('');
                       if (fileRef.current) fileRef.current.value = '';
                     }}

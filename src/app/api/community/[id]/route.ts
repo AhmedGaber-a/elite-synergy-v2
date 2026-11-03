@@ -1,52 +1,14 @@
 // src/app/api/community/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 
 export const dynamic = 'force-dynamic';
 
-function saveBase64File(dataUrl: string, prefix = 'community'): { url: string; fileName: string } | null {
-  try {
-    const matches = dataUrl.match(/^data:([^;,]+)(?:;[^,]*)*;base64,([\s\S]+)$/);
-    if (!matches || matches.length < 3) {
-      return null;
-    }
-    const mimeType = matches[1].toLowerCase();
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    let ext = 'bin';
-    if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
-    else if (mimeType.includes('png')) ext = 'png';
-    else if (mimeType.includes('gif')) ext = 'gif';
-    else if (mimeType.includes('webp')) ext = 'webp';
-    else if (mimeType.includes('mp4')) ext = 'mp4';
-    else if (mimeType.includes('webm')) ext = 'webm';
-    else if (mimeType.includes('quicktime') || mimeType.includes('mov')) ext = 'mov';
-    else if (mimeType.includes('pdf')) ext = 'pdf';
-    else if (mimeType.includes('word') || mimeType.includes('doc')) ext = 'docx';
-    else if (mimeType.includes('presentation') || mimeType.includes('powerpoint') || mimeType.includes('ppt')) ext = 'pptx';
-    else if (mimeType.includes('zip') || mimeType.includes('compressed')) ext = 'zip';
-
-    const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, filename);
-    fs.writeFileSync(filePath, buffer);
-
-    return {
-      url: `/uploads/${filename}`,
-      fileName: filename,
-    };
-  } catch (err) {
-    console.error('Error saving base64 file:', err);
-    return null;
-  }
+// Files are uploaded straight to Vercel Blob by the browser; the server only stores their URLs.
+// A base64 payload means the client skipped the upload, so it is refused here.
+function hasInlineData(...urls: (string | null | undefined)[]): boolean {
+  return urls.some((u) => typeof u === 'string' && (u.startsWith('data:') || u.startsWith('blob:')));
 }
 
 export async function PATCH(
@@ -91,26 +53,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'محتوى المنشور لا يمكن أن يكون فارغاً بدون مرفق' }, { status: 400 });
     }
 
-    // Save Base64 mediaUrl if new base64 sent
-    if (mediaUrl && mediaUrl.startsWith('data:')) {
-      const saved = saveBase64File(mediaUrl, mediaType === 'video' ? 'video' : 'media');
-      if (saved) {
-        mediaUrl = saved.url;
-        if (!fileName && mediaType === 'file') {
-          fileName = saved.fileName;
-        }
-      }
-    }
-
-    // Save Base64 fileUrl if new base64 sent
-    if (fileUrl && fileUrl.startsWith('data:')) {
-      const saved = saveBase64File(fileUrl, 'doc');
-      if (saved) {
-        fileUrl = saved.url;
-        if (!fileName) {
-          fileName = body.fileName || saved.fileName;
-        }
-      }
+    if (hasInlineData(mediaUrl, fileUrl)) {
+      return NextResponse.json({ error: 'ارفع الملف أولاً ثم انشر المنشور' }, { status: 400 });
     }
 
     if (mediaType === 'file' && !fileUrl && mediaUrl) {
