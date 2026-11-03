@@ -32,7 +32,10 @@ export const metadata: Metadata = {
 
 // إعدادات لون المتصفح للموبايل
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover', // lets the layout use the notch and home-bar areas on phones
+  themeColor: '#1E2A3A',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

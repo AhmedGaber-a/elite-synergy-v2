@@ -1,5 +1,5 @@
 // POST /api/erp/points  body: { userId, amount (can be negative), reason }
-// Used by staff and doctors to adjust points after review.
+// Used by Elite Synergy staff to adjust points after review. Instructors cannot change points.
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyErpRequest } from '@/lib/services/erpAuth';

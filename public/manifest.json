@@ -4,13 +4,24 @@
   "description": "Student Collaboration Platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#FFF8F0",
+  "theme_color": "#1E2A3A",
   "icons": [
     {
       "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "/",
+  "scope": "/",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl"
 }

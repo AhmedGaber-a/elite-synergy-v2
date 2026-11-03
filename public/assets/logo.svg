@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" role="img" aria-label="Elite Synergy">
+  <g transform="translate(16,20)">
+    <rect width="160" height="160" rx="38" fill="#1E2A3A"/>
+    <line x1="80" y1="46" x2="44" y2="114" stroke="#F97316" stroke-width="8" stroke-linecap="round"/>
+    <line x1="80" y1="46" x2="116" y2="114" stroke="#14B8A6" stroke-width="8" stroke-linecap="round"/>
+    <line x1="44" y1="114" x2="116" y2="114" stroke="#7C83E8" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="80" cy="46" r="22" fill="#F97316"/>
+    <circle cx="44" cy="114" r="22" fill="#14B8A6"/>
+    <circle cx="116" cy="114" r="22" fill="#7C83E8"/>
+  </g>
+  <text x="206" y="104" font-family="Poppins, Cairo, Arial, sans-serif" font-weight="800" font-size="64" fill="#1E2A3A">Elite</text>
+  <text x="208" y="162" font-family="Poppins, Cairo, Arial, sans-serif" font-weight="700" font-size="40" fill="#F97316" letter-spacing="3">SYNERGY</text>
+</svg>
