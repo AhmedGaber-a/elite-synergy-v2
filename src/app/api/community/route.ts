@@ -5,7 +5,6 @@ import path from 'path';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
-import { classifyCommunityPost } from '@/lib/services/aiModeration';
 
 // Only the fields the feed shows. Never load password hashes or private columns into list responses.
 const AUTHOR_FIELDS = {
@@ -327,16 +326,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const screening = content && typeof content === 'string' && content.trim()
-      ? await classifyCommunityPost(content)
-      : { verdict: 'UNCERTAIN' as const, reason: '' };
-    const holdForReview = screening.verdict === 'NOT_SCIENTIFIC';
-
     const newPost = await prisma.post.create({
       data: {
         authorId: authUser.id,
-        moderationStatus: holdForReview ? 'PENDING' : 'APPROVED',
-        moderationNote: holdForReview ? `AI: ${screening.reason || 'not academic content'}` : null,
         content: content && typeof content === 'string' ? content.trim() : '',
         contentAr: contentAr && typeof contentAr === 'string' ? contentAr.trim() : null,
         mediaType: mediaType || null,

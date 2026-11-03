@@ -23,6 +23,7 @@ export function Navbar() {
     { href: '/', label: t('nav.home') },
     { href: '/practical', label: t('nav.practical') },
     { href: '/peers', label: t('nav.peers') },
+    { href: '/points', label: t('nav.points') },
     { href: '/community', label: t('nav.community') },
   ]
 

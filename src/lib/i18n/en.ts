@@ -11,8 +11,9 @@ export const en = {
   'nav.myProfile': 'My Profile',
   'nav.notifications': 'Notifications',
   'nav.signOut': 'Sign Out',
-  'nav.languageToggle': 'US English',
-  'nav.languageSwitchLabel': 'Switch to Egyptian Arabic',
+  'nav.languageToggle': 'English',
+  'nav.languageSwitchLabel': 'Switch to Arabic',
+  'nav.points': 'Points & Skills',
 
   // Common UI
   'common.search': 'Search',
@@ -215,6 +216,51 @@ export const en = {
   'workspace.linkVideo': 'Link a YouTube / Vimeo Video',
   'workspace.uploadPresentation': 'Upload Presentation File',
   'workspace.typeMessage': 'Message your team...',
+
+  // Points & skills (student dashboard)
+  'points.title': 'My Points & Skills',
+  'points.subtitle': 'Track every point you earn from practical cases and from teaching your peers.',
+  'points.total': 'Total points',
+  'points.history': 'Points history',
+  'points.noHistory': 'No points yet. Submit a practical case or teach a skill to start earning.',
+  'points.pendingExams': 'Skill exams waiting for you',
+  'points.noExams': 'You have no pending exams.',
+  'points.questionLabel': 'Question',
+  'points.submitAnswers': 'Submit answers',
+  'points.attemptsLeft': 'Attempts left',
+  'points.passed': 'Passed. The skill was added to your profile.',
+  'points.failed': 'Not passed this time.',
+  'points.taughtBy': 'Taught by',
+  'points.skillsLearned': 'Skills learned from peers',
+  'points.teachingGiven': 'Skills you taught',
+  'points.exam': 'Exam',
+  'status.pending': 'Pending',
+  'status.passed': 'Passed',
+  'status.failed': 'Failed',
+  'status.approved': 'Approved',
+  'status.rejected': 'Rejected',
+
+  // Teaching a peer (endorsement)
+  'endorse.title': 'Teach a skill to a peer',
+  'endorse.subtitle': 'You can only teach skills on your own profile. Your peer must pass an AI exam before points are awarded.',
+  'endorse.peer': 'Peer',
+  'endorse.skill': 'Skill',
+  'endorse.selectSkill': 'Choose a skill',
+  'endorse.submit': 'Start endorsement',
+  'endorse.created': 'Endorsement created. Your peer can now take the exam.',
+  'endorse.noSkills': 'Add skills to your profile first.',
+  'endorse.noPeer': 'Choose a peer from the Peers page first.',
+
+  // Team submission
+  'team.submitTitle': 'Submit team work',
+  'team.submitSubtitle': 'Share a link and notes for your team deliverables. Your supervisor will review them.',
+  'team.submitLink': 'Link to your work (Drive, GitHub, ...)',
+  'team.submitNotes': 'Notes for the supervisor',
+  'team.submitButton': 'Submit team work',
+  'team.submitted': 'Submitted. Waiting for review.',
+
+  // Community access
+  'community.loginRequired': 'Sign in to see the community feed.',
 }
 
 export type TranslationKey = keyof typeof en
