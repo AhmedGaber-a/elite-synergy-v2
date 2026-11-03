@@ -6,7 +6,7 @@ import { verifyErpRequest } from '@/lib/services/erpAuth';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  if (!verifyErpRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!await verifyErpRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const status = new URL(req.url).searchParams.get('status');
   const items = await prisma.skillEndorsement.findMany({

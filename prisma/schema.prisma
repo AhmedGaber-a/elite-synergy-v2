@@ -569,3 +569,15 @@ model ErpAuditLog {
 
   @@index([createdAt])
 }
+
+// ERP staff accounts (company employees). Separate from student accounts.
+model ErpStaff {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  role           String    @default("STAFF") // STAFF | REVIEWER | ADMIN
+  active         Boolean   @default(true)
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+}

@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
         platformProjects: true,
       },
       orderBy: { points: 'desc' },
+      take: 200, // cap the list so it stays fast as the student body grows
     });
 
     const peers = users.map((u) => ({

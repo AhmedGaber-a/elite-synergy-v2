@@ -8,7 +8,7 @@ import { awardPoints, logErpAction } from '@/lib/services/points';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  const erp = verifyErpRequest(req);
+  const erp = await verifyErpRequest(req);
   if (!erp) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));

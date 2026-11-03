@@ -6,7 +6,7 @@ import { verifyErpRequest } from '@/lib/services/erpAuth';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  if (!verifyErpRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!await verifyErpRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get('type') || 'solo';
