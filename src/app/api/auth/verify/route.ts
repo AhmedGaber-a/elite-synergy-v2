@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { ensureYearGroup } from '@/lib/services/yearGroups';
 
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 3;
 
 export async function POST(request: Request) {
   try {

@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/services/authService';
 import { isStudentEmail, normalizeEmail, GENERIC_AUTH_ERROR, GENERIC_CODE_MESSAGE } from '@/lib/services/studentEmail';
 
-const MAX_LOGIN_ATTEMPTS = 5;
+const MAX_LOGIN_ATTEMPTS = 3;
 const LOCK_MINUTES = 15;
 
 export async function POST(req: NextRequest) {
