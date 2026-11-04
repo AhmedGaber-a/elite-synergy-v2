@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { connectionWith } from '@/lib/services/connections';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +34,11 @@ export async function GET(
       return NextResponse.json({ error: 'Peer not found' }, { status: 404 });
     }
 
+    const connection = await connectionWith(viewer.id, user.id);
+
     const peer = {
       id: user.id,
+      connection,
       name: user.name,
       fullName: user.fullName,
       discipline: user.discipline || user.college,

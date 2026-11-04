@@ -12,7 +12,6 @@ import { PeerItem } from '@/app/peers/page';
 export default function PeerProfilePage({ params }: { params: { id: string } }) {
   const [peer, setPeer] = useState<PeerItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
   }, [params.id]);
 
   const handleConnect = async () => {
-    if (!peer || requesting || connected) return;
+    if (!peer || requesting || peer.connection !== 'NONE') return;
     setRequesting(true);
     try {
       const res = await fetch('/api/peers', {
@@ -43,7 +42,7 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
         body: JSON.stringify({ peerId: peer.id }),
       });
       if (res.ok) {
-        setConnected(true);
+        setPeer({ ...peer, connection: 'SENT' });
       }
     } catch (err) {
       console.error('Failed to connect:', err);
@@ -113,10 +112,18 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                 <Link href={`/messages?type=peer&id=${peer.id}`} className="flex-1 md:flex-initial">
                   <Button variant="outline" size="md" fullWidth><MessageCircle size={18} className="mr-2" /> Message</Button>
                 </Link>
-                {connected ? (
+                {peer.connection === 'ACCEPTED' ? (
+                  <Button variant="navy" size="md" disabled className="flex-1 md:flex-initial">
+                    <Check size={18} className="mr-2 text-green-400" /> Connected
+                  </Button>
+                ) : peer.connection === 'SENT' ? (
                   <Button variant="navy" size="md" disabled className="flex-1 md:flex-initial">
                     <Check size={18} className="mr-2 text-green-400" /> Request Sent
                   </Button>
+                ) : peer.connection === 'RECEIVED' ? (
+                  <Link href="/peers" className="flex-1 md:flex-initial">
+                    <Button variant="primary" size="md" fullWidth>Respond to request</Button>
+                  </Link>
                 ) : (
                   <Button
                     variant="primary"

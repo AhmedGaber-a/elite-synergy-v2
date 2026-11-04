@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
+import { areConnected } from '@/lib/services/connections';
 
 export const dynamic = 'force-dynamic';
 
@@ -150,6 +151,13 @@ export async function POST(req: NextRequest) {
     const isMember = conversation.participants.some((p) => p.userId === authUser.id);
     if (!isMember) {
       return NextResponse.json({ error: 'Not a member of this conversation' }, { status: 403 });
+    }
+
+    if (!conversation.isGroup) {
+      const other = conversation.participants.find((p) => p.userId !== authUser.id);
+      if (other && !(await areConnected(authUser.id, other.userId))) {
+        return NextResponse.json({ error: 'لازم الزميل يقبل طلب التواصل الأول' }, { status: 403 });
+      }
     }
 
     const message = await prisma.message.create({

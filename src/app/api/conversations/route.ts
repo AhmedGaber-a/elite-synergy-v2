@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { ensureYearGroup } from '@/lib/services/yearGroups';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
+import { acceptedPeerIds, areConnected } from '@/lib/services/connections';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,7 +61,15 @@ export async function GET(req: NextRequest) {
       orderBy: { lastMessageAt: 'desc' },
     });
 
-    const formatted = conversations.map((conv) => {
+    // Only show 1-on-1 chats with students the viewer is actually connected to.
+    const accepted = await acceptedPeerIds(authUser.id);
+    const visible = conversations.filter((conv) => {
+      if (conv.isGroup) return true;
+      const other = conv.participants.find((p) => p.userId !== authUser.id);
+      return !!other && accepted.has(other.userId);
+    });
+
+    const formatted = visible.map((conv) => {
       const otherParticipant = conv.participants.find((p) => p.userId !== authUser.id)?.user;
       const isGroup = conv.isGroup;
       const times = formatArabicTimeAgo(conv.lastMessageAt || conv.createdAt);
@@ -124,6 +133,10 @@ export async function POST(req: NextRequest) {
     if (peerId) {
       if (peerId === authUser.id) {
         return NextResponse.json({ error: 'Cannot chat with yourself' }, { status: 400 });
+      }
+
+      if (!(await areConnected(authUser.id, peerId))) {
+        return NextResponse.json({ error: 'لازم الزميل يقبل طلب التواصل الأول' }, { status: 403 });
       }
 
       // Check if conversation already exists between these 2 users

@@ -58,7 +58,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(json);
   } catch (error) {
-    const status = error instanceof Error && error.message === 'UNAUTHORIZED' ? 401 : 400;
-    return NextResponse.json({ error: 'تعذر رفع الملف' }, { status });
+    const message = error instanceof Error ? error.message : 'unknown';
+    console.error('Community upload error:', message);
+    if (message === 'UNAUTHORIZED') {
+      return NextResponse.json({ error: 'سجّل دخولك الأول عشان ترفع ملف' }, { status: 401 });
+    }
+    if (message === 'BAD_KIND') {
+      return NextResponse.json({ error: 'نوع الملف غير مدعوم' }, { status: 400 });
+    }
+    return NextResponse.json({ error: `تعذر رفع الملف: ${message}` }, { status: 400 });
   }
 }

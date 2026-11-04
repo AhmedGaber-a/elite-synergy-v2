@@ -89,10 +89,6 @@ function MessagesContent() {
         const convList: ConversationItem[] = data.conversations || [];
         setConversations(convList);
 
-        // Auto-select first conversation if none selected
-        if (!activeId && convList.length > 0 && !idParam) {
-          setActiveId(convList[0].id);
-        }
       }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
@@ -102,9 +98,14 @@ function MessagesContent() {
   }, [activeId, idParam]);
 
   // Handle URL query navigation: open or create conversation
+  const handledParamRef = useRef<string | null>(null);
   useEffect(() => {
     async function handleUrlParam() {
       if (!idParam) return;
+      // Run once per link, so polling and tab changes don't reset the view.
+      const key = `${typeParam}:${idParam}`;
+      if (handledParamRef.current === key) return;
+      handledParamRef.current = key;
 
       // If idParam is a conversation ID that exists in list
       const existing = conversations.find((c) => c.id === idParam);
