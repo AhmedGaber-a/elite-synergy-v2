@@ -2,11 +2,11 @@
 // Post times are always shown in Cairo time, whatever the viewer's device timezone is.
 const CAIRO = 'Africa/Cairo';
 
-export function formatCairoDateTime(iso: string | Date | null | undefined): string {
+export function formatCairoDateTime(iso: string | Date | null | undefined, lang: 'ar' | 'en' = 'ar'): string {
   if (!iso) return '';
   const d = iso instanceof Date ? iso : new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('ar-EG', {
+  return d.toLocaleString(lang === 'en' ? 'en-US' : 'ar-EG', {
     timeZone: CAIRO,
     day: 'numeric',
     month: 'long',

@@ -133,7 +133,7 @@ function CreatePostModal({
   const [year, setYear] = useState<number | null>(user?.academicYear ?? null);
   const mediaTypeOfTab = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
   const kindOfTab: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
-  const kindLabel = activeTab === 'photo' ? 'صورة' : activeTab === 'video' ? 'فيديو' : 'ملف';
+  const kindLabel = activeTab === 'photo' ? t('upload.kind.image') : activeTab === 'video' ? t('upload.kind.video') : t('upload.kind.file');
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -150,7 +150,7 @@ function CreatePostModal({
     setFileName(f.name);
     setPendingFile(f);
     if (kind === 'image') {
-      resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
+      resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError(t('community.readFail')));
     } else {
       setFilePreview(URL.createObjectURL(f));
     }
@@ -160,11 +160,11 @@ function CreatePostModal({
     if (!text.trim() && !filePreview) return;
     setError('');
     if (user && user.userRole === 'STUDENT' && !user.academicYear) {
-      setError('سجّل سنتك الدراسية الأول');
+      setError(t('community.setYearFirst'));
       return;
     }
     if (isStaff && !year) {
-      setError('اختار السنة الدراسية للمنشور');
+      setError(t('community.chooseYear'));
       return;
     }
 
@@ -188,7 +188,7 @@ function CreatePostModal({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل نشر المنشور');
+      if (!res.ok) throw new Error(data.error || t('community.postFail'));
       return data;
     };
 
@@ -210,7 +210,7 @@ function CreatePostModal({
       onPostCreated(data);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ في الاتصال بالخادم');
+      setError(err instanceof Error ? err.message : t('community.serverErr'));
     } finally {
       setLoading(false);
     }
@@ -246,13 +246,13 @@ function CreatePostModal({
 
           {isStaff && (
             <div className="mb-4">
-              <label className="block text-xs font-bold text-text-muted mb-1.5">السنة الدراسية للمنشور</label>
+              <label className="block text-xs font-bold text-text-muted mb-1.5">{t('community.selectYear')}</label>
               <select
                 value={year ?? ''}
                 onChange={(e) => setYear(Number(e.target.value) || null)}
                 className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-white"
               >
-                <option value="">اختار السنة</option>
+                <option value="">{t('year.choose')}</option>
                 {[1, 2, 3, 4, 5].map((y) => (
                   <option key={y} value={y}>{YEAR_NAMES_AR[y]}</option>
                 ))}
@@ -266,7 +266,7 @@ function CreatePostModal({
               <Avatar name={user.name} avatarType={user.avatarType} src={user.avatar || user.avatarUrl || ''} size="md" />
               <div>
                 <p className="font-bold text-sm text-text-primary">{user.fullName || user.name}</p>
-                <p className="text-xs text-text-muted">{user.college || 'Student'}</p>
+                <p className="text-xs text-text-muted">{user.college || t('community.studentFallback')}</p>
               </div>
             </div>
           )}
@@ -291,7 +291,7 @@ function CreatePostModal({
                 <div className="relative">
                   {activeTab === 'photo' && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={filePreview} alt="Preview" className="max-h-[240px] w-full object-contain mx-auto rounded-xl" />
+                    <img src={filePreview} alt={t('community.previewAlt')} className="max-h-[240px] w-full object-contain mx-auto rounded-xl" />
                   )}
                   {activeTab === 'video' && (
                     <video controls src={filePreview} className="max-h-[240px] w-full object-contain mx-auto rounded-xl bg-black" />
@@ -300,8 +300,8 @@ function CreatePostModal({
                     <div className="flex items-center justify-center gap-3 py-4 text-brand-navy">
                       <FileText size={32} className="text-brand-orange" />
                       <div className="text-start">
-                        <p className="text-xs font-bold truncate max-w-xs">{fileName || 'Attached Document'}</p>
-                        <span className="text-[10px] text-gray-500">جاهز للمشاركة</span>
+                        <p className="text-xs font-bold truncate max-w-xs">{fileName || t('community.attachedDoc')}</p>
+                        <span className="text-[10px] text-gray-500">{t('community.readyShare')}</span>
                       </div>
                     </div>
                   )}
@@ -322,9 +322,9 @@ function CreatePostModal({
                 <div className="flex flex-col items-center gap-2 text-gray-400">
                   <Upload size={28} />
                   <p className="text-sm font-medium">
-                    {activeTab === 'photo' ? 'اضغط لرفع صورة من جهازك' : activeTab === 'video' ? 'اضغط لرفع مقطع فيديو' : 'اضغط لاختيار ملف (PDF, Word, Code)'}
+                    {activeTab === 'photo' ? t('community.pickImage') : activeTab === 'video' ? t('community.pickVideo') : t('community.pickFile')}
                   </p>
-                  <p className="text-xs text-text-muted">الحد الأقصى المسموح 4 ميجابايت</p>
+                  <p className="text-xs text-text-muted">{t('community.maxSize')}</p>
                 </div>
               )}
               <input
@@ -400,7 +400,7 @@ function EditPostModal({
   const { enqueue } = useUploadQueue();
   const mediaTypeOfTab = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
   const kindOfTab: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
-  const kindLabel = activeTab === 'photo' ? 'صورة' : activeTab === 'video' ? 'فيديو' : 'ملف';
+  const kindLabel = activeTab === 'photo' ? t('upload.kind.image') : activeTab === 'video' ? t('upload.kind.video') : t('upload.kind.file');
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -417,7 +417,7 @@ function EditPostModal({
     setFileName(f.name);
     setPendingFile(f);
     if (kind === 'image') {
-      resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError('تعذر قراءة الملف'));
+      resizeImageToDataUrl(f, 1280, 0.8).then(setFilePreview).catch(() => setError(t('community.readFail')));
     } else {
       setFilePreview(URL.createObjectURL(f));
     }
@@ -445,7 +445,7 @@ function EditPostModal({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل حفظ التعديلات');
+      if (!res.ok) throw new Error(data.error || t('community.saveFail'));
       return data;
     };
 
@@ -462,7 +462,7 @@ function EditPostModal({
       onPostUpdated(data);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ في الاتصال بالخادم');
+      setError(err instanceof Error ? err.message : t('community.serverErr'));
     } finally {
       setLoading(false);
     }
@@ -479,7 +479,7 @@ function EditPostModal({
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 flex flex-col max-h-[85vh]">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
           <h2 className="text-lg font-extrabold text-text-primary flex items-center gap-2">
-            <Pencil size={18} className="text-brand-orange" /> تعديل المنشور
+            <Pencil size={18} className="text-brand-orange" /> {t('community.editPost')}
           </h2>
           <button onClick={onClose} className="p-2 text-text-muted hover:text-text-primary hover:bg-gray-100 rounded-full transition-colors">
             <X size={20} />
@@ -512,7 +512,7 @@ function EditPostModal({
                 <div className="relative">
                   {activeTab === 'photo' && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={filePreview} alt="Preview" className="max-h-[240px] w-full object-contain mx-auto rounded-xl" />
+                    <img src={filePreview} alt={t('community.previewAlt')} className="max-h-[240px] w-full object-contain mx-auto rounded-xl" />
                   )}
                   {activeTab === 'video' && (
                     <video controls src={filePreview} className="max-h-[240px] w-full object-contain mx-auto rounded-xl bg-black" />
@@ -521,8 +521,8 @@ function EditPostModal({
                     <div className="flex items-center justify-center gap-3 py-4 text-brand-navy">
                       <FileText size={32} className="text-brand-orange" />
                       <div className="text-start">
-                        <p className="text-xs font-bold truncate max-w-xs">{fileName || 'Attached Document'}</p>
-                        <span className="text-[10px] text-gray-500">جاهز للتعديل</span>
+                        <p className="text-xs font-bold truncate max-w-xs">{fileName || t('community.attachedDoc')}</p>
+                        <span className="text-[10px] text-gray-500">{t('community.readyEdit')}</span>
                       </div>
                     </div>
                   )}
@@ -542,8 +542,8 @@ function EditPostModal({
               ) : (
                 <div className="flex flex-col items-center gap-2 text-gray-400">
                   <Upload size={28} />
-                  <p className="text-sm font-medium">اضغط لتغيير أو رفع مرفق جديد</p>
-                  <p className="text-xs text-text-muted">الحد الأقصى المسموح 4 ميجابايت</p>
+                  <p className="text-sm font-medium">{t('community.changeAttach')}</p>
+                  <p className="text-xs text-text-muted">{t('community.maxSize')}</p>
                 </div>
               )}
               <input
@@ -584,7 +584,7 @@ function EditPostModal({
             isLoading={loading}
             disabled={!text.trim() && !filePreview}
           >
-            حفظ التعديلات
+            {t('community.saveEdits')}
           </Button>
         </div>
       </div>
@@ -604,6 +604,7 @@ function SharePostModal({
   onPostShared: (newPost: PostItem) => void;
   onShowToast: (msg: string) => void;
 }) {
+  const { t } = useLanguage();
   const [shareDestination, setShareDestination] = useState<'community' | 'chat'>('community');
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
@@ -644,11 +645,11 @@ function SharePostModal({
       if (res.ok) {
         const newPost = await res.json();
         onPostShared(newPost);
-        onShowToast('تمت مشاركة المنشور في المجتمع بنجاح!');
+        onShowToast(t('community.sharedOk'));
         onClose();
       }
     } catch {
-      onShowToast('حدث خطأ أثناء المشاركة');
+      onShowToast(t('community.shareFail'));
     } finally {
       setLoading(false);
     }
@@ -663,17 +664,17 @@ function SharePostModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: selectedConvId,
-          text: caption.trim() || 'شارك معك هذا المنشور من المجتمع',
+          text: caption.trim() || t('community.sharedMsg'),
           sharedPostId: post.id,
         }),
       });
 
       if (res.ok) {
-        onShowToast('تم إرسال المنشور في المحادثة بنجاح!');
+        onShowToast(t('community.sentChatOk'));
         onClose();
       }
     } catch {
-      onShowToast('حدث خطأ أثناء إرسال المنشور');
+      onShowToast(t('community.sendChatFail'));
     } finally {
       setLoading(false);
     }
@@ -685,7 +686,7 @@ function SharePostModal({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
-      onShowToast('تم نسخ رابط المنشور');
+      onShowToast(t('community.linkCopied'));
     } catch {
       // ignore
     }
@@ -698,7 +699,7 @@ function SharePostModal({
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
           <div className="flex items-center gap-2">
             <Share2 size={18} className="text-brand-orange" />
-            <h2 className="text-lg font-extrabold text-text-primary">مشاركة المنشور</h2>
+            <h2 className="text-lg font-extrabold text-text-primary">{t('community.sharePostTitle')}</h2>
           </div>
           <button onClick={onClose} className="p-2 text-text-muted hover:text-text-primary hover:bg-gray-100 rounded-full transition-colors">
             <X size={20} />
@@ -717,7 +718,7 @@ function SharePostModal({
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              إعادة النشر في المجتمع
+              {t('community.repost')}
             </button>
             <button
               type="button"
@@ -728,20 +729,20 @@ function SharePostModal({
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              إرسال في محادثة خاصة / فريق
+              {t('community.sendPrivate')}
             </button>
           </div>
 
           {/* Caption Input */}
           <div>
             <label className="block text-xs font-bold text-text-primary mb-1.5">
-              {shareDestination === 'community' ? 'أضف تعليقك على المنشور (اختياري)' : 'رسالة مرافقة (اختياري)'}
+              {shareDestination === 'community' ? t('community.addComment') : t('community.companionMsg')}
             </label>
             <textarea
               rows={2}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="اكتب أفكارك أو ملاحظاتك هنا..."
+              placeholder={t('community.sharePh')}
               className="w-full text-xs md:text-sm p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-gray-50 outline-none"
             />
           </div>
@@ -749,10 +750,10 @@ function SharePostModal({
           {/* Select Conversation when sending to Chat */}
           {shareDestination === 'chat' && (
             <div>
-              <label className="block text-xs font-bold text-text-primary mb-1.5">اختر الزميل أو المحادثة المستهدفة</label>
+              <label className="block text-xs font-bold text-text-primary mb-1.5">{t('community.pickConv')}</label>
               {conversations.length === 0 ? (
                 <p className="text-xs text-text-muted bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  لا توجد محادثات نشطة حالياً. يمكنك تواصل مع الزملاء عبر قسم Peers أولاً.
+                  {t('community.noConv')}
                 </p>
               ) : (
                 <select
@@ -772,7 +773,7 @@ function SharePostModal({
 
           {/* Post Preview Box */}
           <div className="border border-gray-200 rounded-2xl p-3 bg-gray-50/60 text-xs">
-            <p className="text-[10px] font-bold text-text-muted uppercase mb-1.5">معاينة المنشور الأصلي</p>
+            <p className="text-[10px] font-bold text-text-muted uppercase mb-1.5">{t('community.originalPreview')}</p>
             <div className="flex items-center gap-2 mb-2">
               <Avatar src={post.authorAvatar} avatarType={post.authorAvatarType} name={post.author} size="xs" />
               <div>
@@ -783,7 +784,7 @@ function SharePostModal({
             <p className="text-text-body line-clamp-3 leading-relaxed mb-2">{post.content}</p>
             {post.mediaUrl && post.mediaType === 'image' && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={post.mediaUrl} alt="Thumbnail" className="w-full h-24 object-cover rounded-xl" />
+              <img src={post.mediaUrl} alt={t('community.thumbAlt')} className="w-full h-24 object-cover rounded-xl" />
             )}
           </div>
 
@@ -795,7 +796,7 @@ function SharePostModal({
               className="text-brand-orange hover:underline font-bold flex items-center gap-1.5"
             >
               {copiedLink ? <Check size={14} className="text-green-600" /> : <Share2 size={14} />}
-              <span>{copiedLink ? 'تم نسخ الرابط!' : 'نسخ رابط المنشور المباشر'}</span>
+              <span>{copiedLink ? t('community.linkCopiedShort') : t('community.copyLink')}</span>
             </button>
           </div>
         </div>
@@ -803,7 +804,7 @@ function SharePostModal({
         {/* Footer */}
         <div className="px-5 py-4 flex items-center justify-end gap-3 border-t border-gray-100 shrink-0 bg-white">
           <Button variant="ghost" size="sm" className="rounded-full" onClick={onClose}>
-            إلغاء
+            {t('common.cancel')}
           </Button>
           <Button
             variant="primary"
@@ -813,7 +814,7 @@ function SharePostModal({
             isLoading={loading}
             disabled={shareDestination === 'chat' && !selectedConvId}
           >
-            {shareDestination === 'community' ? 'مشاركة الآن في المجتمع' : 'إرسال في المحادثة'}
+            {shareDestination === 'community' ? t('community.shareNow') : t('community.sendInChat')}
           </Button>
         </div>
       </div>
@@ -839,7 +840,7 @@ function PostCard({
   onShare: (post: PostItem) => void;
   onShowToast: (msg: string) => void;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [liked, setLiked] = useState(
     currentUser ? post.likes.includes(currentUser.name) : false
   );
@@ -895,9 +896,9 @@ function PostCard({
   };
 
   const handleDelete = async () => {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا المنشور؟ سيتم الحذف نهائياً.')) return;
+    if (!confirm(t('community.confirmDelete'))) return;
     onDelete(post.id); // optimistic removal
-    onShowToast('تم حذف المنشور');
+    onShowToast(t('community.deleted'));
 
     try {
       await fetch(`/api/community/${post.id}`, {
@@ -976,7 +977,7 @@ function PostCard({
             )
           );
           setReplyingToCommentId(null);
-          onShowToast('تمت إضافة الرد بنجاح');
+          onShowToast(t('community.replyOk'));
         }
       }
     } catch (err) {
@@ -1041,13 +1042,13 @@ function PostCard({
           <div className="min-w-0">
             <p className="font-bold text-base text-text-primary truncate">{post.author}</p>
             <div className="flex items-center gap-2 text-xs text-text-muted flex-wrap">
-              <span>{post.role || 'طالب في المنصة'}</span>
+              <span>{post.role || t('community.defaultRole')}</span>
               <span>·</span>
               <span title={postTimes.exact} className="text-brand-orange font-medium">
                 {postTimes.relative}
               </span>
               <span>·</span>
-              <span dir="rtl">{formatCairoDateTime(post.createdAt) || postTimes.exact}</span>
+              <span dir="rtl">{formatCairoDateTime(post.createdAt, lang) || postTimes.exact}</span>
               {showYearBadge && post.academicYear && (
                 <span className="px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy font-bold">
                   {YEAR_NAMES_AR[post.academicYear]}
@@ -1062,18 +1063,18 @@ function PostCard({
             <button
               onClick={() => onEdit(post)}
               className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-text-muted hover:text-brand-orange hover:bg-orange-50 rounded-xl transition-all border border-transparent hover:border-orange-200"
-              title="تعديل المنشور"
+              title={t('community.editPost')}
             >
               <Pencil size={13} />
-              <span>تعديل</span>
+              <span>{t('community.edit')}</span>
             </button>
             <button
               onClick={handleDelete}
               className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-200"
-              title="حذف المنشور"
+              title={t('community.deletePost')}
             >
               <Trash2 size={13} />
-              <span>حذف</span>
+              <span>{t('community.delete')}</span>
             </button>
           </div>
         )}
@@ -1099,7 +1100,7 @@ function PostCard({
             <div className="min-w-0">
               <p className="font-bold text-xs text-text-primary">{post.sharedPost.author}</p>
               <p className="text-[10px] text-text-muted">
-                {post.sharedPost.role} · {post.sharedPost.timeAgoAr || 'منذ فترة'}
+                {post.sharedPost.role} · {post.sharedPost.timeAgoAr || t('community.someTimeAgo')}
               </p>
             </div>
           </div>
@@ -1111,7 +1112,7 @@ function PostCard({
           {post.sharedPost.mediaType === 'image' && post.sharedPost.mediaUrl && (
             <div className="w-full max-h-72 bg-gray-50 rounded-xl overflow-hidden relative border border-gray-100 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.sharedPost.mediaUrl} alt="Shared Attachment" className="w-full h-auto max-h-72 object-contain rounded-xl" />
+              <img src={post.sharedPost.mediaUrl} alt={t('community.sharedAttachAlt')} className="w-full h-auto max-h-72 object-contain rounded-xl" />
             </div>
           )}
 
@@ -1127,7 +1128,7 @@ function PostCard({
       {post.mediaType === 'image' && post.mediaUrl && (
         <div className="w-full max-h-96 bg-gray-50 rounded-2xl mb-4 overflow-hidden relative border border-gray-100 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.mediaUrl} alt="Post Attachment" className="w-full h-auto max-h-96 object-contain rounded-2xl" />
+          <img src={post.mediaUrl} alt={t('community.postAttachAlt')} className="w-full h-auto max-h-96 object-contain rounded-2xl" />
         </div>
       )}
 
@@ -1151,8 +1152,8 @@ function PostCard({
             <FileText size={20} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-text-primary truncate">{post.fileName || 'ملف مرفق (Attachment)'}</p>
-            <span className="text-[10px] text-text-muted">اضغط للتحميل أو المعاينة</span>
+            <p className="text-xs font-bold text-text-primary truncate">{post.fileName || t('community.attachment')}</p>
+            <span className="text-[10px] text-text-muted">{t('community.tapDownload')}</span>
           </div>
           <Download size={16} className="text-gray-400 group-hover:text-brand-orange transition-colors" />
         </a>
@@ -1179,10 +1180,10 @@ function PostCard({
         <button
           onClick={() => onShare(post)}
           className="flex items-center gap-1.5 hover:text-brand-orange transition-colors ms-auto font-semibold"
-          title="مشاركة المنشور داخلياً"
+          title={t('community.shareInternal')}
         >
           <Share2 size={18} />
-          <span>مشاركة</span>
+          <span>{t('community.share')}</span>
         </button>
       </div>
 
@@ -1224,7 +1225,7 @@ function PostCard({
                                   className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[11px] hover:scale-125 transition-transform ${
                                     userReacted ? 'bg-orange-100 rounded-full' : ''
                                   }`}
-                                  title={`تفاعل بـ ${emoji}`}
+                                  title={`${t('community.reactWith')} ${emoji}`}
                                 >
                                   <span>{emoji}</span>
                                   {count > 0 && <span className="text-[10px] font-bold text-text-primary">{count}</span>}
@@ -1242,7 +1243,7 @@ function PostCard({
                             className="hover:text-brand-orange font-semibold text-[11px] flex items-center gap-1"
                           >
                             <CornerDownRight size={12} />
-                            <span>رد</span>
+                            <span>{t('community.reply')}</span>
                           </button>
                         </div>
                       </div>
@@ -1302,7 +1303,7 @@ function PostCard({
                           <input
                             autoFocus
                             className="w-full text-xs border border-gray-200 rounded-full ps-3.5 pe-10 py-2 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-white"
-                            placeholder={`اكتب رداً على ${c.author}...`}
+                            placeholder={`${t('community.replyTo')} ${c.author}...`}
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && submitReply(c.id)}
@@ -1319,7 +1320,7 @@ function PostCard({
                           onClick={() => setReplyingToCommentId(null)}
                           className="text-gray-400 hover:text-gray-600 text-xs px-2"
                         >
-                          إلغاء
+                          {t('common.cancel')}
                         </button>
                       </div>
                     )}
@@ -1360,7 +1361,7 @@ function PostCard({
 // ─── Main Community Page ─────────────────────────────────────────────────────
 export default function CommunityPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   // Each department has its own community; "GENERAL" is the shared one for everyone.
   const myDepartment = departmentOf(user?.college);
@@ -1415,12 +1416,12 @@ export default function CommunityPage() {
 
   const handlePostCreated = (newPost: PostItem) => {
     setPosts((prev) => [newPost, ...prev.filter((p) => p.id !== newPost.id)]);
-    showToast('تم نشر منشورك بنجاح!');
+    showToast(t('community.postedOk'));
   };
 
   const handlePostUpdated = (updatedPost: PostItem) => {
     setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
-    showToast('تم حفظ التعديلات بنجاح');
+    showToast(t('community.editedOk'));
   };
 
   const handlePostDeleted = (postId: string) => {
@@ -1483,12 +1484,12 @@ export default function CommunityPage() {
                     <div className="mt-4 pt-4 border-t border-gray-100 flex justify-around text-center">
                       <div>
                         <span className="block font-black text-sm text-text-primary">{user.points || 0}</span>
-                        <span className="text-[10px] text-text-muted uppercase font-bold">Points</span>
+                        <span className="text-[10px] text-text-muted uppercase font-bold">{t('common.points')}</span>
                       </div>
                       <div className="h-8 w-px bg-gray-100" />
                       <div>
                         <span className="block font-black text-sm text-text-primary">{user.skills?.length || 0}</span>
-                        <span className="text-[10px] text-text-muted uppercase font-bold">Skills</span>
+                        <span className="text-[10px] text-text-muted uppercase font-bold">{t('common.skills')}</span>
                       </div>
                     </div>
                   </div>
@@ -1497,8 +1498,8 @@ export default function CommunityPage() {
                     <div className="w-12 h-12 bg-orange-50 text-brand-orange rounded-2xl flex items-center justify-center mx-auto mb-3">
                       <Users size={22} />
                     </div>
-                    <h4 className="font-extrabold text-sm text-text-primary mb-1">Student Community</h4>
-                    <p className="text-xs text-text-muted mb-4">Join conversations and connect with fellow academic peers.</p>
+                    <h4 className="font-extrabold text-sm text-text-primary mb-1">{t('community.studentCommunity')}</h4>
+                    <p className="text-xs text-text-muted mb-4">{t('community.joinDesc')}</p>
                     <Link href="/auth/login">
                       <Button variant="primary" size="sm" fullWidth className="rounded-xl font-bold">
                         Sign In to Post
@@ -1508,14 +1509,14 @@ export default function CommunityPage() {
                 )}
 
                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-                  <h3 className="font-bold text-text-primary mb-3 text-sm px-2">Academic Hubs</h3>
+                  <h3 className="font-bold text-text-primary mb-3 text-sm px-2">{t('community.academicHubs')}</h3>
                   <div className="space-y-1.5">
                     <Link href="/peers" className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-text-body hover:bg-orange-50 hover:text-brand-orange transition-colors">
-                      <span>Verified Peers Directory</span>
+                      <span>{t('community.peersDir')}</span>
                       <span>→</span>
                     </Link>
                     <Link href="/practical" className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-text-body hover:bg-orange-50 hover:text-brand-orange transition-colors">
-                      <span>Practical Projects</span>
+                      <span>{t('community.practicalProjects')}</span>
                       <span>→</span>
                     </Link>
                   </div>
@@ -1572,7 +1573,7 @@ export default function CommunityPage() {
                           : 'bg-white text-text-body border border-gray-100 hover:bg-orange-50'
                       }`}
                     >
-                      مجتمع {getDepartment(myDepartment)?.labelAr ?? user?.college}
+                      {t('community.hub')} {lang === 'en' ? (getDepartment(myDepartment)?.label ?? user?.college) : (getDepartment(myDepartment)?.labelAr ?? user?.college)}
                     </button>
                   )}
                   <button
@@ -1583,7 +1584,7 @@ export default function CommunityPage() {
                         : 'bg-white text-text-body border border-gray-100 hover:bg-orange-50'
                     }`}
                   >
-                    المجتمع الشامل (كل الأقسام)
+                    {t('community.allDepts')}
                   </button>
                 </div>
               )}
@@ -1592,7 +1593,7 @@ export default function CommunityPage() {
               {loading ? (
                 <div className="py-20 text-center">
                   <div className="w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-xs font-bold text-text-muted">Loading community discussions...</p>
+                  <p className="text-xs font-bold text-text-muted">{t('community.loadingDisc')}</p>
                 </div>
               ) : !isAuthenticated ? (
                 /* Unauthenticated View */
@@ -1601,14 +1602,14 @@ export default function CommunityPage() {
                     🔒
                   </div>
                   <h3 className="text-xl font-extrabold text-text-primary mb-2">
-                    مجتمع طلابي أكاديمي مغلق
+                    {t('community.closed')}
                   </h3>
                   <p className="text-sm text-text-muted max-w-md mx-auto mb-6 leading-relaxed">
-                    محتوى هذا المجتمع مخصص لطلاب الكلية المسجلين والمفعلين رسمياً. يرجى تسجيل الدخول بحسابك الجامعي لعرض المنشورات والتفاعل مع زملائك.
+                    {t('community.closedDesc')}
                   </p>
                   <Link href="/auth/login">
                     <Button variant="primary" size="md" className="rounded-xl px-6 font-bold">
-                      تسجيل الدخول الآن
+                      {t('community.loginNow')}
                     </Button>
                   </Link>
                 </div>
@@ -1619,10 +1620,10 @@ export default function CommunityPage() {
                     💬
                   </div>
                   <h3 className="text-xl font-extrabold text-text-primary mb-2">
-                    لا توجد منشورات في المجتمع حالياً (0 Posts)
+                    {t('community.empty')} 
                   </h3>
                   <p className="text-sm text-text-muted max-w-md mx-auto mb-6 leading-relaxed">
-                    كن أول من يشارك أفكاره الأكاديمية أو يطرح استفساراته لزملائه في مختلف التخصصات!
+                    {t('community.emptyDesc')}
                   </p>
                   <Button
                     variant="primary"
@@ -1630,7 +1631,7 @@ export default function CommunityPage() {
                     className="rounded-xl px-6 font-bold"
                     onClick={() => setModalOpen(true)}
                   >
-                    <Plus size={16} className="me-1.5" /> إنشاء أول منشور الآن
+                    <Plus size={16} className="me-1.5" /> {t('community.createFirst')}
                   </Button>
                 </div>
               ) : (
@@ -1642,7 +1643,7 @@ export default function CommunityPage() {
                       onChange={(e) => setYearFilter(Number(e.target.value) || null)}
                       className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold bg-white"
                     >
-                      <option value="">كل السنوات</option>
+                      <option value="">{t('community.allYears')}</option>
                       {[1, 2, 3, 4, 5].map((y) => (
                         <option key={y} value={y}>{YEAR_NAMES_AR[y]}</option>
                       ))}
@@ -1673,7 +1674,7 @@ export default function CommunityPage() {
                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles size={16} className="text-brand-orange" />
-                    <h3 className="font-bold text-text-primary text-sm">Academic Guidelines</h3>
+                    <h3 className="font-bold text-text-primary text-sm">{t('community.guidelines')}</h3>
                   </div>
                   <p className="text-xs text-text-muted leading-relaxed">
                     Share helpful academic resources, project milestones, and collaborate constructively across disciplines.
