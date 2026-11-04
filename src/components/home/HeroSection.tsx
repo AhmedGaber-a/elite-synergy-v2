@@ -30,11 +30,11 @@ export function HeroSection() {
                 <p className="text-brand-orange font-bold text-sm md:text-base mb-2 uppercase tracking-wider">
                   {lang === 'ar' ? `منور يا ${user?.name}!` : `Welcome back, ${user?.name}!`}
                 </p>
-                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.45] mb-4">
+                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.75] mb-6">
                   {t('home.heroTitle')}{' '}
                   <span className="text-brand-orange">{t('home.heroTitleHighlight')}</span>
                 </h1>
-                <p className="text-text-body text-base md:text-lg mb-4 max-w-lg leading-relaxed">
+                <p className="text-text-body text-base md:text-lg mb-6 max-w-lg leading-[1.9]">
                   {t('home.heroSubtitle')}
                 </p>
                 {user?.skills && user.skills.length > 0 && (
@@ -52,7 +52,7 @@ export function HeroSection() {
               </>
             ) : (
               <>
-                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.45] mb-4">
+                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.75] mb-6">
                   {lang === 'ar' ? (
                     <>
                       ابني مستقبلك مع <span className="text-brand-orange">إيليت سينرجي</span>
@@ -63,13 +63,13 @@ export function HeroSection() {
                     </>
                   )}
                 </h1>
-                <p className="text-text-body text-sm md:text-base mb-6 leading-relaxed max-w-lg">
+                <p className="text-text-body text-sm md:text-base mb-10 leading-[1.9] max-w-lg">
                   {t('home.heroSubtitle')}
                 </p>
               </>
             )}
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 mt-2">
               {isAuthenticated ? (
                 <>
                   <Link href="/practical">
