@@ -96,13 +96,13 @@ export default function CVPage() {
         {/* Navigation */}
         <div className="flex justify-between items-center border-t border-gray-200 pt-6">
           <Button variant="ghost" onClick={() => router.push('/onboarding/projects')}>
-            <ArrowLeft size={16} className="mr-2" /> Back
+            <ArrowLeft size={16} className="me-2 rtl:rotate-180" /> Back
           </Button>
           <Button 
             variant={cvFile ? 'primary' : 'outline'} 
             onClick={handleNext}
           >
-            {cvFile ? 'Continue' : 'Skip Step'} <ArrowRight size={16} className="ml-2" />
+            {cvFile ? 'Continue' : 'Skip Step'} <ArrowRight size={16} className="ms-2 rtl:rotate-180" />
           </Button>
         </div>
       </div>

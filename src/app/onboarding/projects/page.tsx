@@ -152,14 +152,14 @@ export default function ProjectsPage() {
         {/* Nav */}
         <div className="flex justify-between items-center border-t border-gray-200 pt-6">
           <Button variant="ghost" onClick={() => router.push('/onboarding/skills')}>
-            <ArrowLeft size={16} className="mr-2" /> {t('onbProj.back')}
+            <ArrowLeft size={16} className="me-2 rtl:rotate-180" /> {t('onbProj.back')}
           </Button>
           <Button 
             variant={hasProjects === false ? 'outline' : 'primary'} 
             onClick={handleNext}
             disabled={hasProjects === null}
           >
-            {hasProjects === false ? t('onbProj.skip') : t('onbProj.continue')} <ArrowRight size={16} className="ml-2" />
+            {hasProjects === false ? t('onbProj.skip') : t('onbProj.continue')} <ArrowRight size={16} className="ms-2 rtl:rotate-180" />
           </Button>
         </div>
       </div>

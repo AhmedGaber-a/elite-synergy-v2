@@ -38,6 +38,11 @@ export default function SkillsPage() {
     router.push('/onboarding/projects')
   }
 
+  const handleSkip = () => {
+    updateState({ skills: [], customSkill: '' })
+    router.push('/onboarding/projects')
+  }
+
   return (
     <div className="min-h-screen bg-bg-cream flex flex-col items-center px-4 py-12">
       <div className="w-full max-w-4xl">
@@ -101,17 +106,22 @@ export default function SkillsPage() {
         </div>
 
         {/* Nav */}
-        <div className="flex justify-between items-center border-t border-gray-200 pt-6">
+        <div className="flex flex-wrap justify-between items-center gap-3 border-t border-gray-200 pt-6">
           <Button variant="ghost" onClick={() => router.push('/onboarding/register')}>
-            <ArrowLeft size={16} className="mr-2" /> Back
+            <ArrowLeft size={16} className="me-2 rtl:rotate-180" /> Back
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleNext} 
-            disabled={selected.length === 0 && !customSkill.trim()}
-          >
-            Continue <ArrowRight size={16} className="ml-2" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={handleSkip}>
+              Skip
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleNext}
+              disabled={selected.length === 0 && !customSkill.trim()}
+            >
+              Continue <ArrowRight size={16} className="ms-2 rtl:rotate-180" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

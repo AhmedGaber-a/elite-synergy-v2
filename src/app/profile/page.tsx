@@ -588,17 +588,20 @@ export default function ProfilePage() {
   };
 
   const handleQuickAddSkill = async () => {
-    if (!newSkillInput.trim()) return;
+    const skill = newSkillInput.trim();
+    if (!skill) return;
     try {
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_skill', skill: newSkillInput.trim() }),
+        body: JSON.stringify({ action: 'add_skill', skill }),
       });
       if (res.ok) {
+        // Keep the box open and clear it, so several skills can be added in a row.
         setNewSkillInput('');
-        setAddSkillPrompt(false);
         await loadProfile();
+      } else {
+        console.error('Failed to add skill: HTTP', res.status);
       }
     } catch (err) {
       console.error('Failed to add skill:', err);
@@ -742,6 +745,12 @@ export default function ProfilePage() {
                       <input
                         value={newSkillInput}
                         onChange={(e) => setNewSkillInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleQuickAddSkill();
+                          }
+                        }}
                         placeholder="Skill name..."
                         className="w-full px-2.5 py-1 text-xs rounded-lg bg-white/10 text-white border border-white/20 focus:outline-none"
                       />

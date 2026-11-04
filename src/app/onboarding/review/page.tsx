@@ -165,7 +165,7 @@ export default function ReviewPage() {
         {/* Navigation */}
         <div className="flex justify-between items-center border-t border-gray-200 pt-6">
           <Button variant="ghost" onClick={() => router.push('/onboarding/cv')}>
-            <ArrowLeft size={16} className="mr-2" /> {t('onbRev.back')}
+            <ArrowLeft size={16} className="me-2 rtl:rotate-180" /> {t('onbRev.back')}
           </Button>
           <Button
             variant="primary"
