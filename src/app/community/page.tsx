@@ -16,7 +16,9 @@ import { CommunityKey, GENERAL_COMMUNITY, departmentOf, getDepartment } from '@/
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
-import { checkUploadSize, uploadCommunityFile, type UploadKind } from '@/lib/utils/communityUpload';
+import { checkUploadSize, type UploadKind } from '@/lib/utils/communityUpload';
+import { COMMUNITY_CHANGED_EVENT, useUploadQueue } from '@/lib/context/UploadQueueContext';
+import { formatCairoDateTime, YEAR_NAMES_AR } from '@/lib/utils/cairoDate';
 
 export interface CommentReactionItem {
   id?: string;
@@ -57,6 +59,7 @@ export interface PostCommentItem {
 }
 
 export interface PostItem {
+  academicYear?: number | null;
   id: string;
   authorId?: string;
   author: string;
@@ -125,6 +128,12 @@ function CreatePostModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const { enqueue } = useUploadQueue();
+  const isStaff = !!user && user.userRole !== 'STUDENT';
+  const [year, setYear] = useState<number | null>(user?.academicYear ?? null);
+  const mediaTypeOfTab = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
+  const kindOfTab: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
+  const kindLabel = activeTab === 'photo' ? 'صورة' : activeTab === 'video' ? 'فيديو' : 'ملف';
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -147,24 +156,23 @@ function CreatePostModal({
     }
   };
 
-  // Uploads the chosen file (if any) and returns its URL; an existing URL is kept as is.
-  const resolveMediaUrl = async (): Promise<string | null> => {
-    const kind: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
-    if (pendingFile && kind) return uploadCommunityFile(pendingFile, kind);
-    return filePreview && !filePreview.startsWith('data:') && !filePreview.startsWith('blob:') ? filePreview : null;
-  };
-
   const submit = async () => {
     if (!text.trim() && !filePreview) return;
-    setLoading(true);
     setError('');
+    if (user && user.userRole === 'STUDENT' && !user.academicYear) {
+      setError('سجّل سنتك الدراسية الأول');
+      return;
+    }
+    if (isStaff && !year) {
+      setError('اختار السنة الدراسية للمنشور');
+      return;
+    }
 
-    try {
-      const mediaUrl = await resolveMediaUrl();
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
+    const saveToFeed = async (mediaUrl: string | null) => {
       const res = await fetch('/api/community', {
         method: 'POST',
         headers,
@@ -172,31 +180,37 @@ function CreatePostModal({
         body: JSON.stringify({
           content: text.trim(),
           community,
-          mediaType: activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null,
+          academicYear: isStaff ? year : undefined,
+          mediaType: mediaTypeOfTab,
           mediaUrl,
           fileName: fileName || null,
           fileUrl: activeTab === 'file' ? mediaUrl : null,
         }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'فشل نشر المنشور');
-        return;
-      }
+      if (!res.ok) throw new Error(data.error || 'فشل نشر المنشور');
+      return data;
+    };
 
+    // With a file: the dialog closes now. The upload and the post run in the background (see UploadBar).
+    if (pendingFile && kindOfTab) {
+      enqueue({ label: kindLabel, file: pendingFile, kind: kindOfTab, submit: saveToFeed });
+      onClose();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await saveToFeed(null);
       setText('');
       setFilePreview(null); setPendingFile(null);
       setFileName('');
       setActiveTab('text');
-      if (fileRef.current) {
-        fileRef.current.value = '';
-      }
-
+      if (fileRef.current) fileRef.current.value = '';
       onPostCreated(data);
       onClose();
     } catch (err) {
-      setError(err instanceof Error && err.message.startsWith('تعذر رفع') ? err.message : 'حدث خطأ في الاتصال بالخادم');
+      setError(err instanceof Error ? err.message : 'حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
@@ -227,6 +241,22 @@ function CreatePostModal({
             <div className="mb-4 bg-red-50 text-red-600 text-xs p-3 rounded-xl border border-red-200 flex items-center gap-2">
               <AlertCircle size={15} />
               <span>{error}</span>
+            </div>
+          )}
+
+          {isStaff && (
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-text-muted mb-1.5">السنة الدراسية للمنشور</label>
+              <select
+                value={year ?? ''}
+                onChange={(e) => setYear(Number(e.target.value) || null)}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-white"
+              >
+                <option value="">اختار السنة</option>
+                {[1, 2, 3, 4, 5].map((y) => (
+                  <option key={y} value={y}>{YEAR_NAMES_AR[y]}</option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -367,6 +397,10 @@ function EditPostModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const { enqueue } = useUploadQueue();
+  const mediaTypeOfTab = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
+  const kindOfTab: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
+  const kindLabel = activeTab === 'photo' ? 'صورة' : activeTab === 'video' ? 'فيديو' : 'ملف';
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -389,47 +423,46 @@ function EditPostModal({
     }
   };
 
-  // Uploads the chosen file (if any) and returns its URL; an existing URL is kept as is.
-  const resolveMediaUrl = async (): Promise<string | null> => {
-    const kind: UploadKind | null = activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null;
-    if (pendingFile && kind) return uploadCommunityFile(pendingFile, kind);
-    return filePreview && !filePreview.startsWith('data:') && !filePreview.startsWith('blob:') ? filePreview : null;
-  };
-
   const submitEdit = async () => {
     if (!text.trim() && !filePreview) return;
-    setLoading(true);
     setError('');
 
-    try {
-      const mediaUrl = await resolveMediaUrl();
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
+    const saveEdit = async (mediaUrl: string | null) => {
       const res = await fetch(`/api/community/${post.id}`, {
         method: 'PATCH',
         headers,
         credentials: 'include',
         body: JSON.stringify({
           content: text.trim(),
-          mediaType: activeTab === 'photo' ? 'image' : activeTab === 'video' ? 'video' : activeTab === 'file' ? 'file' : null,
+          mediaType: mediaTypeOfTab,
           mediaUrl,
           fileName: fileName || null,
           fileUrl: activeTab === 'file' ? mediaUrl : null,
         }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'فشل حفظ التعديلات');
-        return;
-      }
+      if (!res.ok) throw new Error(data.error || 'فشل حفظ التعديلات');
+      return data;
+    };
 
+    if (pendingFile && kindOfTab) {
+      enqueue({ label: kindLabel, file: pendingFile, kind: kindOfTab, submit: saveEdit });
+      onClose();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const existing = filePreview && !filePreview.startsWith('data:') && !filePreview.startsWith('blob:') ? filePreview : null;
+      const data = await saveEdit(existing);
       onPostUpdated(data);
       onClose();
     } catch (err) {
-      setError(err instanceof Error && err.message.startsWith('تعذر رفع') ? err.message : 'حدث خطأ في الاتصال بالخادم');
+      setError(err instanceof Error ? err.message : 'حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
@@ -796,8 +829,10 @@ function PostCard({
   onDelete,
   onShare,
   onShowToast,
+  showYearBadge = false,
 }: {
   post: PostItem;
+  showYearBadge?: boolean;
   currentUser: { id?: string; name: string; avatar?: string | null; avatarUrl?: string | null; avatarType?: 'male' | 'female' | string } | null;
   onEdit: (post: PostItem) => void;
   onDelete: (postId: string) => void;
@@ -1011,6 +1046,13 @@ function PostCard({
               <span title={postTimes.exact} className="text-brand-orange font-medium">
                 {postTimes.relative}
               </span>
+              <span>·</span>
+              <span dir="rtl">{formatCairoDateTime(post.createdAt) || postTimes.exact}</span>
+              {showYearBadge && post.academicYear && (
+                <span className="px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy font-bold">
+                  {YEAR_NAMES_AR[post.academicYear]}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1330,6 +1372,9 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [yearFilter, setYearFilter] = useState<number | null>(null);
+  const { user: viewerForYear } = useAuth();
+  const isStaffViewer = !!viewerForYear && viewerForYear.userRole !== 'STUDENT';
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1341,7 +1386,9 @@ export default function CommunityPage() {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/community?community=${activeCommunity}`, { cache: 'no-store' });
+      const qs = new URLSearchParams({ community: activeCommunity });
+      if (yearFilter) qs.set('year', String(yearFilter));
+      const res = await fetch(`/api/community?${qs.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setPosts(Array.isArray(data) ? data : []);
@@ -1353,10 +1400,17 @@ export default function CommunityPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeCommunity]);
+  }, [activeCommunity, yearFilter]);
 
   useEffect(() => {
     fetchPosts();
+  }, [fetchPosts]);
+
+  // A background upload finished and saved its post: refresh the feed.
+  useEffect(() => {
+    const onChanged = () => { void fetchPosts(); };
+    window.addEventListener(COMMUNITY_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(COMMUNITY_CHANGED_EVENT, onChanged);
   }, [fetchPosts]);
 
   const handlePostCreated = (newPost: PostItem) => {
@@ -1581,12 +1635,28 @@ export default function CommunityPage() {
                   </Button>
                 </div>
               ) : (
+                <>
+                {isStaffViewer && activeCommunity !== GENERAL_COMMUNITY && (
+                  <div className="mb-4">
+                    <select
+                      value={yearFilter ?? ''}
+                      onChange={(e) => setYearFilter(Number(e.target.value) || null)}
+                      className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold bg-white"
+                    >
+                      <option value="">كل السنوات</option>
+                      {[1, 2, 3, 4, 5].map((y) => (
+                        <option key={y} value={y}>{YEAR_NAMES_AR[y]}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   {posts.map((post) => (
                     <PostCard
                       key={post.id}
                       post={post}
                       currentUser={user}
+                      showYearBadge={activeCommunity === GENERAL_COMMUNITY}
                       onEdit={(p) => setEditingPost(p)}
                       onDelete={handlePostDeleted}
                       onShare={(p) => setSharingPost(p)}
@@ -1594,6 +1664,7 @@ export default function CommunityPage() {
                     />
                   ))}
                 </div>
+                </>
               )}
             </div>
 

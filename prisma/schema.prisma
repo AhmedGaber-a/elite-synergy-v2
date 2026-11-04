@@ -306,6 +306,7 @@ model Post {
   mediaUrl  String?  @db.Text
   fileName  String?
   fileUrl   String?  @db.Text
+  academicYear Int? // 1..5, the year the post is for. null for posts written before years existed
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -326,6 +327,7 @@ model Post {
   moderationNote   String?           @db.Text
   @@index([moderationStatus])
   @@index([community])
+  @@index([community, academicYear])
 }
 
 model PostLike {

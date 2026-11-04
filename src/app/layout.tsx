@@ -7,6 +7,9 @@ import './globals.css'
 import { AuthProvider } from '../lib/context/AuthContext'
 import { OnboardingProvider } from '../lib/context/OnboardingContext'
 import { LanguageProvider } from '../lib/context/LanguageContext'
+import { UploadQueueProvider } from '../lib/context/UploadQueueContext'
+import { UploadBar } from '../components/upload/UploadBar'
+import { YearReminderBanner } from '../components/layout/YearReminderBanner'
 
 // Poppins has no Arabic glyphs. Cairo is used as the fallback so Arabic text
 // renders with a proper font instead of the browser default.
@@ -45,7 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <OnboardingProvider>
             <LanguageProvider>
-              {children}
+              <UploadQueueProvider>
+                <YearReminderBanner />
+                {children}
+                <UploadBar />
+              </UploadQueueProvider>
             </LanguageProvider>
           </OnboardingProvider>
         </AuthProvider>

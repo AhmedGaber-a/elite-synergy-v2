@@ -15,6 +15,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   const isVerifiedParam = searchParams.get('verified') === 'true';
+  const isResetParam = searchParams.get('reset') === 'true';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,6 +58,13 @@ function LoginForm() {
         <div className="w-full max-w-sm">
           <h2 className="text-3xl font-extrabold text-text-primary mb-2 text-center">تسجيل الدخول</h2>
           <p className="text-center text-xs text-text-muted mb-6">منصة Elite Synergy الأكاديمية</p>
+
+          {isResetParam && (
+            <div className="bg-green-50 border border-green-200 text-green-700 p-3.5 rounded-2xl text-xs mb-5 flex items-start gap-2">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+              <span>تم تغيير كلمة المرور. سجّل دخولك بالكلمة الجديدة.</span>
+            </div>
+          )}
 
           {isVerifiedParam && (
             <div className="bg-green-50 border border-green-200 text-green-700 p-3.5 rounded-2xl text-xs mb-5 flex items-start gap-2">
@@ -135,9 +143,9 @@ function LoginForm() {
                 />
                 تذكرني
               </label>
-              <button type="button" className="text-brand-orange hover:underline font-semibold">
+              <Link href="/auth/forgot" className="text-brand-orange hover:underline font-semibold">
                 نسيت كلمة المرور؟
-              </button>
+              </Link>
             </div>
 
             <Button type="submit" variant="primary" fullWidth isLoading={isLoading} size="lg" className="rounded-xl h-11 font-bold">

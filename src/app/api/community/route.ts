@@ -45,14 +45,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'لا يمكنك دخول مجتمع قسم آخر' }, { status: 403 });
     }
 
+    // Year scoping: inside a department, a student only sees posts for their own year.
+    // The combined ("GENERAL") area shows every year and every department.
+    const isStudent = viewer.userRole === 'STUDENT';
+    const isDeptArea = requested !== GENERAL_COMMUNITY;
+    let yearFilter: { academicYear: number } | undefined;
+    if (isDeptArea && isStudent) {
+      if (!viewer.academicYear) return NextResponse.json([]); // no year yet: nothing to show in the department area
+      yearFilter = { academicYear: viewer.academicYear };
+    } else if (isDeptArea && !isStudent) {
+      const yearParam = Number(searchParams.get('year'));
+      if (Number.isInteger(yearParam) && yearParam >= 1 && yearParam <= 5) yearFilter = { academicYear: yearParam };
+    }
+
     const posts = await prisma.post.findMany({
       where: {
         community: requested,
         OR: [{ moderationStatus: 'APPROVED' }, { authorId: viewer.id }],
+        ...(yearFilter ?? {}),
       },
       select: {
         id: true,
         authorId: true,
+        academicYear: true,
         content: true,
         contentAr: true,
         mediaType: true,
@@ -143,6 +158,7 @@ export async function GET(req: NextRequest) {
       return {
         id: post.id,
         authorId: post.authorId,
+        academicYear: post.academicYear,
         author: post.author.name,
         authorAvatar: post.author.avatar || '',
         authorAvatarType: post.author.avatarType,
@@ -282,6 +298,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'لا يمكنك النشر في مجتمع قسم آخر' }, { status: 403 });
     }
 
+    // Year rules: a student's post always carries the student's own year (any year sent by the client is ignored).
+    // Staff choose the year of the post themselves.
+    let postYear: number | null;
+    if (authUser.userRole === 'STUDENT') {
+      if (!authUser.academicYear) {
+        return NextResponse.json({ error: 'سجّل سنتك الدراسية الأول' }, { status: 403 });
+      }
+      postYear = authUser.academicYear;
+    } else {
+      const requestedYear = Number(body.academicYear);
+      if (!Number.isInteger(requestedYear) || requestedYear < 1 || requestedYear > 5) {
+        return NextResponse.json({ error: 'اختار السنة الدراسية اللي المنشور ده ليها' }, { status: 400 });
+      }
+      postYear = requestedYear;
+    }
+
     const rawContent = body.content !== undefined ? body.content : body.text;
     const rawContentAr = body.contentAr;
     const sharedPostId = body.sharedPostId || null;
@@ -359,6 +391,7 @@ export async function POST(req: NextRequest) {
       data: {
         authorId: authUser.id,
         community,
+        academicYear: postYear,
         content: contentValidation.sanitized,
         contentAr: sanitizedContentAr,
         mediaType: mediaType || null,

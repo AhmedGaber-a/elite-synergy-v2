@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/context/AuthContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
 import { AvailabilityCard } from '@/components/profile/AvailabilityCard';
+import { AcademicYearCard } from '@/components/profile/AcademicYearCard';
 
 function XIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -789,6 +790,7 @@ export default function ProfilePage() {
             {/* ─── Main Content ────────────────────────────────────────── */}
             <div className="flex-1 min-w-0 space-y-6">
 
+              <AcademicYearCard />
               <AvailabilityCard />
 
               {/* Bio & Intro Card */}

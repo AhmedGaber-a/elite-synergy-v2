@@ -15,6 +15,7 @@ export interface User {
   specialty?: string;
   role?: string;
   userRole?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+  academicYear?: number | null;
   college?: string;
   discipline?: string | null;
   points: number;
