@@ -826,4 +826,8 @@ export const ar: Record<TranslationKey, string> = {
   'instr.doneProjects': "مشاريع مكتملة",
   'instr.approvedCases': "حالات عملية معتمدة",
   'instr.none': "لا يوجد",
+  'home.feat1': "زملاء من كل التخصصات",
+  'home.feat2': "مشاريع عملية حقيقية",
+  'home.feat3': "مجتمع يساعدك تكمل",
+  'home.feat4': "ملف أكاديمي موثق",
 };

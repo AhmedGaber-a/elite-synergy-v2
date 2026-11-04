@@ -4,12 +4,20 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
+import { Users, Briefcase, MessageCircle, GraduationCap } from 'lucide-react'
 import { useAuth } from '@/lib/context/AuthContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 
 export function HeroSection() {
   const { isAuthenticated, user } = useAuth()
   const { t, lang } = useLanguage()
+
+  const features = [
+    { Icon: Users, label: t('home.feat1') },
+    { Icon: Briefcase, label: t('home.feat2') },
+    { Icon: MessageCircle, label: t('home.feat3') },
+    { Icon: GraduationCap, label: t('home.feat4') },
+  ]
 
   return (
     <section className="relative overflow-hidden bg-bg-cream">
@@ -22,7 +30,7 @@ export function HeroSection() {
                 <p className="text-brand-orange font-bold text-sm md:text-base mb-2 uppercase tracking-wider">
                   {lang === 'ar' ? `منور يا ${user?.name}!` : `Welcome back, ${user?.name}!`}
                 </p>
-                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-tight mb-4">
+                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.45] mb-4">
                   {t('home.heroTitle')}{' '}
                   <span className="text-brand-orange">{t('home.heroTitleHighlight')}</span>
                 </h1>
@@ -44,7 +52,7 @@ export function HeroSection() {
               </>
             ) : (
               <>
-                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.18] mb-4">
+                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.45] mb-4">
                   {lang === 'ar' ? (
                     <>
                       ابني مستقبلك مع <span className="text-brand-orange">إيليت سينرجي</span>
@@ -97,6 +105,18 @@ export function HeroSection() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Feature strip */}
+        <div className="mt-10 md:mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 border-t border-orange-100 pt-8">
+          {features.map(({ Icon, label }) => (
+            <div key={label} className="flex items-center gap-3">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-brand-orange">
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <span className="text-sm font-bold text-text-primary leading-relaxed">{label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

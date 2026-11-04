@@ -823,6 +823,10 @@ export const en = {
   'instr.doneProjects': "Completed projects",
   'instr.approvedCases': "Approved practical cases",
   'instr.none': "None",
+  'home.feat1': "Peers from every major",
+  'home.feat2': "Real practical projects",
+  'home.feat3': "A community that keeps you going",
+  'home.feat4': "A verified academic profile",
 } as const;
 
 export type TranslationKey = keyof typeof en;
