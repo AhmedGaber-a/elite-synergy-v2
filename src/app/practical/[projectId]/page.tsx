@@ -115,6 +115,7 @@ function CreateTeamModal({
   onClose: () => void;
   onTeamCreated: () => void;
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🚀');
   const [goal, setGoal] = useState('');
@@ -124,7 +125,7 @@ function CreateTeamModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('يرجى كتابة اسم الفريق');
+      setError(t('team.nameRequired'));
       return;
     }
 
@@ -145,14 +146,14 @@ function CreateTeamModal({
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'فشل إنشاء الفريق');
+        setError(data.error || t('team.createFail'));
         return;
       }
 
       onTeamCreated();
       onClose();
     } catch {
-      setError('حدث خطأ في الاتصال بالخادم');
+      setError(t('pj.serverErr'));
     } finally {
       setLoading(false);
     }
@@ -165,7 +166,7 @@ function CreateTeamModal({
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
         <div className="bg-gradient-to-r from-brand-navy to-brand-blue px-6 py-5 flex items-center justify-between text-white">
           <div>
-            <h3 className="font-extrabold text-base">إنشاء فريق للمشروع</h3>
+            <h3 className="font-extrabold text-base">{t('team.createTitle')}</h3>
             <p className="text-xs text-white/70 truncate max-w-xs">{projectTitle}</p>
           </div>
           <button onClick={onClose} className="p-1 text-white/60 hover:text-white rounded-full">
@@ -182,7 +183,7 @@ function CreateTeamModal({
           )}
 
           <div>
-            <label className="block text-xs font-bold text-text-primary mb-1">أيقونة الفريق</label>
+            <label className="block text-xs font-bold text-text-primary mb-1">{t('team.icon')}</label>
             <div className="flex gap-2">
               {EMOJIS.map((em) => (
                 <button
@@ -201,35 +202,35 @@ function CreateTeamModal({
 
           <div>
             <label className="block text-xs font-bold text-text-primary mb-1">
-              اسم الفريق <span className="text-red-500">*</span>
+              {t('team.name')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="مثال: رواد التقنية (Team Alpha)"
+              placeholder={t('pj.teamNamePh')}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:ring-2 focus:ring-brand-orange outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-primary mb-1">هدف الفريق وخطة العمل</label>
+            <label className="block text-xs font-bold text-text-primary mb-1">{t('team.goal')}</label>
             <textarea
               rows={3}
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
-              placeholder="اكتب نبذة عن أهداف الفريق وتوزيع المهام..."
+              placeholder={t('pj.teamGoalPh')}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs bg-gray-50 focus:ring-2 focus:ring-brand-orange outline-none resize-none"
             />
           </div>
 
           <div className="flex gap-2 pt-2 border-t border-gray-100">
             <Button variant="ghost" fullWidth type="button" onClick={onClose} className="rounded-xl">
-              إلغاء
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" fullWidth type="submit" isLoading={loading} className="rounded-xl font-bold">
-              تأسيس الفريق وحجز الشاغر
+              {t('team.createBtn')}
             </Button>
           </div>
         </form>
@@ -244,7 +245,7 @@ export default function ProjectWorkspacePage() {
   const router = useRouter();
   const projectId = params?.projectId as string;
   const { user, isAuthenticated } = useAuth();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [teams, setTeams] = useState<any[]>([]);
@@ -318,15 +319,15 @@ export default function ProjectWorkspacePage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setStatusMessage(data.error || 'فشل الانضمام للفريق');
+        setStatusMessage(data.error || t('team.joinFail'));
         return;
       }
 
-      setStatusMessage('تم الانضمام للفريق بنجاح والدخول لمساحة العمل!');
+      setStatusMessage(t('pj.joinOk'));
       await loadProjectData();
       setTeamTab('chat');
     } catch {
-      setStatusMessage('حدث خطأ أثناء الانضمام للفريق');
+      setStatusMessage(t('team.joinError'));
     } finally {
       setJoiningTeamId(null);
     }
@@ -390,7 +391,7 @@ export default function ProjectWorkspacePage() {
           setMyTeam((prev) =>
             prev ? { ...prev, files: [data.file, ...prev.files] } : prev
           );
-          setStatusMessage('تم رفع وتسجيل ملف المخرجات بنجاح في مساحة عمل الفريق!');
+          setStatusMessage(t('team.outputOk'));
         }
       }
     } catch (err) {
@@ -425,12 +426,12 @@ export default function ProjectWorkspacePage() {
       if (res.ok) {
         setMySubmissions((prev) => [data.submission, ...prev]);
         setSoloNote('');
-        setStatusMessage('تم رفع وتسليم ملف المشروع الفردي بنجاح إلى المشرف الأكاديمي!');
+        setStatusMessage(t('sub.ok'));
       } else {
-        setStatusMessage(data.error || 'فشل تسليم الملف');
+        setStatusMessage(data.error || t('sub.fail'));
       }
     } catch {
-      setStatusMessage('حدث خطأ أثناء تسليم الملف');
+      setStatusMessage(t('sub.error'));
     } finally {
       setSubmittingSolo(false);
     }
@@ -442,7 +443,7 @@ export default function ProjectWorkspacePage() {
         <div className="bg-bg-cream min-h-screen flex items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <div className="w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs font-bold text-text-muted">جاري تحميل تفاصيل المشروع ومساحة العمل...</p>
+            <p className="text-xs font-bold text-text-muted">{t('proj.loading')}</p>
           </div>
         </div>
       </AppLayout>
@@ -455,11 +456,11 @@ export default function ProjectWorkspacePage() {
         <div className="bg-bg-cream min-h-screen flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-md text-center shadow-sm border border-gray-100">
             <div className="text-5xl mb-3">📂</div>
-            <h2 className="text-xl font-extrabold text-text-primary mb-2">المشروع غير موجود</h2>
-            <p className="text-xs text-text-muted mb-6">لم يتم العثور على المشروع الأكاديمي المطلوب في النظام.</p>
+            <h2 className="text-xl font-extrabold text-text-primary mb-2">{t('proj.notFound')}</h2>
+            <p className="text-xs text-text-muted mb-6">{t('proj.notFoundSub')}</p>
             <Link href="/practical">
               <Button variant="primary" className="rounded-xl font-bold">
-                العودة لدليل المشاريع
+                {t('proj.backToList')}
               </Button>
             </Link>
           </div>
@@ -488,12 +489,12 @@ export default function ProjectWorkspacePage() {
           <div className="section-container">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-xs text-white/60 mb-4 flex-wrap">
-              <Link href="/" className="hover:text-white">الرئيسية</Link>
+              <Link href="/" className="hover:text-white">{t('nav.home')}</Link>
               <ChevronRight size={12} className="rtl:rotate-180" />
-              <Link href="/practical" className="hover:text-white">المشاريع العملية</Link>
+              <Link href="/practical" className="hover:text-white">{t('proj.breadcrumb')}</Link>
               <ChevronRight size={12} className="rtl:rotate-180" />
               <span className="text-brand-orange font-bold">
-                {project.type === 'TEAM' ? 'مشروع جماعي (Team)' : 'مشروع فردي (Solo)'}
+                {project.type === 'TEAM' ? t('proj.teamType') : t('proj.soloType')}
               </span>
               <ChevronRight size={12} className="rtl:rotate-180" />
               <span className="text-white/90 line-clamp-1">{project.title}</span>
@@ -510,16 +511,16 @@ export default function ProjectWorkspacePage() {
                   </span>
                   {project.type === 'TEAM' ? (
                     <span className="text-xs bg-yellow-400/20 text-yellow-300 px-3 py-0.5 rounded-full font-bold border border-yellow-400/30">
-                      🤝 مشروع عمل جماعي
+                      {t('proj.teamBadge')}
                     </span>
                   ) : (
                     <span className="text-xs bg-purple-400/20 text-purple-300 px-3 py-0.5 rounded-full font-bold border border-purple-400/30">
-                      🎯 مشروع تطبيقي فردي
+                      {t('proj.soloBadge')}
                     </span>
                   )}
                   {myTeam && (
                     <span className="text-xs bg-green-500/20 text-green-300 px-3 py-0.5 rounded-full font-extrabold border border-green-400/30 flex items-center gap-1">
-                      <CheckCircle2 size={12} /> مسجل في فريق: {myTeam.emoji} {myTeam.name}
+                      <CheckCircle2 size={12} /> {t('proj.inTeam')} {myTeam.emoji} {myTeam.name}
                     </span>
                   )}
                 </div>
@@ -536,7 +537,7 @@ export default function ProjectWorkspacePage() {
                   )}
                   {project.createdAt && (
                     <span className="flex items-center gap-1 text-orange-200 font-semibold" title={formatArabicTimeAgo(project.createdAt).exact}>
-                      <Clock size={14} className="text-brand-orange" /> نُشر في: {formatArabicTimeAgo(project.createdAt).exact} ({formatArabicTimeAgo(project.createdAt).relative})
+                      <Clock size={14} className="text-brand-orange" /> {t('proj.publishedAt')} {formatArabicTimeAgo(project.createdAt).exact} ({formatArabicTimeAgo(project.createdAt).relative})
                     </span>
                   )}
                   <span className="flex items-center gap-1">
@@ -547,7 +548,7 @@ export default function ProjectWorkspacePage() {
                   </span>
                   {project.type === 'TEAM' && (
                     <span className="flex items-center gap-1 bg-white/15 px-3 py-0.5 rounded-full text-white font-bold">
-                      <Users size={14} /> الشواغر المتاحة للفرق: {availableTeamsCount} من {project.maxTeams} فرق
+                      <Users size={14} /> {t('proj.slotsAvail')} {availableTeamsCount} {t('pj.of')} {project.maxTeams} {t('pj.teams')}
                     </span>
                   )}
                 </div>
@@ -569,7 +570,7 @@ export default function ProjectWorkspacePage() {
                     className="rounded-2xl px-6 py-3 font-bold text-sm shadow-lg whitespace-nowrap"
                   >
                     <Plus size={16} className="me-1" />
-                    {availableTeamsCount > 0 ? 'تأسيس فريق جديد للمشروع' : 'اكتمل عدد الفرق المسموح بها'}
+                    {availableTeamsCount > 0 ? t('proj.newTeam') : t('proj.full')}
                   </Button>
                 </div>
               )}
@@ -579,10 +580,10 @@ export default function ProjectWorkspacePage() {
             {project.type === 'TEAM' && myTeam && (
               <div className="flex gap-2 mt-8 overflow-x-auto pb-1">
                 {[
-                  { id: 'overview', label: 'تفاصيل ومتطلبات المشروع', icon: <FileText size={16} /> },
-                  { id: 'chat', label: `محادثة الفريق (${myTeam.messages.length})`, icon: <MessageCircle size={16} /> },
-                  { id: 'files', label: `مخرجات وملفات المشروع (${myTeam.files.length})`, icon: <Upload size={16} /> },
-                  { id: 'members', label: `أعضاء الفريق (${myTeam.members.length}/${myTeam.maxSlots})`, icon: <Users size={16} /> },
+                  { id: 'overview', label: t('tabs.overview'), icon: <FileText size={16} /> },
+                  { id: 'chat', label: `${t('tabs.chat')} (${myTeam.messages.length})`, icon: <MessageCircle size={16} /> },
+                  { id: 'files', label: `${t('tabs.files')} (${myTeam.files.length})`, icon: <Upload size={16} /> },
+                  { id: 'members', label: `${t('tabs.members')} (${myTeam.members.length}/${myTeam.maxSlots})`, icon: <Users size={16} /> },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -624,27 +625,27 @@ export default function ProjectWorkspacePage() {
                 {teamTab === 'overview' && (
                   <div className="p-6 md:p-8 space-y-6">
                     <div>
-                      <h2 className="text-lg font-black text-text-primary mb-2">نبذة عن المشروع الأكاديمي</h2>
+                      <h2 className="text-lg font-black text-text-primary mb-2">{t('overview.title')}</h2>
                       <p className="text-sm text-text-body leading-relaxed">{project.description}</p>
                     </div>
 
                     {project.companyBackground && (
                       <div className="bg-gray-50/70 p-5 rounded-2xl border border-gray-100">
-                        <h3 className="font-bold text-sm text-text-primary mb-1">🏢 خلفية وسياق المشروع</h3>
+                        <h3 className="font-bold text-sm text-text-primary mb-1">{t('sec.context')}</h3>
                         <p className="text-xs text-text-body leading-relaxed">{project.companyBackground}</p>
                       </div>
                     )}
 
                     {project.businessProblem && (
                       <div className="bg-orange-50/50 p-5 rounded-2xl border border-orange-100">
-                        <h3 className="font-bold text-sm text-brand-orange mb-1">⚠️ المشكلة المستهدفة بالحل</h3>
+                        <h3 className="font-bold text-sm text-brand-orange mb-1">{t('sec.problem')}</h3>
                         <p className="text-xs text-text-body leading-relaxed">{project.businessProblem}</p>
                       </div>
                     )}
 
                     {project.tasksToSolve?.length > 0 && (
                       <div>
-                        <h3 className="font-bold text-sm text-text-primary mb-3">✅ المهام والتحديات المطلوب حلها</h3>
+                        <h3 className="font-bold text-sm text-text-primary mb-3">{t('sec.tasks')}</h3>
                         <ul className="space-y-2">
                           {project.tasksToSolve.map((task, i) => (
                             <li key={i} className="flex items-start gap-3 text-xs md:text-sm text-text-body">
@@ -660,7 +661,7 @@ export default function ProjectWorkspacePage() {
 
                     {project.expectedDeliverables?.length > 0 && (
                       <div>
-                        <h3 className="font-bold text-sm text-text-primary mb-3">📦 المخرجات المطلوبة للتسليم النهائي</h3>
+                        <h3 className="font-bold text-sm text-text-primary mb-3">{t('sec.deliverables')}</h3>
                         <ul className="space-y-2">
                           {project.expectedDeliverables.map((item, i) => (
                             <li key={i} className="flex items-start gap-2.5 text-xs md:text-sm text-text-body">
@@ -681,19 +682,19 @@ export default function ProjectWorkspacePage() {
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{myTeam.emoji}</span>
                         <div>
-                          <h3 className="font-extrabold text-sm text-text-primary">{myTeam.name} — المحادثة الجماعية</h3>
-                          <p className="text-[11px] text-text-muted">لوحة نقاش الفريق الحية المحفوظة في قاعدة البيانات</p>
+                          <h3 className="font-extrabold text-sm text-text-primary">{myTeam.name} — {t('pj.teamChat')}</h3>
+                          <p className="text-[11px] text-text-muted">{t('chat.sub')}</p>
                         </div>
                       </div>
                       <span className="text-xs bg-white px-3 py-1 rounded-full border border-gray-200 font-bold text-text-muted">
-                        {myTeam.members.length} أعضاء
+                        {myTeam.members.length} {t('pj.members')}
                       </span>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/50">
                       {myTeam.messages.length === 0 ? (
                         <div className="text-center py-20 text-text-muted text-xs">
-                          💬 لا توجد رسائل سابقة. ابدأ المحادثة وشارك أول خطة عمل مع أعضاء فريقك!
+                          {t('chat.empty')}
                         </div>
                       ) : (
                         myTeam.messages.map((msg) => (
@@ -731,7 +732,7 @@ export default function ProjectWorkspacePage() {
                         type="text"
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
-                        placeholder="اكتب رسالة لأعضاء الفريق..."
+                        placeholder={t('chat.writePh')}
                         className="flex-1 px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-orange"
                       />
                       <Button
@@ -740,7 +741,7 @@ export default function ProjectWorkspacePage() {
                         disabled={!messageInput.trim() || sendingMessage}
                         className="rounded-full px-5 py-2.5 font-bold text-xs"
                       >
-                        <Send size={15} className="me-1 rtl:rotate-180" /> إرسال
+                        <Send size={15} className="me-1 rtl:rotate-180" /> {t('pj.send')}
                       </Button>
                     </form>
                   </div>
@@ -751,8 +752,8 @@ export default function ProjectWorkspacePage() {
                   <div className="p-6 md:p-8 space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
                       <div>
-                        <h3 className="font-black text-lg text-text-primary">مخرجات وملفات المشروع المسلمة</h3>
-                        <p className="text-xs text-text-muted">رفع وثائق التصميم والأكواد والعروض التقديمية الخاصة بالفريق</p>
+                        <h3 className="font-black text-lg text-text-primary">{t('files.title')}</h3>
+                        <p className="text-xs text-text-muted">{t('files.sub')}</p>
                       </div>
 
                       <input
@@ -767,7 +768,7 @@ export default function ProjectWorkspacePage() {
                         isLoading={uploadingTeamFile}
                         className="rounded-xl px-5 font-bold text-xs"
                       >
-                        <Upload size={15} className="me-1.5" /> رفع مخرج جديد
+                        <Upload size={15} className="me-1.5" /> {t('files.upload')}
                       </Button>
                     </div>
 
@@ -779,15 +780,15 @@ export default function ProjectWorkspacePage() {
                       <div className="w-12 h-12 rounded-2xl bg-orange-100 text-brand-orange flex items-center justify-center mx-auto mb-2">
                         <Upload size={22} className={uploadingTeamFile ? 'animate-bounce' : ''} />
                       </div>
-                      <p className="text-sm font-bold text-text-primary">اضغط لاختيار ملف ورفعه لمساحة عمل الفريق</p>
-                      <p className="text-xs text-text-muted mt-1">PDF, DOCX, ZIP, PPTX — Max 50MB</p>
+                      <p className="text-sm font-bold text-text-primary">{t('files.pick')}</p>
+                      <p className="text-xs text-text-muted mt-1">PDF, DOCX, ZIP, PPTX — {t('pj.maxSize')}</p>
                     </div>
 
                     {/* Deliverables List */}
                     <div className="space-y-3">
                       {myTeam.files.length === 0 ? (
                         <div className="text-center py-10 text-text-muted text-xs">
-                          📁 لم يقم أعضاء الفريق برفع أي مخرجات أو ملفات حتى الآن.
+                          {t('files.empty')}
                         </div>
                       ) : (
                         myTeam.files.map((file) => (
@@ -802,13 +803,13 @@ export default function ProjectWorkspacePage() {
                               <div className="min-w-0">
                                 <p className="font-bold text-sm text-text-primary truncate">{file.name}</p>
                                 <p className="text-[11px] text-text-muted">
-                                  {file.size} · بواسطة {file.uploadedBy} · {file.time}
+                                  {file.size} · {t('pj.by')} {file.uploadedBy} · {file.time}
                                 </p>
                               </div>
                             </div>
 
                             <span className="text-xs font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
-                              تم الحفظ في السجل
+                              {t('files.logged')}
                             </span>
                           </div>
                         ))
@@ -822,13 +823,13 @@ export default function ProjectWorkspacePage() {
                   <div className="p-6 md:p-8 space-y-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-black text-lg text-text-primary">أعضاء الفريق والمسؤوليات</h3>
+                        <h3 className="font-black text-lg text-text-primary">{t('members.title')}</h3>
                         <p className="text-xs text-text-muted">
-                          {myTeam.members.length} من أصل {myTeam.maxSlots} أعضاء مسجلين
+                          {myTeam.members.length} {t('pj.outOfSlots')} {myTeam.maxSlots} {t('pj.registeredMembers')}
                         </p>
                       </div>
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700">
-                        {myTeam.slots} شواغر متبقية
+                        {myTeam.slots} {t('pj.seatsLeft')}
                       </span>
                     </div>
 
@@ -860,8 +861,8 @@ export default function ProjectWorkspacePage() {
                             +
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-text-primary">شاغر متاح للطلاب</p>
-                            <p className="text-[10px] text-text-muted">يمكن لزملائك الانضمام لهذا المقعد</p>
+                            <p className="text-xs font-bold text-text-primary">{t('members.openSlot')}</p>
+                            <p className="text-[10px] text-text-muted">{t('members.openSlotSub')}</p>
                           </div>
                         </div>
                       ))}
@@ -875,26 +876,26 @@ export default function ProjectWorkspacePage() {
                 {/* Left 2 Cols: Project Requirements & Tasks */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm">
-                    <h2 className="text-lg font-black text-text-primary mb-3">تفاصيل ومتطلبات المشروع الأكاديمي</h2>
+                    <h2 className="text-lg font-black text-text-primary mb-3">{t('details.title')}</h2>
                     <p className="text-sm text-text-body leading-relaxed mb-6">{project.description}</p>
 
                     {project.companyBackground && (
                       <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-100 mb-4">
-                        <h3 className="font-bold text-sm text-text-primary mb-1">🏢 سياق وخلفية المشروع</h3>
+                        <h3 className="font-bold text-sm text-text-primary mb-1">{t('details.context')}</h3>
                         <p className="text-xs text-text-body leading-relaxed">{project.companyBackground}</p>
                       </div>
                     )}
 
                     {project.businessProblem && (
                       <div className="bg-orange-50/40 p-5 rounded-2xl border border-orange-100 mb-6">
-                        <h3 className="font-bold text-sm text-brand-orange mb-1">⚠️ المشكلة المستهدفة</h3>
+                        <h3 className="font-bold text-sm text-brand-orange mb-1">{t('details.problem')}</h3>
                         <p className="text-xs text-text-body leading-relaxed">{project.businessProblem}</p>
                       </div>
                     )}
 
                     {project.tasksToSolve?.length > 0 && (
                       <div className="mb-6">
-                        <h3 className="font-bold text-sm text-text-primary mb-3">✅ المهام والتحديات المطلوب حلها</h3>
+                        <h3 className="font-bold text-sm text-text-primary mb-3">{t('sec.tasks')}</h3>
                         <ul className="space-y-2.5">
                           {project.tasksToSolve.map((tItem, i) => (
                             <li key={i} className="flex items-start gap-3 text-xs md:text-sm text-text-body">
@@ -910,7 +911,7 @@ export default function ProjectWorkspacePage() {
 
                     {project.expectedDeliverables?.length > 0 && (
                       <div>
-                        <h3 className="font-bold text-sm text-text-primary mb-3">📦 المخرجات المطلوبة للتسليم</h3>
+                        <h3 className="font-bold text-sm text-text-primary mb-3">{t('details.deliverables')}</h3>
                         <ul className="space-y-2">
                           {project.expectedDeliverables.map((dItem, i) => (
                             <li key={i} className="flex items-start gap-2 text-xs md:text-sm text-text-body">
@@ -929,9 +930,9 @@ export default function ProjectWorkspacePage() {
                   {/* Quota Banner */}
                   <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-text-muted">شواغر الفرق في المشروع</span>
+                      <span className="text-xs font-bold text-text-muted">{t('details.slots')}</span>
                       <span className="text-xs font-mono font-bold text-brand-orange bg-orange-50 px-2.5 py-0.5 rounded-full">
-                        {availableTeamsCount} متاحة / {project.maxTeams} أقصى حد
+                        {availableTeamsCount} {t('pj.available')} / {project.maxTeams} {t('pj.maxLimit')}
                       </span>
                     </div>
 
@@ -943,7 +944,7 @@ export default function ProjectWorkspacePage() {
                     </div>
 
                     <p className="text-xs text-text-muted leading-relaxed">
-                      للعمل على هذا المشروع، يمكنك إما <strong>تأسيس فريق جديد</strong> (يخصم من عدد الشواغر المتاحة) أو <strong>الانضمام لأحد الفرق القائمة</strong> التي تمتلك أماكن شاغرة.
+                      {t('pj.p1')} <strong>{t('pj.p2')}</strong> {t('pj.p3')} <strong>{t('pj.p4')}</strong> {t('pj.p5')}
                     </p>
 
                     <Button
@@ -960,17 +961,17 @@ export default function ProjectWorkspacePage() {
                       className="rounded-xl py-3 font-bold text-xs"
                     >
                       <Plus size={16} className="me-1" />
-                      {availableTeamsCount > 0 ? 'تأسيس فريق جديد للمشروع' : 'اكتملت جميع الفرق المسموح بها'}
+                      {availableTeamsCount > 0 ? t('proj.newTeam') : t('proj.allFull')}
                     </Button>
                   </div>
 
                   {/* Existing Teams List */}
                   <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
-                    <h3 className="font-extrabold text-sm text-text-primary">الفرق المنشأة لهذا المشروع ({teams.length})</h3>
+                    <h3 className="font-extrabold text-sm text-text-primary">{t('pj.teamsList')} ({teams.length})</h3>
 
                     {teams.length === 0 ? (
                       <div className="text-center py-8 text-text-muted text-xs">
-                        لا توجد فرق عمل منشأة حتى الآن لهذا المشروع. كن أول من يؤسس فريقاً!
+                        {t('pj.noTeams')}
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -985,7 +986,7 @@ export default function ProjectWorkspacePage() {
                                 <div>
                                   <h4 className="font-extrabold text-sm text-text-primary">{tItem.name}</h4>
                                   <p className="text-[10px] text-text-muted">
-                                    {tItem.membersCount} / {tItem.maxSlots} أعضاء
+                                    {tItem.membersCount} / {tItem.maxSlots} {t('pj.members')}
                                   </p>
                                 </div>
                               </div>
@@ -995,7 +996,7 @@ export default function ProjectWorkspacePage() {
                                   tItem.slots > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                 }`}
                               >
-                                {tItem.slots > 0 ? `${tItem.slots} شواغر` : 'مكتمل'}
+                                {tItem.slots > 0 ? `${tItem.slots} ${t('pj.seatsWord')}` : t('teams.complete')}
                               </span>
                             </div>
 
@@ -1014,7 +1015,7 @@ export default function ProjectWorkspacePage() {
                               onClick={() => handleJoinTeam(tItem.dbId || tItem.id)}
                               className="rounded-xl text-xs font-bold hover:bg-brand-orange hover:text-white hover:border-brand-orange"
                             >
-                              الانضمام لهذا الفريق
+                              {t('teams.join')}
                             </Button>
                           </div>
                         ))}
@@ -1034,26 +1035,26 @@ export default function ProjectWorkspacePage() {
               {/* Left 2 Cols: Project Requirements uploaded by Professor */}
               <div className="lg:col-span-2 space-y-6">
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm">
-                  <h2 className="text-lg font-black text-text-primary mb-3">متطلبات المشروع الفردي</h2>
+                  <h2 className="text-lg font-black text-text-primary mb-3">{t('solo.title')}</h2>
                   <p className="text-sm text-text-body leading-relaxed mb-6">{project.description}</p>
 
                   {project.companyBackground && (
                     <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-100 mb-4">
-                      <h3 className="font-bold text-sm text-text-primary mb-1">🏢 خلفية وسياق الدراسة</h3>
+                      <h3 className="font-bold text-sm text-text-primary mb-1">{t('solo.context')}</h3>
                       <p className="text-xs text-text-body leading-relaxed">{project.companyBackground}</p>
                     </div>
                   )}
 
                   {project.businessProblem && (
                     <div className="bg-orange-50/40 p-5 rounded-2xl border border-orange-100 mb-6">
-                      <h3 className="font-bold text-sm text-brand-orange mb-1">⚠️ المشكلة المطلوب دراستها وحلها</h3>
+                      <h3 className="font-bold text-sm text-brand-orange mb-1">{t('solo.problem')}</h3>
                       <p className="text-xs text-text-body leading-relaxed">{project.businessProblem}</p>
                     </div>
                   )}
 
                   {project.tasksToSolve?.length > 0 && (
                     <div className="mb-6">
-                      <h3 className="font-bold text-sm text-text-primary mb-3">✅ المهام الفردية المطلوبة</h3>
+                      <h3 className="font-bold text-sm text-text-primary mb-3">{t('solo.tasks')}</h3>
                       <ul className="space-y-2.5">
                         {project.tasksToSolve.map((task, i) => (
                           <li key={i} className="flex items-start gap-3 text-xs md:text-sm text-text-body">
@@ -1069,7 +1070,7 @@ export default function ProjectWorkspacePage() {
 
                   {project.expectedDeliverables?.length > 0 && (
                     <div>
-                      <h3 className="font-bold text-sm text-text-primary mb-3">📦 المخرجات المطلوبة للتسليم</h3>
+                      <h3 className="font-bold text-sm text-text-primary mb-3">{t('details.deliverables')}</h3>
                       <ul className="space-y-2">
                         {project.expectedDeliverables.map((item, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs md:text-sm text-text-body">
@@ -1091,17 +1092,17 @@ export default function ProjectWorkspacePage() {
                       <Upload size={18} />
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-sm text-text-primary">مساحة التسليم الفردي</h3>
-                      <p className="text-[11px] text-text-muted">ارفع ملفات الحل مباشرة لأستاذ المادة</p>
+                      <h3 className="font-extrabold text-sm text-text-primary">{t('solo.space')}</h3>
+                      <p className="text-[11px] text-text-muted">{t('solo.sub')}</p>
                     </div>
                   </div>
 
                   {!isAuthenticated ? (
                     <div className="text-center py-6 space-y-3">
-                      <p className="text-xs text-text-muted">يجب تسجيل الدخول بحسابك الجامعي لرفع وتسليم مخرجات المشروع.</p>
+                      <p className="text-xs text-text-muted">{t('solo.loginNeed')}</p>
                       <Link href={`/auth/login?redirect=/practical/${projectId}`}>
                         <Button variant="primary" size="sm" fullWidth className="rounded-xl font-bold">
-                          تسجيل الدخول للتسليم
+                          {t('solo.loginSubmit')}
                         </Button>
                       </Link>
                     </div>
@@ -1110,13 +1111,13 @@ export default function ProjectWorkspacePage() {
                       {/* Notes textarea */}
                       <div>
                         <label className="block text-xs font-bold text-text-primary mb-1">
-                          ملاحظات أو شرح موجز للحل (اختياري)
+                          {t('solo.notes')}
                         </label>
                         <textarea
                           rows={3}
                           value={soloNote}
                           onChange={(e) => setSoloNote(e.target.value)}
-                          placeholder="اكتب نبذة عن منهجيتك في حل المشروع للأستاذ المشرف..."
+                          placeholder={t('solo.notesPh')}
                           className="w-full text-xs p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange resize-none"
                         />
                       </div>
@@ -1133,14 +1134,14 @@ export default function ProjectWorkspacePage() {
                         className="border-2 border-dashed border-gray-200 hover:border-brand-orange rounded-2xl p-6 text-center cursor-pointer bg-gray-50/50 hover:bg-orange-50/30 transition-all"
                       >
                         <Upload size={24} className="mx-auto text-brand-orange mb-2" />
-                        <p className="text-xs font-bold text-text-primary">اضغط هنا لاختيار ورفع ملف الحل</p>
-                        <p className="text-[10px] text-text-muted mt-1">PDF, DOCX, ZIP, PPTX — Max 50MB</p>
+                        <p className="text-xs font-bold text-text-primary">{t('solo.pick')}</p>
+                        <p className="text-[10px] text-text-muted mt-1">PDF, DOCX, ZIP, PPTX — {t('pj.maxSize')}</p>
                       </div>
 
                       {submittingSolo && (
                         <div className="flex items-center justify-center gap-2 text-xs text-brand-orange font-bold">
                           <span className="w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full animate-spin" />
-                          <span>جاري تسليم الملف للمشرف...</span>
+                          <span>{t('solo.submitting')}</span>
                         </div>
                       )}
                     </div>
@@ -1150,12 +1151,12 @@ export default function ProjectWorkspacePage() {
                 {/* Submissions History for this student */}
                 <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-3">
                   <h4 className="font-extrabold text-xs text-text-muted uppercase tracking-wider">
-                    سجل تسليماتك لهذا المشروع ({mySubmissions.length})
+                    {t('pj.submissionsHistory')} ({mySubmissions.length})
                   </h4>
 
                   {mySubmissions.length === 0 ? (
                     <p className="text-xs text-text-muted py-4 text-center">
-                      لم تقم بتسليم أي ملفات بعد لهذا المشروع.
+                      {t('solo.none')}
                     </p>
                   ) : (
                     <div className="space-y-2.5">
@@ -1167,7 +1168,7 @@ export default function ProjectWorkspacePage() {
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-text-primary truncate max-w-[170px]">{sub.name}</span>
                             <span className="text-[10px] text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-bold">
-                              تم التسليم ✓
+                              {t('solo.done')}
                             </span>
                           </div>
                           <p className="text-[10px] text-text-muted">
