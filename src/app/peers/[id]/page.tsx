@@ -123,7 +123,6 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                 <Avatar src={peer.avatar} name={peer.name} size="xl" className="w-24 h-24 md:w-32 md:h-32 shadow-md border-4 border-white" />
                 <div className="text-center sm:text-left mt-2">
                   <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary mb-2">{peer.fullName || peer.name}</h1>
-                  <p className="text-lg text-brand-orange font-bold mb-3">{peer.specialty}</p>
 
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm text-text-body font-medium">
                     <div className="flex items-center gap-1.5"><Briefcase size={16} className="text-brand-navy" /> {peer.discipline}</div>

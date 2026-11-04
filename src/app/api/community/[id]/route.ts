@@ -114,7 +114,7 @@ export async function PATCH(
         college: updated.author.college,
         specialty: updated.author.specialty,
       },
-      role: `${updated.author.college} · ${updated.author.specialty}`,
+      role: `${updated.author.college}`,
       content: updated.content,
       contentAr: updated.contentAr,
       mediaType: updated.mediaType as 'image' | 'video' | 'file' | null | undefined,

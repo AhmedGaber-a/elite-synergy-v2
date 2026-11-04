@@ -1479,7 +1479,6 @@ export default function CommunityPage() {
                     />
                     <h3 className="font-extrabold text-text-primary text-base">{user.fullName || user.name}</h3>
                     <p className="text-xs text-brand-orange font-semibold mt-0.5">{user.college}</p>
-                    <p className="text-[11px] text-text-muted mt-0.5">{user.specialty}</p>
 
                     <div className="mt-4 pt-4 border-t border-gray-100 flex justify-around text-center">
                       <div>

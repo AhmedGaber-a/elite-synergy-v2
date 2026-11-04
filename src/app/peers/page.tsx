@@ -224,7 +224,6 @@ function SuggestTeammatesModal({
                     <Avatar src={peer.avatar} name={peer.name} size="md" />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-text-primary text-sm">{peer.name}</p>
-                      <p className="text-xs text-purple-600 font-semibold">{peer.specialty}</p>
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {peer.skills.slice(0, 3).map((s) => (
                           <span
@@ -598,7 +597,6 @@ export default function PeersPage() {
                             <Link href={`/peers/${peer.id}`} className="hover:text-brand-orange transition-colors">
                               <h3 className="font-bold text-text-primary text-base truncate">{peer.fullName || peer.name}</h3>
                             </Link>
-                            <p className="text-xs text-brand-orange font-semibold truncate">{peer.specialty}</p>
                             <p className="text-[11px] text-text-muted truncate">{peer.college}</p>
                           </div>
                         </div>

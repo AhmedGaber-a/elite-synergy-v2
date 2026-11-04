@@ -33,7 +33,6 @@ function RegisterContent() {
   const [college, setCollege] = useState(state.college || '');
   const [facultyChoice, setFacultyChoice] = useState(college && (EGYPT_FACULTIES as readonly string[]).includes(college) ? college : '');
   const [academicYear, setAcademicYear] = useState<number | null>(state.academicYear ?? null);
-  const [specialty, setSpecialty] = useState(state.specialty || 'Cloud Architecture & Software Engineering');
   const [password, setPassword] = useState(state.password || '');
   const [confirmPassword, setConfirmPassword] = useState(state.password || '');
   const [showPassword, setShowPassword] = useState(false);
@@ -103,7 +102,6 @@ function RegisterContent() {
       password,
       college: finalFaculty,
       academicYear,
-      specialty,
       avatarType,
       socialLinks: {
         linkedin,
@@ -314,19 +312,6 @@ function RegisterContent() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                    التخصص الدقيق <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    placeholder="مثال: Cloud Architecture"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm font-medium"
-                  />
-                </div>
               </div>
 
               {/* Password */}

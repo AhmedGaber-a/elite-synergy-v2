@@ -283,14 +283,6 @@ function EditProfileModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-text-primary mb-1">Specialty</label>
-              <input
-                value={form.specialty}
-                onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange bg-gray-50"
-              />
-            </div>
-            <div>
               <label className="block text-xs font-bold text-text-primary mb-1">Address / City</label>
               <input
                 value={form.address}
@@ -688,7 +680,6 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-brand-orange font-bold mt-1">{profile.specialty}</p>
                   <p className="text-[11px] text-white/60">{profile.college}</p>
                 </div>
 
@@ -801,7 +792,6 @@ export default function ProfilePage() {
                     <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary mb-1">
                       Welcome back, {profile.name}! 👋
                     </h1>
-                    <p className="text-sm font-semibold text-brand-orange mb-3">{profile.specialty}</p>
                     <p className="text-text-body text-sm leading-relaxed max-w-xl">
                       {profile.bio || 'Passionate student collaborating on real-world projects, building production skills, and aiming for academic excellence.'}
                     </p>
