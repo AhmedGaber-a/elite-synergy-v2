@@ -1,6 +1,7 @@
 // src/app/collab/[id]/page.tsx
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Trash2, Video, BookOpen } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -21,9 +22,10 @@ type Item = {
 };
 type Room = { id: string; callToken: string; peer: Person; items: Item[] };
 
-const KIND_LABEL: Record<Item['kind'], string> = { NOTE: 'ملاحظة', SKILL: 'مهارة', FILE: 'ملف' };
 
 export default function CollabRoomPage({ params }: { params: { id: string } }) {
+  const { t, lang } = useLanguage();
+  const KIND_LABEL: Record<Item['kind'], string> = { NOTE: t('collab.kindNote'), SKILL: t('collab.kindSkill'), FILE: t('collab.kindFile') };
   const [room, setRoom] = useState<Room | null>(null);
   const [meId, setMeId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -41,13 +43,13 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
       const res = await fetch(`/api/collab/${params.id}`, { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'تعذر تحميل الغرفة');
+        setError(data.error || t('collab.loadFail'));
         return;
       }
       setRoom(data.room);
       setMeId(data.meId);
     } catch {
-      setError('تعذر الاتصال بالسيرفر');
+      setError(t('collab.serverErr'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
       body: JSON.stringify(payload),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'تعذر الإضافة');
+    if (!res.ok) throw new Error(data.error || t('collab.addFail'));
     await load();
   };
 
@@ -76,7 +78,7 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
       setTitle('');
       setText('');
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'تعذر الإضافة');
+      setFormError(err instanceof Error ? err.message : t('collab.addFail'));
     } finally {
       setBusy(false);
     }
@@ -92,7 +94,7 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
       await addItem({ kind: 'FILE', title: title || file.name, url });
       setTitle('');
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'تعذر رفع الملف');
+      setFormError(err instanceof Error ? err.message : t('collab.uploadFail'));
     } finally {
       setBusy(false);
     }
@@ -117,8 +119,8 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto p-8 text-center">
-          <p className="text-text-body mb-4">{error || 'الغرفة مش متاحة'}</p>
-          <Link href="/peers"><Button variant="primary">ارجع للزملاء</Button></Link>
+          <p className="text-text-body mb-4">{error || t('collab.unavailable')}</p>
+          <Link href="/peers"><Button variant="primary">{t('collab.backPeers')}</Button></Link>
         </div>
       </AppLayout>
     );
@@ -131,13 +133,13 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
     <AppLayout>
       <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
         <Link href={`/peers/${room.peer.id}`} className="inline-flex items-center gap-2 text-sm font-bold text-text-muted hover:text-brand-orange">
-          <ArrowLeft size={16} /> رجوع للبروفايل
+          <ArrowLeft size={16} /> {t('collab.backProfile')}
         </Link>
 
         <div className="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-sm flex items-center gap-4">
           <Avatar src={room.peer.avatar || ''} name={room.peer.name} size="lg" />
           <div>
-            <p className="text-xs font-bold text-text-muted uppercase tracking-wider">غرفة التعاون</p>
+            <p className="text-xs font-bold text-text-muted uppercase tracking-wider">{t('collab.roomLabel')}</p>
             <h1 className="text-xl md:text-2xl font-extrabold text-text-primary">{peerName}</h1>
           </div>
         </div>
@@ -147,13 +149,13 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
             onClick={() => setTab('content')}
             className={`px-4 py-2 text-sm font-bold flex items-center gap-2 border-b-2 -mb-px ${tab === 'content' ? 'border-brand-orange text-brand-orange' : 'border-transparent text-text-muted'}`}
           >
-            <BookOpen size={16} /> المحتوى العلمي
+            <BookOpen size={16} /> {t('collab.content')}
           </button>
           <button
             onClick={() => setTab('call')}
             className={`px-4 py-2 text-sm font-bold flex items-center gap-2 border-b-2 -mb-px ${tab === 'call' ? 'border-brand-orange text-brand-orange' : 'border-transparent text-text-muted'}`}
           >
-            <Video size={16} /> مكالمة فيديو
+            <Video size={16} /> {t('collab.video')}
           </button>
         </div>
 
@@ -174,7 +176,7 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={kind === 'SKILL' ? 'اسم المهارة' : kind === 'FILE' ? 'اسم الملف (اختياري)' : 'عنوان (اختياري)'}
+                placeholder={kind === 'SKILL' ? t('collab.skillName') : kind === 'FILE' ? t('collab.fileNameOpt') : t('collab.titleOpt')}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
               />
               {kind !== 'FILE' ? (
@@ -183,14 +185,14 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={3}
-                    placeholder={kind === 'SKILL' ? 'اشرح الفكرة أو الخطوات' : 'اكتب الملاحظة'}
+                    placeholder={kind === 'SKILL' ? t('collab.explainPh') : t('collab.writeNote')}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
                   />
-                  <Button variant="primary" size="sm" isLoading={busy} onClick={submitText} className="rounded-xl">إضافة</Button>
+                  <Button variant="primary" size="sm" isLoading={busy} onClick={submitText} className="rounded-xl">{t('collab.add')}</Button>
                 </>
               ) : (
                 <label className="inline-flex items-center gap-2 bg-brand-navy text-white px-4 py-2 rounded-xl text-sm font-bold cursor-pointer">
-                  <FileText size={16} /> {busy ? 'جاري الرفع...' : 'اختر ملف (PDF / DOCX / PPTX / ZIP)'}
+                  <FileText size={16} /> {busy ? t('collab.uploading') : t('collab.pickFile')}
                   <input
                     type="file"
                     className="hidden"
@@ -209,7 +211,7 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
 
             <div className="space-y-3">
               {room.items.length === 0 && (
-                <p className="text-sm text-text-muted text-center py-8">لسه مفيش محتوى. ابدأ بمهارة أو ملف.</p>
+                <p className="text-sm text-text-muted text-center py-8">{t('collab.empty')}</p>
               )}
               {room.items.map((item) => (
                 <div key={item.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
@@ -220,15 +222,15 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
                       {item.body && <p className="text-sm text-text-body whitespace-pre-line mt-1">{item.body}</p>}
                       {item.url && (
                         <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-navy underline">
-                          فتح الملف
+                          {t('collab.openFile')}
                         </a>
                       )}
                       <p className="text-[11px] text-text-muted mt-2">
-                        {item.author.fullName || item.author.name} · {new Date(item.createdAt).toLocaleString('ar-EG')}
+                        {item.author.fullName || item.author.name} · {new Date(item.createdAt).toLocaleString(lang === 'en' ? 'en-US' : 'ar-EG')}
                       </p>
                     </div>
                     {item.authorId === meId && (
-                      <button onClick={() => removeItem(item.id)} className="p-2 text-text-muted hover:text-red-600" aria-label="احذف">
+                      <button onClick={() => removeItem(item.id)} className="p-2 text-text-muted hover:text-red-600" aria-label={t('collab.delete')}>
                         <Trash2 size={16} />
                       </button>
                     )}
@@ -244,13 +246,13 @@ export default function CollabRoomPage({ params }: { params: { id: string } }) {
             <div className="aspect-video w-full rounded-2xl overflow-hidden bg-gray-900">
               <iframe
                 src={callUrl}
-                title="مكالمة فيديو"
+                title={t('collab.video')}
                 allow="camera; microphone; fullscreen; display-capture; autoplay"
                 className="w-full h-full border-0"
               />
             </div>
             <p className="text-xs text-text-muted mt-3">
-              المكالمة بتشتغل على Jitsi. الرابط خاص بالغرفة دي، واللي يعرفه بس انتو الاتنين.
+              {t('collab.callNote')}
             </p>
           </div>
         )}

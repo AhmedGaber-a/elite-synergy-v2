@@ -2,6 +2,7 @@
 // src/app/instructor/page.tsx
 // Instructor view: students' completed projects and approved cases, split by department.
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/lib/context/AuthContext';
 import { DEPARTMENTS } from '@/lib/departments';
@@ -21,6 +22,7 @@ type Student = {
 };
 
 export default function InstructorPage() {
+  const { t } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const [department, setDepartment] = useState<string>('');
   const [students, setStudents] = useState<Student[]>([]);
@@ -35,14 +37,14 @@ export default function InstructorPage() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error || 'تعذر تحميل البيانات');
+          setError(data.error || t('instr.loadFail'));
           setStudents([]);
           return;
         }
         setError('');
         setStudents(data.students || []);
       })
-      .catch(() => setError('حدث خطأ في الاتصال بالخادم'))
+      .catch(() => setError(t('instr.serverErr')))
       .finally(() => setLoading(false));
   }, [department, isAuthenticated]);
 
@@ -52,13 +54,13 @@ export default function InstructorPage() {
     <AppLayout>
       <div className="bg-bg-cream min-h-screen pb-12">
         <div className="section-container py-8">
-          <h1 className="text-2xl font-black text-text-primary mb-1">لوحة الدكتور</h1>
-          <p className="text-sm text-text-muted mb-6">الطلبة اللي خلّصوا مشاريع وحالات عملية في المواد</p>
+          <h1 className="text-2xl font-black text-text-primary mb-1">{t('instr.title')}</h1>
+          <p className="text-sm text-text-muted mb-6">{t('instr.sub')}</p>
 
           {!isInstructor && !loading ? (
             <div className="bg-white rounded-3xl p-10 text-center border border-gray-100">
-              <p className="font-bold text-text-primary">الصفحة دي للدكاترة فقط.</p>
-              <p className="text-sm text-text-muted mt-2">لو إنت دكتور، كلّم إدارة Elite Synergy عشان يفعّلوا حسابك.</p>
+              <p className="font-bold text-text-primary">{t('instr.doctorsOnly')}</p>
+              <p className="text-sm text-text-muted mt-2">{t('instr.contactAdmin')}</p>
             </div>
           ) : (
             <>
@@ -67,7 +69,7 @@ export default function InstructorPage() {
                   onClick={() => setDepartment('')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold ${department === '' ? 'bg-brand-navy text-white' : 'bg-white text-text-body border border-gray-100'}`}
                 >
-                  كل الأقسام
+                  {t('instr.allDepts')}
                 </button>
                 {DEPARTMENTS.map((d) => (
                   <button
@@ -82,9 +84,9 @@ export default function InstructorPage() {
 
               {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
               {loading ? (
-                <p className="text-sm text-text-muted">جاري التحميل...</p>
+                <p className="text-sm text-text-muted">{t('common.loading')}</p>
               ) : students.length === 0 ? (
-                <p className="text-sm text-text-muted">لا توجد بيانات لعرضها.</p>
+                <p className="text-sm text-text-muted">{t('instr.noData')}</p>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {students.map((s) => (
@@ -93,16 +95,16 @@ export default function InstructorPage() {
                         <div>
                           <h3 className="font-extrabold text-text-primary">{s.fullName || s.name}</h3>
                           <p className="text-xs text-text-muted mt-0.5">
-                            {s.college}{s.academicYear ? ` · الفرقة ${s.academicYear}` : ''}
+                            {s.college}{s.academicYear ? ` · ${t('instr.yearWord')} ${s.academicYear}` : ''}
                           </p>
                         </div>
-                        <span className="text-xs font-bold text-brand-orange">{s.points} نقطة</span>
+                        <span className="text-xs font-bold text-brand-orange">{s.points} {t('instr.points')}</span>
                       </div>
 
                       <div className="mt-4">
-                        <p className="text-xs font-bold text-text-primary mb-1">مشاريع مكتملة ({s.projects.length})</p>
+                        <p className="text-xs font-bold text-text-primary mb-1">{t('instr.doneProjects')} ({s.projects.length})</p>
                         {s.projects.length === 0 ? (
-                          <p className="text-xs text-text-muted">لا يوجد</p>
+                          <p className="text-xs text-text-muted">{t('instr.none')}</p>
                         ) : (
                           <ul className="text-xs text-text-body space-y-1">
                             {s.projects.map((p) => (
@@ -113,9 +115,9 @@ export default function InstructorPage() {
                       </div>
 
                       <div className="mt-3">
-                        <p className="text-xs font-bold text-text-primary mb-1">حالات عملية معتمدة ({s.approvedCases.length})</p>
+                        <p className="text-xs font-bold text-text-primary mb-1">{t('instr.approvedCases')} ({s.approvedCases.length})</p>
                         {s.approvedCases.length === 0 ? (
-                          <p className="text-xs text-text-muted">لا يوجد</p>
+                          <p className="text-xs text-text-muted">{t('instr.none')}</p>
                         ) : (
                           <ul className="text-xs text-text-body space-y-1">
                             {s.approvedCases.map((c) => (
