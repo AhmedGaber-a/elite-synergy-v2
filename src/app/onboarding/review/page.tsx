@@ -1,6 +1,7 @@
 // src/app/onboarding/review/page.tsx
 'use client';
 import React, { useState } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle, FileText, Briefcase, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
 
 export default function ReviewPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { state, reset } = useOnboarding();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +56,7 @@ export default function ReviewPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'فشل إتمام التسجيل، يرجى مراجعة البيانات');
+        setError(data.error || t('onbRev.failed'));
         setIsSubmitting(false);
         return;
       }
@@ -63,7 +65,7 @@ export default function ReviewPage() {
       const redirectTarget = data.redirectUrl || `/auth/verify?email=${encodeURIComponent(state.email)}`;
       router.push(redirectTarget);
     } catch {
-      setError('حدث خطأ في الاتصال بالخادم');
+      setError(t('verify.serverError'));
       setIsSubmitting(false);
     }
   };
@@ -73,8 +75,8 @@ export default function ReviewPage() {
       <div className="w-full max-w-2xl">
         <div className="mb-8">
           <p className="text-text-muted text-sm font-semibold uppercase tracking-wider mb-2">Step 5 of 5</p>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-text-primary mb-4">Review Your Profile</h1>
-          <p className="text-text-body">Ensure your details are accurate before completing setup.</p>
+          <h1 className="text-3xl md:text-5xl font-extrabold text-text-primary mb-4">{t('onbRev.title')}</h1>
+          <p className="text-text-body">{t('onbRev.sub')}</p>
         </div>
 
         {error && (
@@ -88,21 +90,21 @@ export default function ReviewPage() {
           {/* Account */}
           <div className="flex items-start justify-between border-b border-gray-100 pb-4">
             <div>
-              <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">Account & College</span>
-              <p className="text-text-primary font-bold">{state.fullName || 'Student'} ({state.email || 'name@example.com'})</p>
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">{t('onbRev.account')}</span>
+              <p className="text-text-primary font-bold">{state.fullName || t('onbRev.student')} ({state.email || t('login.emailPh')})</p>
               <p className="text-xs text-text-muted mt-0.5">{state.college}</p>
             </div>
             <button onClick={() => router.push('/onboarding/register')} className="text-xs text-brand-orange hover:underline font-semibold">
-              Edit
+              {t('onbRev.edit')}
             </button>
           </div>
 
           {/* Skills */}
           <div className="border-b border-gray-100 pb-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Selected Skills</span>
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">{t('onbRev.skills')}</span>
               <button onClick={() => router.push('/onboarding/skills')} className="text-xs text-brand-orange hover:underline font-semibold">
-                Edit
+                {t('onbRev.edit')}
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -113,7 +115,7 @@ export default function ReviewPage() {
                 <Badge variant="navy" className="text-xs">{state.customSkill}</Badge>
               )}
               {state.skills.length === 0 && !state.customSkill && (
-                <span className="text-xs text-text-muted">No skills selected</span>
+                <span className="text-xs text-text-muted">{t('onbRev.noSkills')}</span>
               )}
             </div>
           </div>
@@ -121,19 +123,19 @@ export default function ReviewPage() {
           {/* Projects */}
           <div className="border-b border-gray-100 pb-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Portfolio Projects</span>
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">{t('onbRev.projects')}</span>
               <button onClick={() => router.push('/onboarding/projects')} className="text-xs text-brand-orange hover:underline font-semibold">
-                Edit
+                {t('onbRev.edit')}
               </button>
             </div>
             {state.projects.length === 0 ? (
-              <p className="text-xs text-text-muted">None added (skipped)</p>
+              <p className="text-xs text-text-muted">{t('onbRev.noProjects')}</p>
             ) : (
               <div className="space-y-2">
                 {state.projects.map((p, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl text-sm">
                     <Briefcase size={16} className="text-brand-orange" />
-                    <span className="font-semibold text-text-primary">{p.title || 'Untitled Project'}</span>
+                    <span className="font-semibold text-text-primary">{p.title || t('onbRev.untitled')}</span>
                     {p.filename && <span className="text-xs text-text-muted">({p.filename})</span>}
                   </div>
                 ))}
@@ -144,9 +146,9 @@ export default function ReviewPage() {
           {/* CV */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Uploaded CV</span>
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">{t('onbRev.cv')}</span>
               <button onClick={() => router.push('/onboarding/cv')} className="text-xs text-brand-orange hover:underline font-semibold">
-                Edit
+                {t('onbRev.edit')}
               </button>
             </div>
             {state.cvFilename ? (
@@ -155,7 +157,7 @@ export default function ReviewPage() {
                 <span>{state.cvFilename}</span>
               </div>
             ) : (
-              <p className="text-xs text-text-muted">No file uploaded (skipped)</p>
+              <p className="text-xs text-text-muted">{t('onbRev.noCv')}</p>
             )}
           </div>
         </div>
@@ -163,7 +165,7 @@ export default function ReviewPage() {
         {/* Navigation */}
         <div className="flex justify-between items-center border-t border-gray-200 pt-6">
           <Button variant="ghost" onClick={() => router.push('/onboarding/cv')}>
-            <ArrowLeft size={16} className="mr-2" /> Back
+            <ArrowLeft size={16} className="mr-2" /> {t('onbRev.back')}
           </Button>
           <Button
             variant="primary"

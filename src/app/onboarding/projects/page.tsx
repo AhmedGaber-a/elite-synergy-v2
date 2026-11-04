@@ -1,4 +1,5 @@
 'use client'
+import { useLanguage } from '@/lib/context/LanguageContext';
 import React, { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Upload, X, File, Plus } from 'lucide-react'
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { useOnboarding } from '@/lib/context/OnboardingContext'
 
 export default function ProjectsPage() {
+  const { t } = useLanguage();
   const router = useRouter()
   const { state, updateState } = useOnboarding()
   const [projects, setProjects] = useState(state.projects)
@@ -47,7 +49,7 @@ export default function ProjectsPage() {
       <div className="w-full max-w-2xl">
         <div className="mb-8">
           <p className="text-text-muted text-sm font-semibold uppercase tracking-wider mb-2">Step 3 of 5</p>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-text-primary mb-4">Showcase Your Work</h1>
+          <h1 className="text-3xl md:text-5xl font-extrabold text-text-primary mb-4">{t('onbProj.title')}</h1>
           <p className="text-text-body">Do you have any existing projects you&apos;d like to share?</p>
         </div>
 
@@ -58,14 +60,14 @@ export default function ProjectsPage() {
               className="flex-1 bg-white border-2 border-gray-100 rounded-2xl p-6 text-center hover:border-brand-orange hover:bg-orange-50 transition-colors"
             >
               <div className="text-3xl mb-2">📁</div>
-              <div className="font-bold text-text-primary">Yes, I have projects</div>
+              <div className="font-bold text-text-primary">{t('onbProj.yes')}</div>
             </button>
             <button 
               onClick={() => { setHasProjects(false); setProjects([]) }}
               className="flex-1 bg-white border-2 border-gray-100 rounded-2xl p-6 text-center hover:border-brand-navy hover:bg-gray-50 transition-colors"
             >
               <div className="text-3xl mb-2">⏭️</div>
-              <div className="font-bold text-text-primary">No, skip for now</div>
+              <div className="font-bold text-text-primary">{t('onbProj.no')}</div>
             </button>
           </div>
         )}
@@ -85,27 +87,27 @@ export default function ProjectsPage() {
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-text-primary mb-1">Project Title</label>
+                    <label className="block text-sm font-semibold text-text-primary mb-1">{t('onbProj.projTitle')}</label>
                     <input
                       type="text"
                       className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange text-sm"
-                      placeholder="E.g., E-commerce Website"
+                      placeholder={t('onbProj.projTitlePh')}
                       value={proj.title}
                       onChange={e => handleUpdateProject(i, 'title', e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-text-primary mb-1">Description</label>
+                    <label className="block text-sm font-semibold text-text-primary mb-1">{t('onbProj.desc')}</label>
                     <textarea
                       className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange text-sm min-h-[80px]"
-                      placeholder="Briefly describe what you built..."
+                      placeholder={t('onbProj.descPh')}
                       value={proj.description}
                       onChange={e => handleUpdateProject(i, 'description', e.target.value)}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-text-primary mb-1">Upload File (Optional Demo)</label>
+                    <label className="block text-sm font-semibold text-text-primary mb-1">{t('onbProj.upload')}</label>
                     {proj.filename ? (
                       <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
                         <File size={16} />
@@ -123,7 +125,7 @@ export default function ProjectsPage() {
                         />
                         <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:border-brand-orange">
                           <Upload size={18} />
-                          <span>Click to browse files</span>
+                          <span>{t('onbProj.browse')}</span>
                         </div>
                       </div>
                     )}
@@ -143,21 +145,21 @@ export default function ProjectsPage() {
 
         {hasProjects === false && (
           <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center mb-12">
-            <p className="text-text-body">You can always add projects later from your profile.</p>
+            <p className="text-text-body">{t('onbProj.later')}</p>
           </div>
         )}
 
         {/* Nav */}
         <div className="flex justify-between items-center border-t border-gray-200 pt-6">
           <Button variant="ghost" onClick={() => router.push('/onboarding/skills')}>
-            <ArrowLeft size={16} className="mr-2" /> Back
+            <ArrowLeft size={16} className="mr-2" /> {t('onbProj.back')}
           </Button>
           <Button 
             variant={hasProjects === false ? 'outline' : 'primary'} 
             onClick={handleNext}
             disabled={hasProjects === null}
           >
-            {hasProjects === false ? 'Skip Step' : 'Continue'} <ArrowRight size={16} className="ml-2" />
+            {hasProjects === false ? t('onbProj.skip') : t('onbProj.continue')} <ArrowRight size={16} className="ml-2" />
           </Button>
         </div>
       </div>
