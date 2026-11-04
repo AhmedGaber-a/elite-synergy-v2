@@ -3,10 +3,10 @@
 export const en = {
   // Nav & Global
   'nav.home': 'Home',
-  'nav.practical': 'Practical Projects',
-  'nav.peers': 'Students & Peers',
-  'nav.learning': 'Learning & Skill Exchange',
-  'nav.community': 'Community Hub',
+  'nav.practical': 'Projects',
+  'nav.peers': 'Peers',
+  'nav.learning': 'Skill Swap',
+  'nav.community': 'Community',
   'nav.signIn': 'Sign In',
   'nav.joinFree': 'Join Free',
   'nav.myProfile': 'My Profile',

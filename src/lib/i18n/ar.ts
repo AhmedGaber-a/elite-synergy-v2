@@ -6,10 +6,10 @@ import { TranslationKey } from './en';
 export const ar: Record<TranslationKey, string> = {
   // Nav & Global
   'nav.home': 'الرئيسية',
-  'nav.practical': 'المشاريع التطبيقية',
-  'nav.peers': 'مجتمع الطلاب والزملاء',
-  'nav.learning': 'التعلم وتبادل المهارات',
-  'nav.community': 'المجتمع الجامعي',
+  'nav.practical': 'المشاريع',
+  'nav.peers': 'الزملاء',
+  'nav.learning': 'تبادل المهارات',
+  'nav.community': 'المجتمع',
   'nav.signIn': 'تسجيل الدخول',
   'nav.joinFree': 'إنشاء حساب مجاني',
   'nav.myProfile': 'ملفي الشخصي',
