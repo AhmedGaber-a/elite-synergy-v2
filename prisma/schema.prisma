@@ -107,6 +107,8 @@ model User {
 
   @@index([email])
   @@index([college])
+  // ── Phase 1 performance index ──────────────────────────────
+  @@index([userRole, isVerified])
 }
 
 // Portfolio projects uploaded during registration / prior experience
@@ -195,6 +197,10 @@ model Project {
 
   teams           Team[]
   soloSubmissions SoloSubmission[]
+
+  // ── Phase 1 performance indexes ───────────────────────────
+  @@index([type, domain])
+  @@index([createdAt(sort: Desc)])
 }
 
 model SoloSubmission {
@@ -230,7 +236,8 @@ model Team {
   level     String   @default("All Levels")
   goal      String?  @db.Text
   projectId String?
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  // Cascade: deleting a Project removes all its Teams (and their members via Team cascade)
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -312,7 +319,7 @@ model Post {
   comments PostComment[]
 
   @@index([authorId])
-  @@index([createdAt])
+  @@index([createdAt(sort: Desc)])
   @@index([sharedPostId])
   moderationStatus ModerationStatus @default(APPROVED)
   community        String           @default("GENERAL") // "GENERAL" or a department key: CS | BIS | ACC_EN | ACC_AR

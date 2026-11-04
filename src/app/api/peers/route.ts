@@ -141,10 +141,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Peer ID is required' }, { status: 400 });
     }
 
+    // Prevent connecting with oneself
     if (peerId === authUser.id) {
       return NextResponse.json({ error: 'Cannot connect with yourself' }, { status: 400 });
     }
 
+    // Prevent duplicate pending or accepted requests between the two users
     const existing = await prisma.collaborationRequest.findFirst({
       where: {
         OR: [
@@ -153,11 +155,15 @@ export async function POST(req: NextRequest) {
         ],
       },
     });
+
     if (existing?.status === 'ACCEPTED') {
       return NextResponse.json({ error: 'أنتم متواصلين بالفعل' }, { status: 409 });
     }
-    if (existing?.status === 'PENDING' && existing.senderId === peerId) {
-      return NextResponse.json({ error: 'عندك طلب وارد من الزميل ده، اقبله من الطلبات الواردة' }, { status: 409 });
+    if (existing?.status === 'PENDING') {
+      if (existing.senderId === peerId) {
+        return NextResponse.json({ error: 'عندك طلب وارد من الزميل ده، اقبله من الطلبات الواردة' }, { status: 409 });
+      }
+      return NextResponse.json({ error: 'تم إرسال طلب تواصل من قبل وهو قيد الانتظار' }, { status: 409 });
     }
 
     // Upsert collaboration request in Prisma

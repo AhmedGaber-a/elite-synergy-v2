@@ -176,7 +176,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'المنشور غير موجود' }, { status: 404 });
     }
 
-    if (post.authorId !== authUser.id) {
+    // Only post author or ADMIN can delete
+    if (post.authorId !== authUser.id && authUser.userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'غير مصرح لك بحذف هذا المنشور' }, { status: 403 });
     }
 

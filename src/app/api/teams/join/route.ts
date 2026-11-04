@@ -35,9 +35,12 @@ export async function POST(req: NextRequest) {
         throw new Error('الفريق غير موجود');
       }
 
-      // 2. Check if student is already in this team
+      // 2. Prevent joining the same team twice
       const isAlreadyMember = team.members.some((m) => m.userId === authUser.id);
-      if (isAlreadyMember) {
+      const existingTeamMembership = await tx.teamMember.findFirst({
+        where: { teamId: team.id, userId: authUser.id },
+      });
+      if (isAlreadyMember || existingTeamMembership) {
         throw new Error('أنت عضو بالفعل في هذا الفريق');
       }
 
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
         throw new Error('انت في مشروع شغال حالياً. لازم تسلّمه الأول قبل ما تنضم لفريق تاني');
       }
 
-      // 2b. Check if student is already in another team under the same project
+      // 2b. Prevent joining multiple teams within the exact same project
       if (team.projectId) {
         const existingProjectMembership = await tx.teamMember.findFirst({
           where: {
@@ -65,8 +68,12 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 3. Automated slot control with atomic decrement concurrency guard
-      if (team.slots <= 0 || team.members.length >= team.maxSlots) {
+      // 3. Automated slot control: prevent joining if full (slots <= 0 or members >= maxSlots)
+      const currentMembersCount = await tx.teamMember.count({
+        where: { teamId: team.id },
+      });
+
+      if (team.slots <= 0 || currentMembersCount >= team.maxSlots || team.members.length >= team.maxSlots) {
         throw new Error('عذراً، هذا الفريق مكتمل بالكامل ولا توجد أماكن شاغرة');
       }
 

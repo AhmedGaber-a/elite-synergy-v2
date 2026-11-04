@@ -169,3 +169,43 @@ export async function POST(
     return NextResponse.json({ error: 'فشل إضافة التعليق' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const commentId = searchParams.get('commentId') || searchParams.get('id');
+    if (!commentId) {
+      return NextResponse.json({ error: 'معرف التعليق مطلوب' }, { status: 400 });
+    }
+
+    const comment = await prisma.postComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment || comment.postId !== params.id) {
+      return NextResponse.json({ error: 'التعليق غير موجود' }, { status: 404 });
+    }
+
+    // Only comment author or ADMIN can delete
+    if (comment.authorId !== authUser.id && authUser.userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف هذا التعليق' }, { status: 403 });
+    }
+
+    await prisma.postComment.delete({
+      where: { id: commentId },
+    });
+
+    return NextResponse.json({ success: true, message: 'تم حذف التعليق بنجاح' });
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    return NextResponse.json({ error: 'فشل حذف التعليق' }, { status: 500 });
+  }
+}
