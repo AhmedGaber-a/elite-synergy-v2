@@ -6,19 +6,65 @@ import { ProjectType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+// ── Helpers ──────────────────────────────────────────────────
+
+/** Parse a value to an integer, returning the fallback when the result is NaN. */
+function safeInt(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return Number.isNaN(n) ? fallback : Math.floor(n);
+}
+
+/** Strip dangerous protocols (javascript:, data:, vbscript:) from every string in an array. */
+function sanitizeStringArray(arr: unknown): string[] {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((v): v is string => typeof v === 'string')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => {
+      // Block javascript: / data: / vbscript: URLs
+      if (/^\s*(javascript|data|vbscript)\s*:/i.test(s)) return '';
+      return s;
+    })
+    .filter((s) => s.length > 0);
+}
+
+/**
+ * Generate a URL-safe slug from a title.
+ * Latin characters are lowercased and kept; Arabic (\u0600-\u06FF) characters are preserved.
+ * If the resulting base is empty, falls back to "project-<randomSuffix>".
+ */
+function generateSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+  const suffix = Math.random().toString(36).substring(2, 6);
+  return base.length > 0 ? `${base}-${suffix}` : `project-${suffix}`;
+}
+
+// ── GET /api/projects ────────────────────────────────────────
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const typeParam = searchParams.get('type');
     const domain = searchParams.get('domain');
 
-    const projectType =
-      typeParam && (typeParam.toUpperCase() === 'SOLO' ? ProjectType.SOLO : ProjectType.TEAM);
+    // Only filter by type when the param is explicitly SOLO or TEAM.
+    let projectType: ProjectType | undefined;
+    if (typeParam) {
+      const upper = typeParam.toUpperCase();
+      if (upper === 'SOLO') projectType = ProjectType.SOLO;
+      else if (upper === 'TEAM') projectType = ProjectType.TEAM;
+      // Any other value → no type filter (show all).
+    }
 
     const projects = await prisma.project.findMany({
       where: {
         ...(projectType ? { type: projectType } : {}),
-        ...(domain ? { domain: { equals: domain, mode: 'insensitive' } } : {}),
+        ...(domain ? { domain: { equals: domain, mode: 'insensitive' as const } } : {}),
       },
       include: {
         teams: {
@@ -38,11 +84,9 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        soloSubmissions: {
-          select: {
-            id: true,
-            userId: true,
-          },
+        // Use _count instead of loading all soloSubmission records into memory
+        _count: {
+          select: { soloSubmissions: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -78,7 +122,7 @@ export async function GET(req: NextRequest) {
         membersCount: t.members.length,
         members: t.members.map((m) => m.user.name),
       })),
-      submissionsCount: p.soloSubmissions.length,
+      submissionsCount: p._count.soloSubmissions,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
@@ -89,6 +133,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
   }
 }
+
+// ── POST /api/projects ───────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -132,7 +178,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'عنوان المشروع مطلوب' }, { status: 400 });
     }
 
-    const slug = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${Math.random().toString(36).substring(2, 6)}`;
+    // Safe integer parsing with NaN guards
+    const safeMaxTeams = safeInt(maxTeams, 5);
+    const safeLevel = safeInt(level, 4);
+    const safeScore = safeInt(score, 1000);
+    const safeMaxSlots = safeInt(maxSlots, 11);
+
+    // Arabic-aware slug generation
+    const slug = generateSlug(title.trim());
+
+    // Sanitize string arrays and block javascript: URLs
+    const safePhases = sanitizeStringArray(phases);
+    const safeRelevantData = sanitizeStringArray(relevantData);
+    const safeTasksToSolve = sanitizeStringArray(tasksToSolve);
+    const safeExpectedDeliverables = sanitizeStringArray(expectedDeliverables);
+
+    // Resolve professor name for schema consistency
+    const professorName = typeof doctor === 'string' && doctor.trim()
+      ? doctor.trim()
+      : (authUser.fullName || authUser.name || 'Professor');
 
     const newProject = await prisma.project.create({
       data: {
@@ -140,21 +204,21 @@ export async function POST(req: NextRequest) {
         title: title.trim(),
         description: description || 'Academic practical challenge uploaded by faculty professor.',
         type: type.toUpperCase() === 'SOLO' ? ProjectType.SOLO : ProjectType.TEAM,
-        maxTeams: Number(maxTeams) || 5,
+        maxTeams: safeMaxTeams,
         domain,
         forStudents,
-        level: Number(level),
-        doctor,
-        score: Number(score),
+        level: safeLevel,
+        doctor: professorName,        // set both doctor …
+        score: safeScore,
         completionTime,
-        maxSlots: Number(maxSlots),
+        maxSlots: safeMaxSlots,        // … and maxSlots for schema consistency
         isMega: Boolean(isMega),
-        phases,
+        phases: safePhases,
         companyBackground: companyBackground || null,
         businessProblem: businessProblem || null,
-        relevantData,
-        tasksToSolve,
-        expectedDeliverables,
+        relevantData: safeRelevantData,
+        tasksToSolve: safeTasksToSolve,
+        expectedDeliverables: safeExpectedDeliverables,
         category,
       },
     });

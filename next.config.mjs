@@ -10,10 +10,14 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // next/image optimisation is ON by default (unoptimized: false).
+    // Allow common remote image hosts if needed later via remotePatterns.
     remotePatterns: [],
   },
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  // No custom CSP headers here — middleware handles security headers.
+  // next/image will auto-optimise PNGs in public/ when served via <Image>.
 };
 
 export default withPWA(nextConfig);
