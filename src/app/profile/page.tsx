@@ -81,7 +81,7 @@ function EditProfileModal({
   onClose,
 }: {
   user: ProfileData;
-  onSave: (updated: Partial<ProfileData>) => Promise<void>;
+  onSave: (updated: Partial<ProfileData>) => Promise<{ ok: boolean; message?: string }>;
   onClose: () => void;
 }) {
   const { t } = useLanguage();
@@ -103,6 +103,7 @@ function EditProfileModal({
     facebook: user.socialLinks?.facebook || '',
   });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const modalFileRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,7 +129,8 @@ function EditProfileModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await onSave({
+    setSaveError(null);
+    const result = await onSave({
       avatar: form.avatar,
       avatarType: form.avatarType as any,
       name: form.name,
@@ -147,7 +149,11 @@ function EditProfileModal({
       },
     });
     setSaving(false);
-    onClose();
+    if (result.ok) {
+      onClose();
+    } else {
+      setSaveError(result.message || 'تعذر حفظ التعديلات، جرّب تاني');
+    }
   };
 
   return (
@@ -371,6 +377,7 @@ function EditProfileModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            {saveError && <p className="text-xs font-bold text-red-600 me-auto self-center">{saveError}</p>}
             <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl">Cancel</Button>
             <Button type="submit" variant="primary" isLoading={saving} className="rounded-xl px-6">Save Changes</Button>
           </div>
@@ -527,7 +534,7 @@ export default function ProfilePage() {
     }
   }, [authLoading, authUser, loadProfile, router]);
 
-  const handleUpdateProfile = async (updates: Partial<ProfileData>) => {
+  const handleUpdateProfile = async (updates: Partial<ProfileData>): Promise<{ ok: boolean; message?: string }> => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -548,9 +555,13 @@ export default function ProfilePage() {
         if (refreshUser) {
           await refreshUser();
         }
+        return { ok: true };
       }
+      const errData = await res.json().catch(() => ({} as { error?: string }));
+      return { ok: false, message: errData.error || `تعذر حفظ التعديلات (${res.status})` };
     } catch (err) {
       console.error('Failed to update profile:', err);
+      return { ok: false, message: 'تعذر الاتصال بالسيرفر' };
     }
   };
 

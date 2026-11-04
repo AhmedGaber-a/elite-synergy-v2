@@ -190,7 +190,7 @@ function VerifyForm() {
 
           <div>
             <label className="block text-xs font-bold text-text-primary mb-2 text-center">{t('verify.enterCode')}</label>
-            <div className="flex justify-between gap-2 dir-ltr" onPaste={handlePaste}>
+            <div dir="ltr" className="flex justify-between gap-2" onPaste={handlePaste}>
               {otp.map((digit, i) => (
                 <input
                   key={i}
