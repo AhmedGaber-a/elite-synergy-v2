@@ -14,6 +14,8 @@ import { EndorseModal } from '@/components/peers/EndorseModal';
 
 export interface PeerItem {
   id: string;
+  // Viewer's link with this peer: none, my request waiting, their request waiting for me, or connected.
+  connection?: 'NONE' | 'SENT' | 'RECEIVED' | 'ACCEPTED';
   name: string;
   fullName: string;
   email: string;
@@ -278,7 +280,8 @@ export default function PeersPage() {
   const [deptCounts, setDeptCounts] = useState<Record<string, number>>({});
   const activeDept: string = selectedDept ?? departmentOf(user?.college) ?? 'ALL';
   const [showSuggest, setShowSuggest] = useState(false);
-  const [connectedIds, setConnectedIds] = useState<Record<string, boolean>>({});
+  // Incoming connection requests waiting for my answer (from the server, not from local memory).
+  const [incoming, setIncoming] = useState<{ id: string; person: { id: string; name: string; fullName: string; college: string } }[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'explore' | 'points'>('explore');
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
@@ -325,6 +328,46 @@ export default function PeersPage() {
     return () => clearTimeout(debounce);
   }, [fetchPeers]);
 
+  const fetchRequests = useCallback(async () => {
+    try {
+      const res = await fetch('/api/peers/requests', { cache: 'no-store', credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setIncoming(data.incoming || []);
+      }
+    } catch {
+      /* keep the previous list */
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const respondToRequest = async (requestId: string, action: 'accept' | 'decline') => {
+    try {
+      const res = await fetch(`/api/peers/requests/${requestId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setNotification(
+        res.ok
+          ? action === 'accept'
+            ? 'تم قبول الطلب، تقدر تبدأ المحادثة من الرسائل'
+            : 'تم رفض الطلب'
+          : data.error || 'تعذر تنفيذ العملية'
+      );
+      setTimeout(() => setNotification(null), 4000);
+    } catch {
+      setNotification('حدث خطأ في الاتصال بالخادم');
+      setTimeout(() => setNotification(null), 4000);
+    }
+    fetchRequests();
+    fetchPeers();
+  };
+
   const handleConnect = async (peerId: string) => {
     try {
       const res = await fetch('/api/peers', {
@@ -335,7 +378,8 @@ export default function PeersPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setConnectedIds((prev) => ({ ...prev, [peerId]: true }));
+        fetchPeers();
+        fetchRequests();
         setNotification('تم إرسال طلب التواصل بنجاح! سيتم إخطار زميلك.');
         setTimeout(() => setNotification(null), 4000);
       } else {
@@ -424,6 +468,30 @@ export default function PeersPage() {
               </button>
             ))}
           </div>
+
+          {activeTab === 'explore' && incoming.length > 0 && (
+            <div className="mb-6 bg-white rounded-3xl p-5 border border-orange-100 shadow-sm">
+              <h3 className="font-extrabold text-sm mb-3">طلبات تواصل واردة ({incoming.length})</h3>
+              <div className="flex flex-col gap-3">
+                {incoming.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-text-primary truncate">{r.person.fullName || r.person.name}</p>
+                      <p className="text-xs text-text-muted truncate">{r.person.college}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" onClick={() => respondToRequest(r.id, 'accept')}>
+                        قبول
+                      </Button>
+                      <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" onClick={() => respondToRequest(r.id, 'decline')}>
+                        رفض
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {activeTab === 'explore' ? (
           <div className="flex flex-col lg:flex-row gap-8">
@@ -576,23 +644,31 @@ export default function PeersPage() {
                             View Profile
                           </Button>
                         </Link>
-                        <Button
-                          variant={connectedIds[peer.id] ? 'outline' : 'primary'}
-                          size="sm"
-                          className="px-3 py-1.5 text-xs font-bold rounded-xl"
-                          onClick={() => handleConnect(peer.id)}
-                          disabled={connectedIds[peer.id]}
-                        >
-                          {connectedIds[peer.id] ? (
-                            <>
-                              <Check size={13} className="me-1 text-green-600" /> Requested
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus size={13} className="me-1" /> Connect
-                            </>
-                          )}
-                        </Button>
+                        {peer.connection === 'ACCEPTED' ? (
+                          <span className="text-xs font-bold text-green-600 flex items-center gap-1">
+                            <Check size={13} /> متواصلين
+                          </span>
+                        ) : peer.connection === 'SENT' ? (
+                          <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" disabled>
+                            <Check size={13} className="me-1 text-green-600" /> تم الإرسال
+                          </Button>
+                        ) : peer.connection === 'RECEIVED' ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl"
+                            onClick={() => {
+                              const req = incoming.find((x) => x.person.id === peer.id);
+                              if (req) respondToRequest(req.id, 'accept');
+                            }}
+                          >
+                            <Check size={13} className="me-1" /> قبول الطلب
+                          </Button>
+                        ) : (
+                          <Button variant="primary" size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" onClick={() => handleConnect(peer.id)}>
+                            <UserPlus size={13} className="me-1" /> Connect
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

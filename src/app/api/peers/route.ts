@@ -102,7 +102,22 @@ export async function GET(req: NextRequest) {
         .reduce((sum, g) => sum + g._count._all, 0);
     }
 
-    return NextResponse.json({ peers: filteredPeers, departmentCounts });
+    // Each peer's link with the viewer, so the UI never relies on local memory.
+    const links = currentUserId
+      ? await prisma.collaborationRequest.findMany({
+          where: { OR: [{ senderId: currentUserId }, { receiverId: currentUserId }] },
+          select: { senderId: true, receiverId: true, status: true },
+        })
+      : [];
+    const connectionWith = new Map<string, 'SENT' | 'RECEIVED' | 'ACCEPTED'>();
+    for (const l of links) {
+      const other = l.senderId === currentUserId ? l.receiverId : l.senderId;
+      if (l.status === 'ACCEPTED') connectionWith.set(other, 'ACCEPTED');
+      else if (l.status === 'PENDING') connectionWith.set(other, l.senderId === currentUserId ? 'SENT' : 'RECEIVED');
+    }
+    const withState = filteredPeers.map((p) => ({ ...p, connection: connectionWith.get(p.id) ?? 'NONE' }));
+
+    return NextResponse.json({ peers: withState, departmentCounts });
   } catch (error) {
     console.error('Fetch peers error:', error);
     return NextResponse.json({ error: 'Failed to fetch peers' }, { status: 500 });
@@ -125,6 +140,21 @@ export async function POST(req: NextRequest) {
 
     if (peerId === authUser.id) {
       return NextResponse.json({ error: 'Cannot connect with yourself' }, { status: 400 });
+    }
+
+    const existing = await prisma.collaborationRequest.findFirst({
+      where: {
+        OR: [
+          { senderId: authUser.id, receiverId: peerId },
+          { senderId: peerId, receiverId: authUser.id },
+        ],
+      },
+    });
+    if (existing?.status === 'ACCEPTED') {
+      return NextResponse.json({ error: 'أنتم متواصلين بالفعل' }, { status: 409 });
+    }
+    if (existing?.status === 'PENDING' && existing.senderId === peerId) {
+      return NextResponse.json({ error: 'عندك طلب وارد من الزميل ده، اقبله من الطلبات الواردة' }, { status: 409 });
     }
 
     // Upsert collaboration request in Prisma
@@ -160,42 +190,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Ensure a real peer conversation is available in Chat
-    const existingConv = await prisma.conversation.findFirst({
-      where: {
-        isGroup: false,
-        participants: {
-          every: {
-            userId: { in: [authUser.id, peerId] },
-          },
-        },
-      },
-      include: { participants: true },
-    });
-
-    let convId = existingConv?.id;
-    if (!existingConv || existingConv.participants.length < 2) {
-      const newConv = await prisma.conversation.create({
-        data: {
-          isGroup: false,
-          category: 'peers',
-          lastMessage: message || 'بدأت المحادثة الأكاديمية',
-          participants: {
-            create: [
-              { userId: authUser.id },
-              { userId: peerId },
-            ],
-          },
-        },
-      });
-      convId = newConv.id;
-    }
-
     return NextResponse.json({
       success: true,
       message: 'تم إرسال طلب التواصل بنجاح!',
       request,
-      conversationId: convId,
     });
   } catch (error) {
     console.error('Connect peer error:', error);
