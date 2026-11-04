@@ -73,7 +73,7 @@ export function HeroSection() {
                 </>
               ) : (
                 <>
-                  <Link href="/auth/login">
+                  <Link href="/onboarding/register">
                     <Button variant="primary" size="lg">{t('home.joinNow')}</Button>
                   </Link>
                   <Link href="#about">

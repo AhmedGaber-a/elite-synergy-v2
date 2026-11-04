@@ -17,7 +17,7 @@ export function CTABanner() {
         <p className="text-white/70 text-sm md:text-base mb-8 max-w-lg mx-auto">
           {t('home.ctaSubtitle')}
         </p>
-        <Link href="/auth/login">
+        <Link href="/onboarding/register">
           <Button variant="primary" size="lg" className="rounded-2xl px-8 font-bold shadow-lg shadow-orange-500/20">
             {t('home.joinNow')}
           </Button>

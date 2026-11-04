@@ -221,7 +221,7 @@ export function Navbar() {
                 <Link href="/auth/login">
                   <Button variant="ghost" size="sm" className="rounded-full">{t('nav.signIn')}</Button>
                 </Link>
-                <Link href="/auth/login">
+                <Link href="/onboarding/register">
                   <Button variant="primary" size="sm" className="rounded-full px-6 font-semibold">{t('nav.joinFree')}</Button>
                 </Link>
               </div>
@@ -330,7 +330,7 @@ export function Navbar() {
                   <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
                     <Button variant="ghost" fullWidth className="rounded-xl">{t('nav.signIn')}</Button>
                   </Link>
-                  <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
+                  <Link href="/onboarding/register" onClick={() => setMobileOpen(false)}>
                     <Button variant="primary" fullWidth className="rounded-xl">{t('nav.joinFree')}</Button>
                   </Link>
                 </div>
