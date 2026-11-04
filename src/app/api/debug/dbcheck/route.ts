@@ -18,5 +18,8 @@ export async function GET() {
   } catch (e) {
     column = 'error: ' + (e instanceof Error ? e.name : 'unknown');
   }
-  return NextResponse.json({ hostHash, hasUrl: url.length > 0, column });
+  const afterHost = url.split('@')[1] || '';
+  const dbName = afterHost.includes('/') ? afterHost.split('/')[1].split('?')[0] : null;
+  const params = afterHost.includes('?') ? afterHost.split('?')[1].split('&').map((x) => x.split('=')[0]) : [];
+  return NextResponse.json({ hostHash, dbName, urlParamNames: params, hasUrl: url.length > 0, column });
 }
