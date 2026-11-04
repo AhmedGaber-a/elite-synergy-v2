@@ -2,17 +2,19 @@
 // Fixed bar above the mobile nav that shows background uploads.
 'use client';
 import React from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import { Check, AlertCircle, RotateCcw, X, Loader2 } from 'lucide-react';
 import { useUploadQueue, type UploadJob } from '@/lib/context/UploadQueueContext';
 
-function statusText(job: UploadJob): string {
-  if (job.status === 'uploading') return `جاري رفع ${job.label}…`;
-  if (job.status === 'posting') return 'جاري النشر…';
-  if (job.status === 'done') return 'تم النشر ✓';
-  return job.error || 'فشل الرفع';
+function statusText(job: UploadJob, t: (k: string) => string): string {
+  if (job.status === 'uploading') return `${t('upload.uploading')} ${t(`upload.kind.${job.kind}`)}…`;
+  if (job.status === 'posting') return t('upload.posting');
+  if (job.status === 'done') return t('upload.done');
+  return job.error || t('upload.failed');
 }
 
 export function UploadBar() {
+  const { t } = useLanguage();
   const { jobs, retry, dismiss } = useUploadQueue();
   if (jobs.length === 0) return null;
 
@@ -37,10 +39,10 @@ export function UploadBar() {
             )}
 
             <div className="flex-1 min-w-0">
-              <p className={`font-semibold truncate ${failed ? 'text-red-600' : 'text-text-primary'}`}>{statusText(job)}</p>
+              <p className={`font-semibold truncate ${failed ? 'text-red-600' : 'text-text-primary'}`}>{statusText(job, t)}</p>
               {failed && (
                 <p className="text-[11px] text-text-muted mt-0.5">
-                  لو قفلت الصفحة قبل ما الرفع يخلص، لازم ترفع الملف تاني.
+                  {t('upload.closeWarn')}
                 </p>
               )}
             </div>
@@ -51,11 +53,11 @@ export function UploadBar() {
                 onClick={() => retry(job.id)}
                 className="inline-flex items-center gap-1 text-xs font-bold text-brand-orange hover:underline shrink-0"
               >
-                <RotateCcw size={13} /> أعد المحاولة
+                <RotateCcw size={13} /> {t('upload.retry')}
               </button>
             )}
             {failed && (
-              <button type="button" onClick={() => dismiss(job.id)} className="p-1 text-text-muted hover:text-text-primary shrink-0" aria-label="إغلاق">
+              <button type="button" onClick={() => dismiss(job.id)} className="p-1 text-text-muted hover:text-text-primary shrink-0" aria-label={t('upload.close')}>
                 <X size={16} />
               </button>
             )}

@@ -123,8 +123,8 @@ export function Navbar() {
             <button
               onClick={toggleLang}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-text-primary bg-white hover:bg-orange-50 hover:text-brand-orange transition-all border border-gray-200 hover:border-brand-orange shadow-sm"
-              title={lang === 'en' ? 'التبديل إلى العربية' : 'Switch to English'}
-              aria-label="Toggle language"
+              title={t('nav.switchLang')}
+              aria-label={t('nav.toggleLang')}
             >
               <span className="text-base leading-none">
                 {lang === 'en' ? '🇺🇸' : '🇪🇬'}
@@ -140,8 +140,8 @@ export function Navbar() {
                 <Link
                   href="/messages"
                   className="relative p-2.5 text-text-body hover:text-brand-orange hover:bg-orange-50 rounded-xl transition-all"
-                  aria-label="Messages"
-                  title="Messages"
+                  aria-label={t('nav.messages')}
+                  title={t('nav.messages')}
                 >
                   <MessageSquare size={20} />
                   {unread.messages > 0 && (
@@ -155,8 +155,8 @@ export function Navbar() {
                 <Link
                   href="/notification"
                   className="relative p-2.5 text-text-body hover:text-brand-orange hover:bg-orange-50 rounded-xl transition-all"
-                  aria-label="Notifications"
-                  title="Notifications"
+                  aria-label={t('nav.notifications')}
+                  title={t('nav.notifications')}
                 >
                   <Bell size={20} />
                   {unread.notifications > 0 && (
@@ -171,7 +171,7 @@ export function Navbar() {
                   <button
                     onClick={() => setProfileOpen((o) => !o)}
                     className="flex items-center gap-2 bg-brand-orange text-white ps-2 pe-3 py-1.5 rounded-full hover:bg-brand-orange-dark transition-colors text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2"
-                    aria-label="Profile menu"
+                    aria-label={t('nav.profileMenu')}
                     aria-expanded={profileOpen}
                   >
                     <Avatar
@@ -235,7 +235,7 @@ export function Navbar() {
             <button
               onClick={toggleLang}
               className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold shadow-sm"
-              aria-label="Toggle language"
+              aria-label={t('nav.toggleLang')}
             >
               <span className="text-base">{lang === 'en' ? '🇺🇸' : '🇪🇬'}</span>
               <span>{lang === 'en' ? 'English' : 'العربية'}</span>
@@ -243,7 +243,7 @@ export function Navbar() {
 
             {isAuthenticated && (
               <>
-                <Link href="/messages" className="relative p-2 text-text-body" aria-label="Messages">
+                <Link href="/messages" className="relative p-2 text-text-body" aria-label={t('nav.messages')}>
                   <MessageSquare size={19} />
                   {unread.messages > 0 && (
                     <span className="absolute top-1 end-1 min-w-[14px] h-3.5 px-0.5 flex items-center justify-center rounded-full bg-brand-orange text-[8px] font-bold text-white">
@@ -251,7 +251,7 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
-                <Link href="/notification" className="relative p-2 text-text-body" aria-label="Notifications">
+                <Link href="/notification" className="relative p-2 text-text-body" aria-label={t('nav.notifications')}>
                   <Bell size={19} />
                   {unread.notifications > 0 && (
                     <span className="absolute top-1 end-1 min-w-[14px] h-3.5 px-0.5 flex items-center justify-center rounded-full bg-brand-orange text-[8px] font-bold text-white ring-1 ring-white">
@@ -264,7 +264,7 @@ export function Navbar() {
             <button
               className="p-2 text-text-primary hover:bg-gray-100 rounded-xl transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
+              aria-label={t('nav.openMenu')}
               aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}

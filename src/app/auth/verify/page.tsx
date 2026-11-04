@@ -1,6 +1,7 @@
 // src/app/auth/verify/page.tsx
 'use client';
 import React, { useState, useEffect, Suspense, useRef } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,6 +9,7 @@ import { ShieldCheck, ArrowRight, RotateCw, CheckCircle2, AlertCircle, Mail } fr
 import { Button } from '@/components/ui/Button';
 
 function VerifyForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialEmail = searchParams.get('email') || '';
@@ -72,12 +74,12 @@ function VerifyForm() {
     setSuccess('');
 
     if (!email) {
-      setError('يرجى تحديد البريد الإلكتروني الجامعي');
+      setError(t('verify.pickEmail'));
       return;
     }
 
     if (fullOtp.length !== 6) {
-      setError('يرجى إدخال كود التفعيل المكون من 6 أرقام بالكامل');
+      setError(t('verify.fullCode'));
       return;
     }
 
@@ -93,16 +95,16 @@ function VerifyForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'فشل تفعيل الحساب');
+        setError(data.error || t('verify.failed'));
         return;
       }
 
-      setSuccess('تم تفعيل حسابك بنجاح! جاري تحويلك لصفحة تسجيل الدخول...');
+      setSuccess(t('verify.successRedirect'));
       setTimeout(() => {
         router.push('/auth/login?verified=true');
       }, 1500);
     } catch {
-      setError('حدث خطأ في الاتصال بالخادم، يرجى المحاولة مرة أخرى');
+      setError(t('verify.serverError'));
     } finally {
       setLoading(false);
     }
@@ -124,17 +126,17 @@ function VerifyForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'فشل إعادة إرسال الكود');
+        setError(data.error || t('verify.resendFailed'));
         return;
       }
 
-      setSuccess('تم إرسال كود تفعيل جديد إلى بريدك الجامعي بنجاح');
+      setSuccess(t('verify.resendOk'));
       setCanResend(false);
       setCountdown(60);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } catch {
-      setError('فشل في إرسال كود التفعيل');
+      setError(t('verify.sendFailed'));
     } finally {
       setResending(false);
     }
@@ -147,13 +149,13 @@ function VerifyForm() {
           <div className="w-16 h-16 bg-brand-orange/10 text-brand-orange rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ShieldCheck size={36} />
           </div>
-          <h1 className="text-2xl font-black text-text-primary mb-2">تفعيل الحساب الأكاديمي</h1>
+          <h1 className="text-2xl font-black text-text-primary mb-2">{t('verify.title')}</h1>
           <p className="text-sm text-text-muted leading-relaxed">
-            تم إرسال رمز التحقق المكون من 6 أرقام إلى بريدك الجامعي:
+            {t('verify.sentTo')}
           </p>
           <div className="inline-flex items-center gap-2 bg-blue-50 text-brand-blue px-3 py-1.5 rounded-full text-xs font-semibold mt-2 dir-ltr">
             <Mail size={14} />
-            <span>{email || 'بريدك الإلكتروني'}</span>
+            <span>{email || t('verify.yourEmail')}</span>
           </div>
         </div>
 
@@ -174,12 +176,12 @@ function VerifyForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {!initialEmail && (
             <div>
-              <label className="block text-xs font-bold text-text-primary mb-1.5">البريد الإلكتروني الجامعي</label>
+              <label className="block text-xs font-bold text-text-primary mb-1.5">{t('verify.email')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder={t('login.emailPh')}
                 required
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange focus:outline-none"
               />
@@ -187,7 +189,7 @@ function VerifyForm() {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-text-primary mb-2 text-center">أدخل كود التفعيل (OTP)</label>
+            <label className="block text-xs font-bold text-text-primary mb-2 text-center">{t('verify.enterCode')}</label>
             <div className="flex justify-between gap-2 dir-ltr" onPaste={handlePaste}>
               {otp.map((digit, i) => (
                 <input
@@ -216,11 +218,11 @@ function VerifyForm() {
             disabled={loading || fullOtp.length !== 6}
             className="rounded-xl h-12 font-bold text-base shadow-md"
           >
-            تأكيد التفعيل <ArrowRight size={18} className="ms-2" />
+            {t('verify.confirm')} <ArrowRight size={18} className="ms-2" />
           </Button>
 
           <div className="flex items-center justify-between text-xs pt-2">
-            <span className="text-text-muted">لم يصلك الكود؟</span>
+            <span className="text-text-muted">{t('verify.noCode')}</span>
             <button
               type="button"
               onClick={handleResend}
@@ -230,13 +232,13 @@ function VerifyForm() {
               }`}
             >
               <RotateCw size={13} className={resending ? 'animate-spin' : ''} />
-              {canResend ? 'إعادة إرسال الكود' : `إعادة الإرسال بعد (${countdown}s)`}
+              {canResend ? t('verify.resendCode') : `${t('verify.resendIn')} (${countdown}s)`}
             </button>
           </div>
 
           <div className="text-center pt-2 border-t border-gray-100">
             <Link href="/auth/login" className="text-xs text-text-muted hover:text-brand-orange transition-colors">
-              العودة إلى تسجيل الدخول
+              {t('forgot.back')}
             </Link>
           </div>
         </form>
@@ -246,8 +248,9 @@ function VerifyForm() {
 }
 
 export default function VerifyPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white">جاري التحميل...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white">{t('verify.loading')}</div>}>
       <VerifyForm />
     </Suspense>
   );

@@ -24,3 +24,9 @@ export const YEAR_NAMES_AR: Record<number, string> = {
   4: 'السنة الرابعة',
   5: 'السنة الخامسة',
 };
+
+// Year name in the current language. Arabic: السنة الأولى... English: Year 1...
+export function yearLabel(year: number, lang: 'ar' | 'en'): string {
+  if (lang === 'en') return `Year ${year}`;
+  return YEAR_NAMES_AR[year] ?? '';
+}

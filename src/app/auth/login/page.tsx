@@ -1,6 +1,7 @@
 // src/app/auth/login/page.tsx
 'use client';
 import React, { useState, Suspense } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,6 +12,7 @@ import { useAuth } from '@/lib/context/AuthContext';
 
 function LoginForm() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
@@ -29,7 +31,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('يرجى ملء جميع الحقول');
+      setError(t('login.fillAll'));
       return;
     }
     setIsLoading(true);
@@ -42,7 +44,7 @@ function LoginForm() {
     if (result.success) {
       router.push(redirectTo);
     } else {
-      setError(result.error || 'فشل تسجيل الدخول');
+      setError(result.error || t('login.failed'));
       setNotRegistered(!!result.notRegistered);
       if (result.unverified) {
         setUnverifiedEmail(email.toLowerCase().trim());
@@ -56,20 +58,20 @@ function LoginForm() {
       {/* Left form panel */}
       <div className="flex-1 flex items-center justify-center bg-bg-cream p-6">
         <div className="w-full max-w-sm">
-          <h2 className="text-3xl font-extrabold text-text-primary mb-2 text-center">تسجيل الدخول</h2>
-          <p className="text-center text-xs text-text-muted mb-6">منصة Elite Synergy الأكاديمية</p>
+          <h2 className="text-3xl font-extrabold text-text-primary mb-2 text-center">{t('login.title')}</h2>
+          <p className="text-center text-xs text-text-muted mb-6">{t('login.sub')}</p>
 
           {isResetParam && (
             <div className="bg-green-50 border border-green-200 text-green-700 p-3.5 rounded-2xl text-xs mb-5 flex items-start gap-2">
               <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
-              <span>تم تغيير كلمة المرور. سجّل دخولك بالكلمة الجديدة.</span>
+              <span>{t('login.resetDone')}</span>
             </div>
           )}
 
           {isVerifiedParam && (
             <div className="bg-green-50 border border-green-200 text-green-700 p-3.5 rounded-2xl text-xs mb-5 flex items-start gap-2">
               <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0 text-green-600" />
-              <span>تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول.</span>
+              <span>{t('login.verifiedDone')}</span>
             </div>
           )}
 
@@ -86,7 +88,7 @@ function LoginForm() {
                     href={`/onboarding/register?email=${encodeURIComponent(email)}`}
                     className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-brand-orange text-white rounded-xl font-bold text-xs hover:bg-brand-orange-dark transition-all shadow-md"
                   >
-                    إنشاء حساب جديد (Sign Up) <ArrowRight size={14} />
+                    {t('login.signUp')} <ArrowRight size={14} />
                   </Link>
                 </div>
               )}
@@ -97,7 +99,7 @@ function LoginForm() {
                     href={`/auth/verify?email=${encodeURIComponent(unverifiedEmail)}`}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-orange hover:underline bg-white px-3 py-1.5 rounded-lg border border-red-200 shadow-sm"
                   >
-                    تفعيل الحساب الآن بواسطة كود التحقق <ArrowRight size={13} />
+                    {t('login.verifyNow')} <ArrowRight size={13} />
                   </Link>
                 </div>
               )}
@@ -106,20 +108,20 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="البريد الجامعي"
+              label={t('login.email')}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
+              placeholder={t('login.emailPh')}
               leftIcon={<Mail size={16} />}
               autoComplete="email"
             />
             <Input
-              label="كلمة المرور"
+              label={t('login.password')}
               type={showPw ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="أدخل كلمة المرور"
+              placeholder={t('login.passwordPh')}
               leftIcon={<Lock size={16} />}
               rightIcon={
                 <button
@@ -141,21 +143,21 @@ function LoginForm() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="rounded text-brand-orange focus:ring-brand-orange"
                 />
-                تذكرني
+                {t('login.remember')}
               </label>
               <Link href="/auth/forgot" className="text-brand-orange hover:underline font-semibold">
-                نسيت كلمة المرور؟
+                {t('login.forgot')}
               </Link>
             </div>
 
             <Button type="submit" variant="primary" fullWidth isLoading={isLoading} size="lg" className="rounded-xl h-11 font-bold">
-              دخول
+              {t('login.submit')}
             </Button>
 
             <p className="text-center text-xs text-text-muted mt-5">
-              ليس لديك حساب بعد؟{' '}
+              {t('login.noAccount')}{' '}
               <Link href="/onboarding/register" className="text-brand-orange hover:underline font-bold">
-                أنشئ حسابك الآن
+                {t('login.createNow')}
               </Link>
             </p>
           </form>
@@ -173,8 +175,9 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Login...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">{t('login.loading')}</div>}>
       <LoginForm />
     </Suspense>
   );

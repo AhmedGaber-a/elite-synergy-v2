@@ -4,10 +4,12 @@
 import React, { useState } from 'react';
 import { GraduationCap, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
-import { YEAR_NAMES_AR } from '@/lib/utils/cairoDate';
+import { useLanguage } from '@/lib/context/LanguageContext';
+import { yearLabel } from '@/lib/utils/cairoDate';
 
 export function AcademicYearCard() {
   const { user, refreshUser } = useAuth();
+  const { t, lang } = useLanguage();
   const [year, setYear] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export function AcademicYearCard() {
 
   const save = async () => {
     if (!year) {
-      setError('اختار السنة الأول');
+      setError(t('year.pickFirst'));
       return;
     }
     setSaving(true);
@@ -32,12 +34,12 @@ export function AcademicYearCard() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'تعذر حفظ السنة الدراسية');
+        setError(data.error || t('year.saveFailed'));
         return;
       }
       await refreshUser();
     } catch {
-      setError('حدث خطأ في الاتصال بالخادم');
+      setError(t('verify.serverError'));
     } finally {
       setSaving(false);
     }
@@ -47,27 +49,27 @@ export function AcademicYearCard() {
     <div id="year" className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm scroll-mt-24">
       <div className="flex items-center gap-2 pb-3">
         <GraduationCap size={18} className="text-brand-orange" />
-        <h3 className="font-extrabold text-text-primary">السنة الدراسية</h3>
+        <h3 className="font-extrabold text-text-primary">{t('year.title')}</h3>
       </div>
 
       {current ? (
         <div className="flex items-center justify-between gap-3">
-          <p className="font-bold text-text-primary text-sm">{YEAR_NAMES_AR[current]}</p>
+          <p className="font-bold text-text-primary text-sm">{yearLabel(current, lang)}</p>
           <span className="inline-flex items-center gap-1 text-xs text-text-muted">
-            <Lock size={13} /> مقفولة
+            <Lock size={13} /> {t('year.locked')}
           </span>
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-text-muted">اختار سنتك عشان تشوف محتوى سنتك. بعد ما تحفظها مش هتقدر تغيرها، كلم الإدارة لو فيه غلط.</p>
+          <p className="text-xs text-text-muted">{t('year.hint')}</p>
           <select
             value={year ?? ''}
             onChange={(e) => setYear(Number(e.target.value) || null)}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-white"
           >
-            <option value="">اختار السنة</option>
+            <option value="">{t('year.choose')}</option>
             {[1, 2, 3, 4, 5].map((y) => (
-              <option key={y} value={y}>{YEAR_NAMES_AR[y]}</option>
+              <option key={y} value={y}>{yearLabel(y, lang)}</option>
             ))}
           </select>
           <button
@@ -76,7 +78,7 @@ export function AcademicYearCard() {
             disabled={saving || !year}
             className="w-full rounded-xl bg-brand-orange text-white font-bold py-2.5 text-sm disabled:opacity-50"
           >
-            {saving ? 'جاري الحفظ…' : 'احفظ السنة'}
+            {saving ? t('year.saving') : t('year.save')}
           </button>
         </div>
       )}

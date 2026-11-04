@@ -1,6 +1,7 @@
 // src/app/auth/reset/page.tsx
 'use client';
 import React, { Suspense, useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowRight, Check, X } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 const COOLDOWN_SECONDS = 60;
 
 function ResetForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = (searchParams.get('email') || '').trim();
@@ -29,8 +31,8 @@ function ResetForm() {
   }, [cooldown]);
 
   const rules = [
-    { ok: password.length >= 8, text: '8 حروف على الأقل' },
-    { ok: password.length > 0 && password === confirm, text: 'التأكيد مطابق لكلمة المرور' },
+    { ok: password.length >= 8, text: t('reset.ruleLen') },
+    { ok: password.length > 0 && password === confirm, text: t('reset.ruleMatch') },
   ];
 
   const resend = async () => {
@@ -41,16 +43,16 @@ function ResetForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     }).catch(() => null);
-    setInfo('لو البريد مسجل عندنا، هيوصلك كود جديد خلال دقايق.');
+    setInfo(t('reset.sentNew'));
     setCooldown(COOLDOWN_SECONDS);
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) { setError('ارجع لصفحة نسيت كلمة المرور واكتب بريدك'); return; }
-    if (!/^\d{6}$/.test(code.trim())) { setError('الكود لازم يكون 6 أرقام'); return; }
-    if (password.length < 8) { setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
-    if (password !== confirm) { setError('كلمة المرور وتأكيدها مش متطابقين'); return; }
+    if (!email) { setError(t('reset.needEmail')); return; }
+    if (!/^\d{6}$/.test(code.trim())) { setError(t('reset.codeDigits')); return; }
+    if (password.length < 8) { setError(t('reset.pwShort')); return; }
+    if (password !== confirm) { setError(t('reset.pwMismatch')); return; }
 
     setIsLoading(true);
     setError('');
@@ -63,12 +65,12 @@ function ResetForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'حدث خطأ أثناء تغيير كلمة المرور');
+        setError(data.error || t('reset.failed'));
         return;
       }
       router.push('/auth/login?reset=true');
     } catch {
-      setError('حدث خطأ في الاتصال بالخادم');
+      setError(t('verify.serverError'));
     } finally {
       setIsLoading(false);
     }
@@ -77,15 +79,15 @@ function ResetForm() {
   return (
     <div className="min-h-screen flex bg-bg-cream p-6 items-center justify-center">
       <div className="w-full max-w-sm">
-        <h2 className="text-3xl font-extrabold text-text-primary mb-2 text-center">كلمة مرور جديدة</h2>
-        <p className="text-center text-xs text-text-muted mb-6">اكتب الكود اللي وصلك على الإيميل واختار كلمة مرور جديدة</p>
+        <h2 className="text-3xl font-extrabold text-text-primary mb-2 text-center">{t('reset.title')}</h2>
+        <p className="text-center text-xs text-text-muted mb-6">{t('reset.sub')}</p>
 
         {error && <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-2xl text-xs mb-5">{error}</div>}
         {info && <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-2xl text-xs mb-5">{info}</div>}
 
         <form onSubmit={submit} className="space-y-4">
           <Input
-            label="كود الاستعادة (6 أرقام)"
+            label={t('reset.codeLabel')}
             inputMode="numeric"
             maxLength={6}
             value={code}
@@ -93,7 +95,7 @@ function ResetForm() {
             placeholder="000000"
           />
           <Input
-            label="كلمة المرور الجديدة"
+            label={t('reset.newPw')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -101,7 +103,7 @@ function ResetForm() {
             autoComplete="new-password"
           />
           <Input
-            label="أكد كلمة المرور"
+            label={t('reset.confirmPw')}
             type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
@@ -119,7 +121,7 @@ function ResetForm() {
           </ul>
 
           <Button type="submit" variant="primary" fullWidth isLoading={isLoading} size="lg" className="rounded-xl h-11 font-bold">
-            غيّر كلمة المرور
+            {t('reset.submit')}
           </Button>
         </form>
 
@@ -130,10 +132,10 @@ function ResetForm() {
             disabled={cooldown > 0 || !email}
             className="font-bold text-brand-orange hover:underline disabled:text-text-muted disabled:no-underline disabled:cursor-not-allowed"
           >
-            {cooldown > 0 ? `أعد إرسال الكود بعد ${cooldown} ثانية` : 'أعد إرسال الكود'}
+            {cooldown > 0 ? `${t('reset.resendIn')} ${cooldown} ${t('reset.seconds')}` : t('reset.resend')}
           </button>
           <Link href="/auth/login" className="inline-flex items-center gap-1.5 font-bold text-brand-orange hover:underline">
-            رجوع لتسجيل الدخول <ArrowRight size={13} />
+            {t('forgot.back')} <ArrowRight size={13} />
           </Link>
         </div>
       </div>
