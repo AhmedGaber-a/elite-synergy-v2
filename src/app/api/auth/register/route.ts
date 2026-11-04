@@ -75,6 +75,32 @@ export async function POST(request: Request) {
           );
         }
 
+        // Not verified yet: the owner of this email still has to confirm with the code below,
+        // so the newest submission replaces the stale one (gender, year, college, password...).
+        // Otherwise an old draft silently wins and the student sees the wrong avatar/data.
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name: name || fullName?.split(' ')[0] || existingUser.name,
+            fullName: fullName || existingUser.fullName,
+            password: await bcrypt.hash(password, 10),
+            college: college || existingUser.college,
+            academicYear: Number.isInteger(academicYear) && academicYear >= 1 && academicYear <= 5 ? academicYear : existingUser.academicYear,
+            specialty: specialty ?? existingUser.specialty,
+            discipline: college || existingUser.discipline,
+            skills: Array.isArray(skills) ? skills : existingUser.skills,
+            languages: languages ?? existingUser.languages,
+            toolSkills: toolSkills ?? existingUser.toolSkills,
+            extraSkills: Array.isArray(extraSkills) ? extraSkills : existingUser.extraSkills,
+            bio: bio ?? existingUser.bio,
+            resumeUrl: cvUrl || resumeUrl || existingUser.resumeUrl,
+            socialLinks: socialLinks ?? existingUser.socialLinks,
+            avatarType: (avatarType === 'female' || avatarType === 'hijab' || avatarType === 'niqab')
+              ? AvatarType.female
+              : AvatarType.male,
+          },
+        });
+
         // If user registered but never verified, we can refresh OTP
         // Clean old tokens
         await prisma.verificationToken.deleteMany({ where: { identifier: trimmedEmail } });
