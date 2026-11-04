@@ -7,6 +7,7 @@ import { ArrowRight, Camera, Linkedin, Facebook, User, Mail, Lock, Eye, EyeOff, 
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import { resizeImageToDataUrl } from '@/lib/utils/resizeImage';
 import { EGYPT_FACULTIES } from '@/lib/data/egyptFaculties';
 
@@ -19,6 +20,7 @@ function XIcon({ className = 'w-4 h-4' }: { className?: string }) {
 }
 
 function RegisterContent() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { state, updateState } = useOnboarding();
@@ -47,7 +49,7 @@ function RegisterContent() {
 
   useEffect(() => {
     if (queryError === 'must_onboard') {
-      setWarning('يرجى إنشاء حساب جديد واستكمال ملفك الأكاديمي أولاً قبل تسجيل الدخول');
+      setWarning(t('reg.warnNewAccount'));
     }
   }, [queryError]);
 
@@ -65,29 +67,29 @@ function RegisterContent() {
     const cleanEmail = email.toLowerCase().trim();
 
     if (!cleanEmail || !password || !confirmPassword || !fullName) {
-      setError('يرجى ملء جميع الحقول المطلوبة');
+      setError(t('reg.fillAll'));
       return;
     }
 
     // Format check only; the server decides which addresses are accepted.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      setError('اكتب بريد إلكتروني صحيح');
+      setError(t('reg.badEmail'));
       return;
     }
 
     if (password.length < 8) {
-      setError('كلمة المرور يجب أن تتكون من 8 أحرف على الأقل');
+      setError(t('reg.passShort'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('كلمتا المرور غير متطابقتين');
+      setError(t('reg.passMismatch'));
       return;
     }
 
     const finalFaculty = facultyChoice;
     if (!finalFaculty || !academicYear) {
-      setError('اختار الكلية والفرقة الدراسية');
+      setError(t('reg.pickCollegeYear'));
       return;
     }
 
@@ -137,10 +139,10 @@ function RegisterContent() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-semibold px-4 py-1.5 rounded-full mb-4 backdrop-blur-sm">
             <span className="w-2 h-2 bg-brand-orange rounded-full animate-pulse" />
-            Step 1 of 5 — Registration & Basic Info
+            {t('reg.step1')}
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">انضم إلى Elite Synergy</h1>
-          <p className="text-white/60 text-sm">أنشئ ملفك الأكاديمي الموثق وابدأ بالتعاون وبناء المشاريع</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">{t('reg.joinTitle')}</h1>
+          <p className="text-white/60 text-sm">{t('reg.joinSub')}</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
@@ -191,7 +193,7 @@ function RegisterContent() {
                 className="hidden"
               />
               <p className="text-xs text-text-muted mt-3 text-center">
-                الصورة الشخصية (اختياري)<br />
+                {t('reg.photo')}<br />
                 <span className="text-text-muted/60">JPG, PNG</span>
               </p>
             </div>
@@ -208,7 +210,7 @@ function RegisterContent() {
               {/* Full Name */}
               <div>
                 <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                  الاسم الكامل (Full Name) <span className="text-red-500">*</span>
+                  {t('reg.fullName')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <User size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -216,7 +218,7 @@ function RegisterContent() {
                     type="text"
                     required
                     className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-sm transition-all"
-                    placeholder="أحمد محمد علي"
+                    placeholder={t('reg.namePh')}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
@@ -226,7 +228,7 @@ function RegisterContent() {
               {/* Gender / Avatar Selection */}
               <div>
                 <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                  الجنس (Gender) <span className="text-red-500">*</span>
+                  {t('reg.gender')} <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -238,8 +240,8 @@ function RegisterContent() {
                         : 'border-gray-200 bg-gray-50 text-text-muted hover:border-gray-300'
                     }`}
                   >
-                    <Avatar name="طالب" avatarType="male" size="xs" />
-                    <span>ذكر (Male)</span>
+                    <Avatar name={t('reg.studentMale')} avatarType="male" size="xs" />
+                    <span>{t('reg.male')}</span>
                   </button>
                   <button
                     type="button"
@@ -250,8 +252,8 @@ function RegisterContent() {
                         : 'border-gray-200 bg-gray-50 text-text-muted hover:border-gray-300'
                     }`}
                   >
-                    <Avatar name="طالبة" avatarType="female" size="xs" />
-                    <span>أنثى (Female)</span>
+                    <Avatar name={t('reg.studentFemale')} avatarType="female" size="xs" />
+                    <span>{t('reg.female')}</span>
                   </button>
                 </div>
               </div>
@@ -259,7 +261,7 @@ function RegisterContent() {
               {/* Institutional Email */}
               <div>
                 <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                  البريد الجامعي الرسمي <span className="text-red-500">*</span>
+                  {t('reg.uniEmail')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -278,16 +280,16 @@ function RegisterContent() {
               {/* Academic year (الفرقة) */}
               <div>
                 <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                  الفرقة الدراسية <span className="text-red-500">*</span>
+                  {t('reg.yearLabel')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={academicYear ?? ''}
                   onChange={(e) => setAcademicYear(e.target.value ? Number(e.target.value) : null)}
                   className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
                 >
-                  <option value="">اختر الفرقة</option>
-                  {['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة'].map((label, i) => (
-                    <option key={i + 1} value={i + 1}>الفرقة {label}</option>
+                  <option value="">{t('reg.pickYear')}</option>
+                  {(['reg.year1', 'reg.year2', 'reg.year3', 'reg.year4', 'reg.year5'] as const).map((k, i) => (
+                    <option key={i + 1} value={i + 1}>{t(k)}</option>
                   ))}
                 </select>
               </div>
@@ -296,7 +298,7 @@ function RegisterContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                    الكلية / القسم <span className="text-red-500">*</span>
+                    {t('reg.college')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <select
@@ -304,7 +306,7 @@ function RegisterContent() {
                       onChange={(e) => setFacultyChoice(e.target.value)}
                       className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-xs sm:text-sm"
                     >
-                      <option value="">اختر الكلية</option>
+                      <option value="">{t('reg.pickCollege')}</option>
                       {EGYPT_FACULTIES.map((f) => (
                         <option key={f} value={f}>{f}</option>
                       ))}
@@ -317,7 +319,7 @@ function RegisterContent() {
               {/* Password */}
               <div>
                 <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                  كلمة المرور <span className="text-red-500">*</span>
+                  {t('reg.password')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -325,7 +327,7 @@ function RegisterContent() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     className="w-full ps-10 pe-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-sm transition-all"
-                    placeholder="8 أحرف على الأقل"
+                    placeholder={t('reg.passPh')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -353,7 +355,7 @@ function RegisterContent() {
               {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-semibold text-text-primary mb-1.5">
-                  تأكيد كلمة المرور <span className="text-red-500">*</span>
+                  {t('reg.confirmPass')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -385,7 +387,7 @@ function RegisterContent() {
               <div className="pt-2">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">الروابط المهنية (اختياري)</span>
+                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">{t('reg.links')}</span>
                   <div className="flex-1 h-px bg-gray-200" />
                 </div>
 
@@ -442,21 +444,21 @@ function RegisterContent() {
                 isLoading={loading}
                 className="mt-4 rounded-xl font-bold text-base h-12"
               >
-                المتابعة إلى المهارات (Step 2) <ArrowRight size={18} className="ms-2" />
+                {t('reg.nextStep')} <ArrowRight size={18} className="ms-2" />
               </Button>
             </form>
 
             <p className="text-center text-sm text-text-muted mt-6">
-              لديك حساب بالفعل؟{' '}
+              {t('reg.haveAccount')}{' '}
               <Link href="/auth/login" className="text-brand-orange font-semibold hover:underline">
-                تسجيل الدخول
+                {t('reg.signIn')}
               </Link>
             </p>
           </div>
         </div>
 
         <p className="text-center text-white/40 text-xs mt-6">
-          بالتسجيل، أنت توافق على شروط الخدمة وسياسة الخصوصية الأكاديمية لمعهد العالي للهندسة والتكنولوجيا.
+          {t('reg.terms')}
         </p>
       </div>
     </div>
