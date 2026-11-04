@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/Badge';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useAuth } from '@/lib/context/AuthContext';
 import { PointsPanel } from '@/components/peers/PointsPanel';
-import { EndorseModal } from '@/components/peers/EndorseModal';
 
 export interface PeerItem {
   id: string;
@@ -285,7 +284,6 @@ export default function PeersPage() {
   const [notification, setNotification] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'explore' | 'points'>('explore');
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
-  const [teaching, setTeaching] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -626,16 +624,6 @@ export default function PeersPage() {
                       </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
-                        {acceptedIds.includes(peer.id) && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="px-3 py-1.5 text-xs font-bold rounded-xl"
-                            onClick={() => setTeaching({ id: peer.id, name: peer.name })}
-                          >
-                            {t('peers.teach')}
-                          </Button>
-                        )}
                         <Link href={`/peers/${peer.id}`}>
                           <Button variant="ghost" size="sm" className="px-2.5 py-1 text-xs font-bold text-text-muted hover:text-brand-orange">
                             View Profile
@@ -677,15 +665,6 @@ export default function PeersPage() {
             <PointsPanel />
           )}
         </div>
-
-        {/* Teach modal */}
-        {teaching && (
-          <EndorseModal
-            learnerId={teaching.id}
-            learnerName={teaching.name}
-            onClose={() => setTeaching(null)}
-          />
-        )}
 
         {/* Suggest modal */}
         {showSuggest && (

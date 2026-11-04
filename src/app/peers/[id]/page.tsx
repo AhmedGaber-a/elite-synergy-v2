@@ -8,11 +8,35 @@ import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { PeerItem } from '@/app/peers/page';
+import { EndorseModal } from '@/components/peers/EndorseModal';
+import { useRouter } from 'next/navigation';
 
 export default function PeerProfilePage({ params }: { params: { id: string } }) {
   const [peer, setPeer] = useState<PeerItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
+  const [teaching, setTeaching] = useState(false);
+  const [opening, setOpening] = useState(false);
+  const router = useRouter();
+
+  const openRoom = async () => {
+    if (!peer || opening) return;
+    setOpening(true);
+    try {
+      const res = await fetch('/api/collab', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peerId: peer.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.roomId) router.push(`/collab/${data.roomId}`);
+      else alert(data.error || 'تعذر فتح الغرفة');
+    } catch (err) {
+      console.error('Failed to open room:', err);
+    } finally {
+      setOpening(false);
+    }
+  };
 
   useEffect(() => {
     async function loadPeer() {
@@ -137,6 +161,21 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                 )}
               </div>
             </div>
+
+            {peer.connection === 'ACCEPTED' && (
+              <div className="flex flex-wrap gap-3 mb-6">
+                <Button variant="primary" size="md" onClick={() => setTeaching(true)}>
+                  علّم مهارة
+                </Button>
+                <Button variant="outline" size="md" isLoading={opening} onClick={openRoom}>
+                  غرفة التعاون والفيديو
+                </Button>
+              </div>
+            )}
+
+            {teaching && (
+              <EndorseModal learnerId={peer.id} learnerName={peer.name} onClose={() => setTeaching(false)} />
+            )}
 
             {/* Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-b border-gray-100 py-6 my-6">
