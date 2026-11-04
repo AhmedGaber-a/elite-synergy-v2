@@ -2,19 +2,11 @@ import { randomInt } from 'crypto';
 // src/app/api/auth/register/route.ts
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import nodemailer from 'nodemailer';
+import { sendMail } from '@/lib/services/mailer';
 import prisma from '@/lib/prisma';
 import { AvatarType, UserRole } from '@prisma/client';
 import { isStudentEmail, normalizeEmail, GENERIC_AUTH_ERROR, GENERIC_CODE_MESSAGE } from '@/lib/services/studentEmail';
 
-// تجهيز Nodemailer للإرسال عبر Gmail
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 export async function POST(request: Request) {
   try {
@@ -78,8 +70,7 @@ export async function POST(request: Request) {
         });
 
         try {
-          await transporter.sendMail({
-            from: `"Elite Synergy" <${process.env.EMAIL_USER}>`,
+          await sendMail({
             to: trimmedEmail,
             subject: 'كود تفعيل حسابك في Elite Synergy',
             html: `
@@ -163,9 +154,8 @@ export async function POST(request: Request) {
 
     // 5. Send OTP via Nodemailer
     try {
-      await transporter.sendMail({
-        from: `"Elite Synergy" <${process.env.EMAIL_USER}>`,
-        to: trimmedEmail,
+      await sendMail({
+            to: trimmedEmail,
         subject: 'كود تفعيل حسابك في Elite Synergy',
         html: `
           <div dir="rtl" style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">

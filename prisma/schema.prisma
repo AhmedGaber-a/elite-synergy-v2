@@ -687,3 +687,13 @@ model SkillSwap {
   @@index([toId])
   @@index([fromId])
 }
+
+// Failed sign-in attempts, counted per email and IP (not per account).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([email, ip, createdAt])
+}

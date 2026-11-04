@@ -62,7 +62,7 @@ export default function NotificationPage() {
   useEffect(() => {
     fetchNotifications();
     // Smart polling every 8s for live notifications
-    const interval = setInterval(fetchNotifications, 8000);
+    const interval = setInterval(fetchNotifications, 20000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 

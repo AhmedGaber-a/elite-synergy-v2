@@ -38,7 +38,7 @@ export function Navbar() {
         .catch(() => {})
     }
     load()
-    const interval = setInterval(load, 60000)
+    const interval = setInterval(load, 120000)
     const onVisible = () => {
       if (document.visibilityState === 'visible') load()
     }

@@ -1,3 +1,4 @@
+import { hourAgo, tooMany } from '@/lib/services/limits';
 // src/app/api/community/posts/[id]/comments/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -19,6 +20,8 @@ export async function POST(
       return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً للتعليق' }, { status: 401 });
     }
     const authorId = authUser.id;
+    const recentComments = await prisma.postComment.count({ where: { authorId, createdAt: { gte: hourAgo() } } });
+    if (recentComments >= 60) return tooMany('وصلت للحد المسموح من التعليقات في الساعة، حاول بعدين');
 
     const body = await req.json();
     const { text, textAr, commentId, parentId } = body;

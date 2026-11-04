@@ -1,3 +1,4 @@
+import { hourAgo, tooMany } from '@/lib/services/limits';
 // src/app/api/community/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -227,6 +228,8 @@ export async function POST(req: NextRequest) {
     if (!authUser) {
       return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً لنشر منشور' }, { status: 401 });
     }
+    const recentPosts = await prisma.post.count({ where: { authorId: authUser.id, createdAt: { gte: hourAgo() } } });
+    if (recentPosts >= 10) return tooMany('وصلت للحد المسموح من المنشورات في الساعة، حاول بعدين');
 
     const body = await req.json();
 

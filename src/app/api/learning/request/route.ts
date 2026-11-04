@@ -1,3 +1,4 @@
+import { hourAgo, tooMany } from '@/lib/services/limits';
 // src/app/api/learning/request/route.ts
 // I ask a peer to teach me `skill` in a given weekly slot.
 // All learners who pick the same teacher + skill + slot share one group (max 3).
@@ -14,6 +15,8 @@ export async function POST(req: NextRequest) {
   try {
     const me = await getAuthUser(req);
     if (!me) return NextResponse.json({ error: 'سجّل دخولك الأول' }, { status: 401 });
+    const recentLearn = await prisma.learnGroupMember.count({ where: { learnerId: me.id, createdAt: { gte: hourAgo() } } });
+    if (recentLearn >= 20) return tooMany('وصلت للحد المسموح من طلبات التعلم في الساعة، حاول بعدين');
 
     const { teacherId, skill, dayOfWeek, hour } = await req.json();
     if (!teacherId || teacherId === me.id) {

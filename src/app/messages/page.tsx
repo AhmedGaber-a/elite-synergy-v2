@@ -161,7 +161,7 @@ function MessagesContent() {
   // Initial load & poll conversations
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 8000);
+    const interval = setInterval(fetchConversations, 15000);
     return () => clearInterval(interval);
   }, [fetchConversations]);
 

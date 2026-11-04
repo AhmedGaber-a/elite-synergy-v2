@@ -1,6 +1,7 @@
 // src/lib/services/aiModeration.ts
 // AI helpers for the community (post screening) and peer skill exams.
 // Every function degrades safely when GEMINI_API_KEY is missing.
+import { withTimeout } from '@/lib/services/limits';
 import { GoogleGenAI } from '@google/genai';
 import { GEMINI_MODEL } from './aiService';
 
@@ -37,11 +38,11 @@ Respond ONLY with JSON: {"verdict": "SCIENTIFIC" | "NOT_SCIENTIFIC" | "UNCERTAIN
 `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await withTimeout(ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: prompt,
       config: { responseMimeType: 'application/json' },
-    });
+    }), 25000, 'AI timeout');
     const parsed = JSON.parse(extractJson(response.text || '{}')) as { verdict?: string; reason?: string };
     const verdict = parsed.verdict === 'NOT_SCIENTIFIC' || parsed.verdict === 'SCIENTIFIC' ? parsed.verdict : 'UNCERTAIN';
     return { verdict, reason: parsed.reason || '' };
@@ -75,11 +76,11 @@ Respond ONLY with JSON: {"questions": [{"question": "...", "options": ["...","..
 where "answer" is the 0-based index of the correct option.
 `;
 
-  const response = await ai.models.generateContent({
+  const response = await withTimeout(ai.models.generateContent({
     model: GEMINI_MODEL,
     contents: prompt,
     config: { responseMimeType: 'application/json' },
-  });
+  }), 25000, 'AI timeout');
 
   const parsed = JSON.parse(extractJson(response.text || '{}')) as { questions?: ExamQuestion[] };
   const questions = (parsed.questions || []).filter(

@@ -1,3 +1,4 @@
+import { clientIp } from '@/lib/services/ipRisk';
 // src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
@@ -19,6 +20,18 @@ export async function POST(req: NextRequest) {
 
     const trimmedEmail = email.toLowerCase().trim();
 
+    // Failures are counted per email AND per IP, so one attacker cannot lock a student out.
+    const ip = clientIp(req.headers);
+    const recentFails = await prisma.loginAttempt.count({
+      where: { email: trimmedEmail, ip, createdAt: { gte: new Date(Date.now() - LOCK_MINUTES * 60 * 1000) } },
+    });
+    if (recentFails >= MAX_LOGIN_ATTEMPTS) {
+      return NextResponse.json(
+        { error: `محاولات كتير غلط. حاول بعد ${LOCK_MINUTES} دقيقة.`, locked: true },
+        { status: 429 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: trimmedEmail },
       include: {
@@ -38,6 +51,7 @@ export async function POST(req: NextRequest) {
 
     // Unknown account, wrong domain and wrong password all get the same answer.
     if (!user || !isStudentEmail(trimmedEmail)) {
+      await prisma.loginAttempt.create({ data: { email: trimmedEmail, ip } });
       return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
 
@@ -56,23 +70,11 @@ export async function POST(req: NextRequest) {
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      const attempts = user.failedLoginAttempts + 1;
-      const shouldLock = attempts >= MAX_LOGIN_ATTEMPTS;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          failedLoginAttempts: shouldLock ? 0 : attempts,
-          lockedUntil: shouldLock ? new Date(Date.now() + LOCK_MINUTES * 60 * 1000) : null,
-        },
-      });
-      if (shouldLock) {
-        return NextResponse.json(
-          { error: `تم قفل الحساب ${LOCK_MINUTES} دقيقة بسبب محاولات كتير.`, locked: true },
-          { status: 429 }
-        );
-      }
+      await prisma.loginAttempt.create({ data: { email: trimmedEmail, ip } });
       return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
+    // Correct password: forget this IP's failures for this email.
+    await prisma.loginAttempt.deleteMany({ where: { email: trimmedEmail, ip } });
 
     if (user.failedLoginAttempts > 0 || user.lockedUntil) {
       await prisma.user.update({

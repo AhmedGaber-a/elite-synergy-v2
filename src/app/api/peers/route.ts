@@ -1,3 +1,4 @@
+import { hourAgo, tooMany } from '@/lib/services/limits';
 // src/app/api/peers/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -130,6 +131,8 @@ export async function POST(req: NextRequest) {
     if (!authUser) {
       return NextResponse.json({ error: 'يرجى تسجيل الدخول أولاً' }, { status: 401 });
     }
+    const recentRequests = await prisma.collaborationRequest.count({ where: { senderId: authUser.id, createdAt: { gte: hourAgo() } } });
+    if (recentRequests >= 30) return tooMany('وصلت للحد المسموح من طلبات التواصل في الساعة، حاول بعدين');
 
     const body = await req.json();
     const { peerId, message = 'Collaboration invite' } = body;
