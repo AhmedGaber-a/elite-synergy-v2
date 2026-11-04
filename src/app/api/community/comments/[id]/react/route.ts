@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { canUseCommunity } from '@/lib/departments';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function POST(
 
     const comment = await prisma.postComment.findUnique({
       where: { id: commentId },
-      include: { author: true },
+      include: { author: { select: PUBLIC_USER_SELECT } },
     });
 
     if (!comment) {

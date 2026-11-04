@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/services/authService';
 import { ensureYearGroup } from '@/lib/services/yearGroups';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { acceptedPeerIds, areConnected } from '@/lib/services/connections';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
         },
         include: {
           participants: {
-            include: { user: true },
+            include: { user: { select: PUBLIC_USER_SELECT } },
           },
         },
       });

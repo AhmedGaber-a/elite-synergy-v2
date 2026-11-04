@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ export async function PATCH(
 
     const post = await prisma.post.findUnique({
       where: { id: params.id },
-      include: { author: true },
+      include: { author: { select: PUBLIC_USER_SELECT } },
     });
 
     if (!post) {
@@ -72,18 +73,18 @@ export async function PATCH(
         fileUrl: fileUrl !== undefined ? fileUrl : undefined,
       },
       include: {
-        author: true,
+        author: { select: PUBLIC_USER_SELECT },
         likes: {
           include: {
-            user: true,
+            user: { select: PUBLIC_USER_SELECT },
           },
         },
         comments: {
           include: {
-            author: true,
+            author: { select: PUBLIC_USER_SELECT },
             replies: {
               include: {
-                author: true,
+                author: { select: PUBLIC_USER_SELECT },
               },
               orderBy: { createdAt: 'asc' },
             },

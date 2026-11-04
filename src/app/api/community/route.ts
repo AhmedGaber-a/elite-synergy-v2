@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { canUseCommunity, departmentOf, GENERAL_COMMUNITY, isCommunityKey } from '@/lib/departments';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 // Only the fields the feed shows. Never load password hashes or private columns into list responses.
 const AUTHOR_FIELDS = {
@@ -264,7 +265,7 @@ export async function POST(req: NextRequest) {
     if (sharedPostId) {
       const origPost = await prisma.post.findUnique({
         where: { id: sharedPostId },
-        include: { author: true },
+        include: { author: { select: PUBLIC_USER_SELECT } },
       });
       if (origPost) {
         // Never embed a post from a community the author cannot read.
@@ -302,10 +303,10 @@ export async function POST(req: NextRequest) {
         sharedPostId: sharedPostId || null,
       },
       include: {
-        author: true,
+        author: { select: PUBLIC_USER_SELECT },
         sharedPost: {
           include: {
-            author: true,
+            author: { select: PUBLIC_USER_SELECT },
           },
         },
       },

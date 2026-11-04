@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
         project: true,
         members: {
           include: {
-            user: true,
+            user: { select: PUBLIC_USER_SELECT },
           },
         },
         files: {
@@ -168,7 +169,7 @@ export async function POST(req: NextRequest) {
         },
         include: {
           members: {
-            include: { user: true },
+            include: { user: { select: PUBLIC_USER_SELECT } },
           },
           project: true,
         },

@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { canUseCommunity } from '@/lib/departments';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,7 @@ export async function POST(
     if (effectiveParentId) {
       const parentComment = await prisma.postComment.findUnique({
         where: { id: effectiveParentId },
-        include: { author: true },
+        include: { author: { select: PUBLIC_USER_SELECT } },
       });
 
       if (!parentComment) {
@@ -63,9 +64,9 @@ export async function POST(
           parentId: effectiveParentId,
         },
         include: {
-          author: true,
+          author: { select: PUBLIC_USER_SELECT },
           reactions: {
-            include: { user: true },
+            include: { user: { select: PUBLIC_USER_SELECT } },
           },
         },
       });
@@ -117,9 +118,9 @@ export async function POST(
         textAr: textAr ? textAr.trim() : null,
       },
       include: {
-        author: true,
+        author: { select: PUBLIC_USER_SELECT },
         reactions: {
-          include: { user: true },
+          include: { user: { select: PUBLIC_USER_SELECT } },
         },
       },
     });

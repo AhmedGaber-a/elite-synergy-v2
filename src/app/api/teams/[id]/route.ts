@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
+import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,13 +24,13 @@ export async function GET(
         project: true,
         members: {
           include: {
-            user: true,
+            user: { select: PUBLIC_USER_SELECT },
           },
           orderBy: { joinedAt: 'asc' },
         },
         messages: {
           include: {
-            user: true,
+            user: { select: PUBLIC_USER_SELECT },
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -148,7 +149,7 @@ export async function POST(
           text: (text || '').trim(),
         },
         include: {
-          user: true,
+          user: { select: PUBLIC_USER_SELECT },
         },
       });
 
@@ -223,7 +224,7 @@ export async function POST(
 
         const updated = await tx.team.findUnique({
           where: { id: freshTeam.id },
-          include: { members: { include: { user: true } } },
+          include: { members: { include: { user: { select: PUBLIC_USER_SELECT } } } },
         });
 
         return { member: newMember, team: updated };
