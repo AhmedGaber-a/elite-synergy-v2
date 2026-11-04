@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { canUseCommunity, departmentOf, GENERAL_COMMUNITY, isCommunityKey } from '@/lib/departments';
 import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
+import { validateTextContent } from '@/lib/utils/sanitize';
 
 // Only the fields the feed shows. Never load password hashes or private columns into list responses.
 const AUTHOR_FIELDS = {
@@ -33,7 +34,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'سجّل دخولك عشان تشوف المجتمع' }, { status: 401 });
     }
     const { searchParams } = new URL(req.url);
-    const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 30, 1), 100);
+    // Safe pagination with limit = 20 by default
+    const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 20, 1), 50);
+    const page = Math.max(Number(searchParams.get('page')) || 1, 1);
+    const skip = searchParams.get('skip') ? Math.max(Number(searchParams.get('skip')), 0) : (page - 1) * limit;
 
     // Default to the viewer's own department; "GENERAL" is the shared community for all departments.
     const requested = searchParams.get('community') || departmentOf(viewer.college) || GENERAL_COMMUNITY;
@@ -46,15 +50,34 @@ export async function GET(req: NextRequest) {
         community: requested,
         OR: [{ moderationStatus: 'APPROVED' }, { authorId: viewer.id }],
       },
-      include: {
+      select: {
+        id: true,
+        authorId: true,
+        content: true,
+        contentAr: true,
+        mediaType: true,
+        mediaUrl: true,
+        fileName: true,
+        fileUrl: true,
+        sharedPostId: true,
+        createdAt: true,
+        updatedAt: true,
         author: { select: AUTHOR_FIELDS },
         sharedPost: {
-          include: {
+          select: {
+            id: true,
+            authorId: true,
+            content: true,
+            mediaType: true,
+            mediaUrl: true,
+            fileName: true,
+            fileUrl: true,
+            createdAt: true,
             author: { select: AUTHOR_FIELDS },
           },
         },
         likes: {
-          include: {
+          select: {
             user: { select: { name: true } },
           },
         },
@@ -62,18 +85,32 @@ export async function GET(req: NextRequest) {
           where: {
             parentId: null, // Top-level comments only
           },
-          include: {
+          select: {
+            id: true,
+            authorId: true,
+            text: true,
+            textAr: true,
+            createdAt: true,
             author: { select: AUTHOR_FIELDS },
             reactions: {
-              include: {
+              select: {
+                type: true,
+                userId: true,
                 user: { select: { name: true } },
               },
             },
             nestedReplies: {
-              include: {
+              select: {
+                id: true,
+                authorId: true,
+                text: true,
+                textAr: true,
+                createdAt: true,
                 author: { select: AUTHOR_FIELDS },
                 reactions: {
-                  include: {
+                  select: {
+                    type: true,
+                    userId: true,
                     user: { select: { name: true } },
                   },
                 },
@@ -81,7 +118,12 @@ export async function GET(req: NextRequest) {
               orderBy: { createdAt: 'asc' },
             },
             replies: {
-              include: {
+              select: {
+                id: true,
+                authorId: true,
+                text: true,
+                textAr: true,
+                createdAt: true,
                 author: { select: AUTHOR_FIELDS },
               },
               orderBy: { createdAt: 'asc' },
@@ -92,6 +134,7 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
+      skip: skip,
     });
 
     const formattedPosts = posts.map((post) => {
@@ -239,8 +282,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'لا يمكنك النشر في مجتمع قسم آخر' }, { status: 403 });
     }
 
-    const content = body.content !== undefined ? body.content : body.text;
-    const contentAr = body.contentAr;
+    const rawContent = body.content !== undefined ? body.content : body.text;
+    const rawContentAr = body.contentAr;
     const sharedPostId = body.sharedPostId || null;
     let mediaType = body.mediaType || (body.mediaUrl ? 'image' : null);
     let mediaUrl = body.mediaUrl || body.image || null;
@@ -248,11 +291,30 @@ export async function POST(req: NextRequest) {
     let fileUrl = body.fileUrl || null;
 
     const hasMedia = Boolean(mediaUrl || fileUrl);
-    const hasContent = Boolean(content && typeof content === 'string' && content.trim());
     const isSharing = Boolean(sharedPostId);
 
-    if (!hasContent && !hasMedia && !isSharing) {
-      return NextResponse.json({ error: 'يرجى كتابة نص المنشور أو إرفاق ملف/صورة/فيديو' }, { status: 400 });
+    // Validate and sanitize content: max 5000 chars, required if no media or shared post
+    const contentValidation = validateTextContent(rawContent, {
+      maxLength: 5000,
+      required: !hasMedia && !isSharing,
+      fieldName: 'نص المنشور',
+    });
+
+    if (!contentValidation.valid) {
+      return NextResponse.json({ error: contentValidation.error }, { status: 400 });
+    }
+
+    let sanitizedContentAr: string | null = null;
+    if (rawContentAr !== undefined && rawContentAr !== null && typeof rawContentAr === 'string' && rawContentAr.trim()) {
+      const arValidation = validateTextContent(rawContentAr, {
+        maxLength: 5000,
+        required: false,
+        fieldName: 'النص العربي للمنشور',
+      });
+      if (!arValidation.valid) {
+        return NextResponse.json({ error: arValidation.error }, { status: 400 });
+      }
+      sanitizedContentAr = arValidation.sanitized;
     }
 
     if (hasInlineData(mediaUrl, fileUrl)) {
@@ -297,8 +359,8 @@ export async function POST(req: NextRequest) {
       data: {
         authorId: authUser.id,
         community,
-        content: content && typeof content === 'string' ? content.trim() : '',
-        contentAr: contentAr && typeof contentAr === 'string' ? contentAr.trim() : null,
+        content: contentValidation.sanitized,
+        contentAr: sanitizedContentAr,
         mediaType: mediaType || null,
         mediaUrl: mediaUrl || null,
         fileName: fileName || null,

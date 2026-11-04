@@ -11,7 +11,7 @@ interface SectionHeaderProps {
 }
 
 export function SectionHeader({ label, title, subtitle, align = 'center', className }: SectionHeaderProps) {
-  const alignClass = align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left'
+  const alignClass = align === 'center' ? 'text-center' : align === 'right' ? 'text-end' : 'text-start'
   return (
     <div className={cn(alignClass, className)}>
       {label && <Badge variant="orange" className="mb-3">{label}</Badge>}

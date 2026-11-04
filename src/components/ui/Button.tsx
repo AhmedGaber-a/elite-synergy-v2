@@ -40,7 +40,7 @@ export function Button({
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading ? <span className="animate-spin mr-2">⏳</span> : null}
+      {isLoading ? <span className="animate-spin me-2">⏳</span> : null}
       {children}
     </button>
   )

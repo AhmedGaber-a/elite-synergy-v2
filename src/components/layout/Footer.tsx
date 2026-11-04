@@ -1,7 +1,9 @@
+'use client'
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Facebook, Globe } from 'lucide-react'
+import { useLanguage } from '@/lib/context/LanguageContext'
 
 function XIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -12,6 +14,8 @@ function XIcon({ className = 'w-4 h-4' }: { className?: string }) {
 }
 
 export function Footer() {
+  const { t } = useLanguage()
+
   return (
     <footer className="bg-bg-dark text-white">
       <div className="section-container py-10">
@@ -20,19 +24,19 @@ export function Footer() {
             <Link href="/" className="inline-block relative h-16 w-44 rounded-2xl bg-white px-2 py-1 shadow-sm">
               <Image src="/assets/logo.svg" alt="Elite Synergy Logo" fill className="object-contain object-left" />
             </Link>
-            <p className="text-gray-400 text-sm">Build your future together.</p>
+            <p className="text-gray-400 text-sm">{t('footer.tagline')}</p>
           </div>
           
           <div className="flex flex-col items-center md:items-end gap-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
               <a href="https://futureacademyegypt.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Globe size={18} />
-                <span>Future Academy</span>
+                <span>{t('footer.academy')}</span>
               </a>
-              <Link href="/about" className="hover:text-white transition-colors">About</Link>
-              <Link href="/practical" className="hover:text-white transition-colors">Practical</Link>
-              <Link href="/peers" className="hover:text-white transition-colors">Peers</Link>
-              <Link href="/community" className="hover:text-white transition-colors">Community</Link>
+              <Link href="/about" className="hover:text-white transition-colors">{t('common.learnMore')}</Link>
+              <Link href="/practical" className="hover:text-white transition-colors">{t('nav.practical')}</Link>
+              <Link href="/peers" className="hover:text-white transition-colors">{t('nav.peers')}</Link>
+              <Link href="/community" className="hover:text-white transition-colors">{t('nav.community')}</Link>
             </div>
             
             <div className="flex items-center gap-4 mt-2">
@@ -47,10 +51,10 @@ export function Footer() {
         </div>
         
         <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-gray-500 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p>© {new Date().getFullYear()} Elite Synergy. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Elite Synergy. {t('footer.rights')}</p>
           <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">{t('footer.privacy')}</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">{t('footer.terms')}</Link>
           </div>
         </div>
       </div>

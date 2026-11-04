@@ -54,7 +54,7 @@ export function Navbar() {
     { href: '/', label: t('nav.home') },
     { href: '/practical', label: t('nav.practical') },
     { href: '/peers', label: t('nav.peers') },
-    { href: '/learning', label: 'التعلم والتبادل' },
+    { href: '/learning', label: t('nav.learning') },
     { href: '/community', label: t('nav.community') },
   ]
 
@@ -123,14 +123,14 @@ export function Navbar() {
             <button
               onClick={toggleLang}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-text-primary bg-white hover:bg-orange-50 hover:text-brand-orange transition-all border border-gray-200 hover:border-brand-orange shadow-sm"
-              title={lang === 'en' ? 'التبديل إلى العامية المصرية' : 'Switch to US English'}
+              title={lang === 'en' ? 'التبديل إلى العربية' : 'Switch to English'}
               aria-label="Toggle language"
             >
               <span className="text-base leading-none">
                 {lang === 'en' ? '🇺🇸' : '🇪🇬'}
               </span>
               <span className="tracking-wide">
-                {lang === 'en' ? 'US English' : 'عربي مصري'}
+                {lang === 'en' ? 'English' : 'العربية'}
               </span>
             </button>
 
@@ -238,7 +238,7 @@ export function Navbar() {
               aria-label="Toggle language"
             >
               <span className="text-base">{lang === 'en' ? '🇺🇸' : '🇪🇬'}</span>
-              <span>{lang === 'en' ? 'US English' : 'عربي مصري'}</span>
+              <span>{lang === 'en' ? 'English' : 'العربية'}</span>
             </button>
 
             {isAuthenticated && (

@@ -95,7 +95,7 @@ function MessagesContent() {
     } finally {
       setLoadingConvs(false);
     }
-  }, [activeId, idParam]);
+  }, []);
 
   // Handle URL query navigation: open or create conversation
   const handledParamRef = useRef<string | null>(null);

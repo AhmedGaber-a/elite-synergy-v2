@@ -3,20 +3,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
-import { DAY_NAMES, TEACH_HOURS, hourLabel } from '@/lib/learningUi';
+import { DAY_NAMES_AR, DAY_NAMES_EN, TEACH_HOURS, hourLabel } from '@/lib/learningUi';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
-type Person = { id: string; name: string; fullName?: string | null };
 type Tab = 'requests' | 'mine' | 'availability' | 'skills' | 'swaps';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'requests', label: 'طلبات واردة' },
-  { key: 'mine', label: 'تعلّمي' },
-  { key: 'availability', label: 'مواعيدي' },
-  { key: 'skills', label: 'عايز أتعلم' },
-  { key: 'swaps', label: 'تبادل مهارات' },
-];
-
 export default function LearningPage() {
+  const { t, lang } = useLanguage();
   const [tab, setTab] = useState<Tab>('requests');
   const [inbox, setInbox] = useState<any>(null);
   const [slots, setSlots] = useState<Set<string>>(new Set());
@@ -25,6 +18,16 @@ export default function LearningPage() {
   const [newWant, setNewWant] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const dayNames = lang === 'ar' ? DAY_NAMES_AR : DAY_NAMES_EN;
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: 'requests', label: t('learning.tabRequests') },
+    { key: 'mine', label: t('learning.tabMine') },
+    { key: 'availability', label: t('learning.tabAvailability') },
+    { key: 'skills', label: t('learning.tabSkills') },
+    { key: 'swaps', label: t('learning.tabSwaps') },
+  ];
 
   const loadAll = useCallback(async () => {
     const [i, a, w, s] = await Promise.all([
@@ -47,7 +50,7 @@ export default function LearningPage() {
     setMsg(null);
     const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const json = await res.json();
-    if (!res.ok) setMsg(json.error || 'حصل خطأ');
+    if (!res.ok) setMsg(json.error || (lang === 'ar' ? 'حصل خطأ' : 'An error occurred'));
     await loadAll();
     return json;
   };
@@ -70,7 +73,7 @@ export default function LearningPage() {
     });
     await act('/api/learning/availability', { slots: list }, 'PUT');
     setSaving(false);
-    setMsg('اتحفظت المواعيد');
+    setMsg(t('learning.saved'));
   };
 
   const addWant = async () => {
@@ -83,18 +86,18 @@ export default function LearningPage() {
     <AppLayout>
       <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-text-primary">التعلم والتبادل</h1>
-          <p className="text-sm text-text-muted">مواعيدك، طلبات التعلم، وتبادل المهارات مع زمايلك.</p>
+          <h1 className="text-2xl font-extrabold text-text-primary">{t('learning.title')}</h1>
+          <p className="text-sm text-text-muted">{t('learning.subtitle')}</p>
         </div>
 
         <div className="flex gap-2 overflow-x-auto border-b border-gray-200">
-          {TABS.map((t) => (
+          {TABS.map((tabItem) => (
             <button
-              key={t.key}
-              onClick={() => { setTab(t.key); setMsg(null); }}
-              className={`px-4 py-2 text-sm font-bold whitespace-nowrap border-b-2 -mb-px ${tab === t.key ? 'border-brand-orange text-brand-orange' : 'border-transparent text-text-muted'}`}
+              key={tabItem.key}
+              onClick={() => { setTab(tabItem.key); setMsg(null); }}
+              className={`px-4 py-2 text-sm font-bold whitespace-nowrap border-b-2 -mb-px transition-colors ${tab === tabItem.key ? 'border-brand-orange text-brand-orange' : 'border-transparent text-text-muted hover:text-text-primary'}`}
             >
-              {t.label}
+              {tabItem.label}
             </button>
           ))}
         </div>
@@ -103,14 +106,24 @@ export default function LearningPage() {
 
         {tab === 'requests' && (
           <div className="space-y-3">
-            {!inbox?.incomingLearners?.length && <p className="text-sm text-text-muted text-center py-8">مفيش طلبات تعلم جديدة.</p>}
+            {!inbox?.incomingLearners?.length && (
+              <p className="text-sm text-text-muted text-center py-8">{t('learning.noRequests')}</p>
+            )}
             {inbox?.incomingLearners?.map((r: any) => (
               <Card key={r.id}>
                 <p className="font-bold text-text-primary">{r.learner.fullName || r.learner.name}</p>
-                <p className="text-sm text-text-body">عايز يتعلم <b>{r.skill}</b> يوم {DAY_NAMES[r.dayOfWeek]} الساعة {hourLabel(r.hour)}</p>
+                <p className="text-sm text-text-body">
+                  {lang === 'ar'
+                    ? `عايز يتعلم ${r.skill} يوم ${dayNames[r.dayOfWeek]} الساعة ${hourLabel(r.hour, lang)}`
+                    : `Wants to learn ${r.skill} on ${dayNames[r.dayOfWeek]} at ${hourLabel(r.hour, lang)}`}
+                </p>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="primary" size="sm" onClick={() => act(`/api/learning/member/${r.id}`, { action: 'accept' })}>موافق</Button>
-                  <Button variant="outline" size="sm" onClick={() => act(`/api/learning/member/${r.id}`, { action: 'decline' })}>مش متاح</Button>
+                  <Button variant="primary" size="sm" onClick={() => act(`/api/learning/member/${r.id}`, { action: 'accept' })}>
+                    {t('learning.accept')}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => act(`/api/learning/member/${r.id}`, { action: 'decline' })}>
+                    {t('learning.decline')}
+                  </Button>
                 </div>
               </Card>
             ))}
@@ -119,13 +132,21 @@ export default function LearningPage() {
 
         {tab === 'mine' && (
           <div className="space-y-3">
-            {!inbox?.myLearning?.length && <p className="text-sm text-text-muted text-center py-8">لسه ما طلبتش تتعلم من حد.</p>}
+            {!inbox?.myLearning?.length && (
+              <p className="text-sm text-text-muted text-center py-8">{t('learning.noMine')}</p>
+            )}
             {inbox?.myLearning?.map((m: any) => (
               <Card key={m.id}>
-                <p className="font-bold text-text-primary">{m.skill} مع {m.teacher.fullName || m.teacher.name}</p>
-                <p className="text-sm text-text-body">يوم {DAY_NAMES[m.dayOfWeek]} الساعة {hourLabel(m.hour)}</p>
+                <p className="font-bold text-text-primary">
+                  {m.skill} {lang === 'ar' ? 'مع' : 'with'} {m.teacher.fullName || m.teacher.name}
+                </p>
+                <p className="text-sm text-text-body">
+                  {lang === 'ar'
+                    ? `يوم ${dayNames[m.dayOfWeek]} الساعة ${hourLabel(m.hour, lang)}`
+                    : `On ${dayNames[m.dayOfWeek]} at ${hourLabel(m.hour, lang)}`}
+                </p>
                 <span className={`inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded-full ${m.status === 'ACCEPTED' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-                  {m.status === 'ACCEPTED' ? 'متأكد' : 'مستني موافقة'}
+                  {m.status === 'ACCEPTED' ? t('learning.confirmed') : t('learning.waiting')}
                 </span>
               </Card>
             ))}
@@ -134,8 +155,8 @@ export default function LearningPage() {
 
         {tab === 'availability' && (
           <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
-            <p className="text-sm text-text-muted">اختار الساعات اللي تقدر تعلّم فيها زمايلك (توقيت القاهرة).</p>
-            {DAY_NAMES.map((name, day) => (
+            <p className="text-sm text-text-muted">{t('learning.availabilityDesc')}</p>
+            {dayNames.map((name, day) => (
               <div key={day}>
                 <p className="text-sm font-bold text-text-primary mb-2">{name}</p>
                 <div className="flex flex-wrap gap-2">
@@ -145,36 +166,38 @@ export default function LearningPage() {
                       <button
                         key={h}
                         onClick={() => toggleSlot(day, h)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${on ? 'bg-brand-navy text-white border-brand-navy' : 'border-gray-200 text-text-muted'}`}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${on ? 'bg-brand-navy text-white border-brand-navy' : 'border-gray-200 text-text-muted hover:border-gray-300'}`}
                       >
-                        {hourLabel(h)}
+                        {hourLabel(h, lang)}
                       </button>
                     );
                   })}
                 </div>
               </div>
             ))}
-            <Button variant="primary" isLoading={saving} onClick={saveAvailability}>احفظ المواعيد</Button>
+            <Button variant="primary" isLoading={saving} onClick={saveAvailability}>
+              {t('learning.saveAvailability')}
+            </Button>
           </div>
         )}
 
         {tab === 'skills' && (
           <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
-            <p className="text-sm text-text-muted">المهارات اللي عايز تتعلمها. ده بيستخدم في اقتراح التبادل.</p>
+            <p className="text-sm text-text-muted">{t('learning.skillsDesc')}</p>
             <div className="flex gap-2">
               <input
                 value={newWant}
                 onChange={(e) => setNewWant(e.target.value)}
-                placeholder="مثلا: AWS"
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                placeholder={t('learning.placeholderSkill')}
+                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange"
               />
-              <Button variant="primary" onClick={addWant}>أضف</Button>
+              <Button variant="primary" onClick={addWant}>{t('learning.add')}</Button>
             </div>
             <div className="flex flex-wrap gap-2">
               {wants.map((w) => (
                 <span key={w} className="inline-flex items-center gap-2 bg-orange-50 text-brand-orange px-3 py-1.5 rounded-xl text-xs font-bold">
                   {w}
-                  <button onClick={() => act(`/api/learning/wants?skill=${encodeURIComponent(w)}`, {}, 'DELETE')} aria-label="شيل">×</button>
+                  <button onClick={() => act(`/api/learning/wants?skill=${encodeURIComponent(w)}`, {}, 'DELETE')} aria-label={t('common.cancel')}>×</button>
                 </span>
               ))}
             </div>
@@ -184,43 +207,63 @@ export default function LearningPage() {
         {tab === 'swaps' && (
           <div className="space-y-6">
             <div className="space-y-3">
-              <h2 className="font-extrabold text-text-primary">اقتراحات تبادل</h2>
+              <h2 className="font-extrabold text-text-primary">{t('learning.swapSuggestions')}</h2>
               {suggestions.length === 0 && (
-                <p className="text-sm text-text-muted">ضيف مهارات عايز تتعلمها من تاب "عايز أتعلم"، وتأكد إن مهاراتك موجودة في بروفايلك.</p>
+                <p className="text-sm text-text-muted">{t('learning.noSuggestions')}</p>
               )}
               {suggestions.map((s) => (
                 <Card key={s.peer.id}>
                   <p className="font-bold text-text-primary">{s.peer.fullName || s.peer.name}</p>
-                  <p className="text-sm text-text-body">هتعلمه <b>{s.giveSkill}</b> وهيعلمك <b>{s.takeSkill}</b></p>
+                  <p className="text-sm text-text-body">
+                    {lang === 'ar'
+                      ? `ستعلّمه ${s.giveSkill} وسيعلّمك ${s.takeSkill}`
+                      : `You will teach ${s.giveSkill} and they will teach you ${s.takeSkill}`}
+                  </p>
                   <Button variant="primary" size="sm" className="mt-3" onClick={() => act('/api/learning/swaps', { toId: s.peer.id, giveSkill: s.giveSkill, takeSkill: s.takeSkill })}>
-                    ابعت اقتراح التبادل
+                    {t('learning.sendSwap')}
                   </Button>
                 </Card>
               ))}
             </div>
 
             <div className="space-y-3">
-              <h2 className="font-extrabold text-text-primary">طلبات تبادل واردة</h2>
-              {!inbox?.swapsIn?.length && <p className="text-sm text-text-muted">مفيش طلبات.</p>}
+              <h2 className="font-extrabold text-text-primary">{t('learning.incomingSwaps')}</h2>
+              {!inbox?.swapsIn?.length && <p className="text-sm text-text-muted">{t('learning.noIncomingSwaps')}</p>}
               {inbox?.swapsIn?.map((s: any) => (
                 <Card key={s.id}>
                   <p className="font-bold text-text-primary">{s.from.fullName || s.from.name}</p>
-                  <p className="text-sm text-text-body">عايز يعلمك <b>{s.giveSkill}</b> مقابل إنك تعلمه <b>{s.takeSkill}</b></p>
+                  <p className="text-sm text-text-body">
+                    {lang === 'ar'
+                      ? `يريد أن يعلّمك ${s.giveSkill} مقابل أن تعلّمه ${s.takeSkill}`
+                      : `Wants to teach you ${s.giveSkill} in exchange for learning ${s.takeSkill}`}
+                  </p>
                   <div className="flex gap-2 mt-3">
-                    <Button variant="primary" size="sm" onClick={() => act(`/api/learning/swaps/${s.id}`, { action: 'accept' })}>موافق</Button>
-                    <Button variant="outline" size="sm" onClick={() => act(`/api/learning/swaps/${s.id}`, { action: 'decline' })}>مش موافق</Button>
+                    <Button variant="primary" size="sm" onClick={() => act(`/api/learning/swaps/${s.id}`, { action: 'accept' })}>
+                      {t('learning.accept')}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => act(`/api/learning/swaps/${s.id}`, { action: 'decline' })}>
+                      {t('learning.decline')}
+                    </Button>
                   </div>
                 </Card>
               ))}
             </div>
 
             <div className="space-y-3">
-              <h2 className="font-extrabold text-text-primary">اقتراحاتك المبعوتة</h2>
-              {!inbox?.swapsOut?.length && <p className="text-sm text-text-muted">لسه ما بعتش اقتراحات.</p>}
+              <h2 className="font-extrabold text-text-primary">{t('learning.outgoingSwaps')}</h2>
+              {!inbox?.swapsOut?.length && <p className="text-sm text-text-muted">{t('learning.noOutgoingSwaps')}</p>}
               {inbox?.swapsOut?.map((s: any) => (
                 <Card key={s.id}>
-                  <p className="text-sm text-text-body">لـ {s.to.fullName || s.to.name}: {s.giveSkill} ⇄ {s.takeSkill}</p>
-                  <span className="text-xs font-bold text-text-muted">{s.status === 'PENDING' ? 'مستني رد' : s.status === 'ACCEPTED' ? 'اتقبل' : 'اترفض'}</span>
+                  <p className="text-sm text-text-body">
+                    {lang === 'ar' ? 'إلى' : 'To'} {s.to.fullName || s.to.name}: {s.giveSkill} ⇄ {s.takeSkill}
+                  </p>
+                  <span className="text-xs font-bold text-text-muted">
+                    {s.status === 'PENDING'
+                      ? t('learning.waiting')
+                      : s.status === 'ACCEPTED'
+                        ? t('status.approved')
+                        : t('status.rejected')}
+                  </span>
                 </Card>
               ))}
             </div>

@@ -6,6 +6,12 @@
   html {
     scroll-behavior: smooth;
   }
+  html[lang="ar"], html.font-cairo, body.font-cairo, .font-cairo {
+    font-family: var(--font-cairo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  html[lang="en"], html.font-poppins, body.font-poppins, .font-poppins {
+    font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
   body {
     @apply bg-bg-cream text-text-primary font-sans antialiased;
     min-height: 100dvh;

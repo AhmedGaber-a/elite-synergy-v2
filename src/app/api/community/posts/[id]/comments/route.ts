@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/services/authService';
 import { canUseCommunity } from '@/lib/departments';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { PUBLIC_USER_SELECT } from '@/lib/services/publicUser';
+import { validateTextContent } from '@/lib/utils/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,11 +27,31 @@ export async function POST(
     const body = await req.json();
     const { text, textAr, commentId, parentId } = body;
 
-    if (!text || !text.trim()) {
-      return NextResponse.json({ error: 'نص التعليق مطلوب' }, { status: 400 });
+    // Validate and sanitize comment text: max 2000 chars, required
+    const textValidation = validateTextContent(text, {
+      maxLength: 2000,
+      required: true,
+      fieldName: 'نص التعليق',
+    });
+
+    if (!textValidation.valid) {
+      return NextResponse.json({ error: textValidation.error }, { status: 400 });
     }
 
-    const trimmedText = text.trim();
+    let sanitizedTextAr: string | null = null;
+    if (textAr !== undefined && textAr !== null && typeof textAr === 'string' && textAr.trim()) {
+      const arValidation = validateTextContent(textAr, {
+        maxLength: 2000,
+        required: false,
+        fieldName: 'النص العربي للتعليق',
+      });
+      if (!arValidation.valid) {
+        return NextResponse.json({ error: arValidation.error }, { status: 400 });
+      }
+      sanitizedTextAr = arValidation.sanitized;
+    }
+
+    const trimmedText = textValidation.sanitized;
     const effectiveParentId = parentId || commentId || null;
 
     // Verify post exists
@@ -63,7 +84,7 @@ export async function POST(
           postId,
           authorId,
           text: trimmedText,
-          textAr: textAr ? textAr.trim() : null,
+          textAr: sanitizedTextAr,
           parentId: effectiveParentId,
         },
         include: {
@@ -118,7 +139,7 @@ export async function POST(
         postId,
         authorId,
         text: trimmedText,
-        textAr: textAr ? textAr.trim() : null,
+        textAr: sanitizedTextAr,
       },
       include: {
         author: { select: PUBLIC_USER_SELECT },

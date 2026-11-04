@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { formatArabicTimeAgo } from '@/lib/utils/timeAgo';
 import { areConnected } from '@/lib/services/connections';
+import { validateTextContent } from '@/lib/utils/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,10 +132,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'conversationId is required' }, { status: 400 });
     }
 
-    const trimmedText = text ? text.trim() : '';
-    if (!trimmedText && !sharedPostId) {
-      return NextResponse.json({ error: 'Message text or shared post is required' }, { status: 400 });
+    const isSharing = Boolean(sharedPostId);
+    // Validate and sanitize message text: max 2000 chars, required if not sharing a post
+    const textValidation = validateTextContent(text, {
+      maxLength: 2000,
+      required: !isSharing,
+      fieldName: 'نص الرسالة',
+    });
+
+    if (!textValidation.valid) {
+      return NextResponse.json({ error: textValidation.error }, { status: 400 });
     }
+
+    const trimmedText = textValidation.sanitized;
 
     // Verify conversation and participation
     const conversation = await prisma.conversation.findUnique({

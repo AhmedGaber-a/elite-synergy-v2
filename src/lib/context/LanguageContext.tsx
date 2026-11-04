@@ -17,17 +17,17 @@ export interface LanguageContextValue {
 }
 
 const LanguageContext = createContext<LanguageContextValue>({
-  lang: 'en',
-  dir: 'ltr',
-  isArabic: false,
-  isRTL: false,
+  lang: 'ar',
+  dir: 'rtl',
+  isArabic: true,
+  isRTL: true,
   t: (key) => key,
   toggleLang: () => {},
   setLanguage: () => {},
 })
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>('en')
+  const [lang, setLang] = useState<Lang>('ar')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -43,6 +43,20 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const dir = lang === 'ar' ? 'rtl' : 'ltr'
     document.documentElement.lang = lang
     document.documentElement.dir = dir
+
+    // Dynamic Font Family switching: Cairo for Arabic, Poppins for English
+    if (lang === 'ar') {
+      document.documentElement.classList.add('font-cairo')
+      document.documentElement.classList.remove('font-poppins')
+      document.body.classList.add('font-cairo')
+      document.body.classList.remove('font-poppins')
+    } else {
+      document.documentElement.classList.add('font-poppins')
+      document.documentElement.classList.remove('font-cairo')
+      document.body.classList.add('font-poppins')
+      document.body.classList.remove('font-cairo')
+    }
+
     localStorage.setItem('elite-lang', lang)
   }, [lang, mounted])
 
@@ -62,7 +76,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ lang, dir, isArabic, isRTL, t, toggleLang, setLanguage }}>
-      <div dir={dir} className="w-full min-h-screen">
+      <div dir={dir} className={`w-full min-h-screen ${lang === 'ar' ? 'font-cairo' : 'font-poppins'}`}>
         {children}
       </div>
     </LanguageContext.Provider>

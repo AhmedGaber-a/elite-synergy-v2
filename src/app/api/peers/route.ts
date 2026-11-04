@@ -12,6 +12,11 @@ export async function GET(req: NextRequest) {
     const authUser = await getAuthUser(req);
     const { searchParams } = new URL(req.url);
 
+    // Safe pagination with limit = 20 by default
+    const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 20, 1), 100);
+    const page = Math.max(Number(searchParams.get('page')) || 1, 1);
+    const skip = searchParams.get('skip') ? Math.max(Number(searchParams.get('skip')), 0) : (page - 1) * limit;
+
     const search = searchParams.get('search') || '';
     const collegeParam = searchParams.get('college') || searchParams.get('discipline') || '';
     const skill = searchParams.get('skill') || '';
@@ -19,7 +24,7 @@ export async function GET(req: NextRequest) {
     // Department split: exact match on the registered college value. "ALL" or empty = every department.
     const department = getDepartment(searchParams.get('department'));
 
-    // Fetch only verified students from PostgreSQL, strictly excluding current logged-in user
+    // Fetch verified students from PostgreSQL with targeted select — never return password or private auth fields
     const users = await prisma.user.findMany({
       where: {
         isVerified: true,
@@ -34,13 +39,49 @@ export async function GET(req: NextRequest) {
               ],
             }
           : {}),
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { fullName: { contains: search, mode: 'insensitive' } },
+                { specialty: { contains: search, mode: 'insensitive' } },
+                { college: { contains: search, mode: 'insensitive' } },
+                { discipline: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+        ...(skill
+          ? {
+              skills: { has: skill },
+            }
+          : {}),
       },
-      include: {
-        priorProjects: true,
-        platformProjects: true,
+      select: {
+        id: true,
+        name: true,
+        fullName: true,
+        discipline: true,
+        specialty: true,
+        college: true,
+        avatar: true,
+        avatarType: true,
+        skills: true,
+        bio: true,
+        points: true,
+        matchScore: true,
+        priorProjects: {
+          select: {
+            id: true,
+            title: true,
+            skill: true,
+            desc: true,
+          },
+          take: 3,
+        },
       },
       orderBy: { points: 'desc' },
-      take: 200, // cap the list so it stays fast as the student body grows
+      take: limit,
+      skip: skip,
     });
 
     const peers = users.map((u) => ({
@@ -66,28 +107,7 @@ export async function GET(req: NextRequest) {
       })),
     }));
 
-    // Dynamic case-insensitive free-text filter for skills & search
-    let filteredPeers = peers;
-    if (skill) {
-      const sLower = skill.toLowerCase().trim();
-      filteredPeers = filteredPeers.filter((p) =>
-        p.skills.some((s) => s.toLowerCase().includes(sLower))
-      );
-    }
-
-    if (search) {
-      const qLower = search.toLowerCase().trim();
-      filteredPeers = filteredPeers.filter((p) =>
-        p.name.toLowerCase().includes(qLower) ||
-        p.fullName.toLowerCase().includes(qLower) ||
-        p.specialty.toLowerCase().includes(qLower) ||
-        p.college.toLowerCase().includes(qLower) ||
-        p.discipline.toLowerCase().includes(qLower) ||
-        p.skills.some((s) => s.toLowerCase().includes(qLower))
-      );
-    }
-
-    // Student counts per department, for the sidebar (ignores the current filters, excludes the viewer).
+    // Student counts per department for the sidebar (ignores current search/pagination, excludes viewer)
     const grouped = await prisma.user.groupBy({
       by: ['college'],
       where: {
@@ -103,20 +123,27 @@ export async function GET(req: NextRequest) {
         .reduce((sum, g) => sum + g._count._all, 0);
     }
 
-    // Each peer's link with the viewer, so the UI never relies on local memory.
-    const links = currentUserId
+    // Targeted link query scoped only to the currently paginated peers
+    const peerIds = peers.map((p) => p.id);
+    const links = currentUserId && peerIds.length > 0
       ? await prisma.collaborationRequest.findMany({
-          where: { OR: [{ senderId: currentUserId }, { receiverId: currentUserId }] },
+          where: {
+            OR: [
+              { senderId: currentUserId, receiverId: { in: peerIds } },
+              { receiverId: currentUserId, senderId: { in: peerIds } },
+            ],
+          },
           select: { senderId: true, receiverId: true, status: true },
         })
       : [];
+
     const connectionWith = new Map<string, 'SENT' | 'RECEIVED' | 'ACCEPTED'>();
     for (const l of links) {
       const other = l.senderId === currentUserId ? l.receiverId : l.senderId;
       if (l.status === 'ACCEPTED') connectionWith.set(other, 'ACCEPTED');
       else if (l.status === 'PENDING') connectionWith.set(other, l.senderId === currentUserId ? 'SENT' : 'RECEIVED');
     }
-    const withState = filteredPeers.map((p) => ({ ...p, connection: connectionWith.get(p.id) ?? 'NONE' }));
+    const withState = peers.map((p) => ({ ...p, connection: connectionWith.get(p.id) ?? 'NONE' }));
 
     return NextResponse.json({ peers: withState, departmentCounts });
   } catch (error) {
