@@ -74,6 +74,10 @@ export function LearnModal({ teacherId, teacherName, onClose }: { teacherId: str
           </div>
         )}
 
+        {!loading && !done && !data && error && (
+          <p className="text-sm text-red-600 font-semibold">{error}</p>
+        )}
+
         {!loading && !done && data && (
           <div className="space-y-5">
             {data.skills.length === 0 ? (

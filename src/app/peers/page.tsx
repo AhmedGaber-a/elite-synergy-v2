@@ -15,6 +15,7 @@ export interface PeerItem {
   id: string;
   // Viewer's link with this peer: none, my request waiting, their request waiting for me, or connected.
   connection?: 'NONE' | 'SENT' | 'RECEIVED' | 'ACCEPTED';
+  availability?: { swaps: boolean; projects: boolean; inActiveProject: boolean };
   name: string;
   fullName: string;
   email: string;

@@ -49,6 +49,8 @@ model User {
   discipline  String? // For peer filtering (e.g. "Computer Science", "Business Information System")
   points      Int        @default(0)
   skills      String[]   @default([])
+  availableForSwaps    Boolean @default(false) // student's own choice: open to skill swaps
+  availableForProjects Boolean @default(true)  // student's own choice: open to practical projects
   bio         String?    @db.Text
   resumeUrl   String?
   age         Int?

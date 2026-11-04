@@ -187,9 +187,23 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">Status</span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-green-500" /> Available for Projects
-                </span>
+                <div className="flex flex-wrap gap-2">
+                  {peer.availability?.projects && (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-green-500" /> متاح للمشاريع
+                    </span>
+                  )}
+                  {peer.availability?.swaps && (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" /> متاح لتبادل المهارات
+                    </span>
+                  )}
+                  {!peer.availability?.projects && !peer.availability?.swaps && (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-gray-400" /> {peer.availability?.inActiveProject ? 'في مشروع شغال حالياً' : 'مش متاح حالياً'}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

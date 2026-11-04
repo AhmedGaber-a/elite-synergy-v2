@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/lib/services/authService';
 import { connectionWith } from '@/lib/services/connections';
+import { availabilityOf } from '@/lib/services/availability';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +36,12 @@ export async function GET(
     }
 
     const connection = await connectionWith(viewer.id, user.id);
+    const availability = await availabilityOf(user);
 
     const peer = {
       id: user.id,
       connection,
+      availability,
       name: user.name,
       fullName: user.fullName,
       discipline: user.discipline || user.college,

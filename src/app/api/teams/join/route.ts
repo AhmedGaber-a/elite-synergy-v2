@@ -40,6 +40,15 @@ export async function POST(req: NextRequest) {
         throw new Error('أنت عضو بالفعل في هذا الفريق');
       }
 
+      // 2a. One active project at a time: must submit the current team first
+      const activeTeam = await tx.teamMember.findFirst({
+        where: { userId: authUser.id, team: { submissions: { none: {} } } },
+        select: { id: true },
+      });
+      if (activeTeam) {
+        throw new Error('انت في مشروع شغال حالياً. لازم تسلّمه الأول قبل ما تنضم لفريق تاني');
+      }
+
       // 2b. Check if student is already in another team under the same project
       if (team.projectId) {
         const existingProjectMembership = await tx.teamMember.findFirst({
