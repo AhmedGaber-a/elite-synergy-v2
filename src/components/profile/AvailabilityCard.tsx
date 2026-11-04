@@ -2,10 +2,12 @@
 // The student chooses what they are open to. Project availability is locked while on an active team.
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 type Status = { availableForSwaps: boolean; availableForProjects: boolean; swaps: boolean; projects: boolean; inActiveProject: boolean };
 
 export function AvailabilityCard() {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<Status | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +16,7 @@ export function AvailabilityCard() {
     fetch('/api/profile/status', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => { if (d.swaps !== undefined) setStatus(d); })
-      .catch(() => setError('تعذر تحميل الحالة'));
+      .catch(() => setError(t('avail.loadFail')));
   }, []);
 
   const update = async (patch: Partial<{ availableForSwaps: boolean; availableForProjects: boolean }>) => {
@@ -27,7 +29,7 @@ export function AvailabilityCard() {
         body: JSON.stringify(patch),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error || 'تعذر الحفظ');
+      if (!res.ok) setError(data.error || t('avail.saveFail'));
       else setStatus(data);
     } finally {
       setSaving(false);
@@ -56,16 +58,16 @@ export function AvailabilityCard() {
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm divide-y divide-gray-100">
-      <h3 className="font-extrabold text-text-primary pb-3">حالتي</h3>
+      <h3 className="font-extrabold text-text-primary pb-3">{t('avail.title')}</h3>
       <Toggle
-        label="متاح لتبادل المهارات"
-        hint="الزملاء يقدروا يقترحولك تبادل"
+        label={t('avail.swapLabel')}
+        hint={t('avail.swapHint')}
         on={status.availableForSwaps}
         onChange={() => update({ availableForSwaps: !status.availableForSwaps })}
       />
       <Toggle
-        label="متاح للمشاريع"
-        hint={status.inActiveProject ? 'انت في مشروع شغال، لازم تسلّمه الأول' : 'الزملاء يشوفوك في المشاريع'}
+        label={t('avail.projLabel')}
+        hint={status.inActiveProject ? t('avail.projBusy') : t('avail.projOpen')}
         disabled={status.inActiveProject}
         on={status.projects}
         onChange={() => update({ availableForProjects: !status.availableForProjects })}

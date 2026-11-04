@@ -1,9 +1,12 @@
+'use client';
+import { useLanguage } from '@/lib/context/LanguageContext';
 // src/app/loading.tsx
 export default function GlobalLoading() {
+  const { t } = useLanguage();
   return (
     <div
       role="status"
-      aria-label="Loading page content / جاري التحميل"
+      aria-label={t('common.loadingPage')}
       className="min-h-screen bg-bg-cream flex flex-col transition-opacity duration-300"
     >
       {/* Top indeterminate progress bar */}

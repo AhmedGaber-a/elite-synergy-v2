@@ -50,6 +50,7 @@ function SuggestTeammatesModal({
   onClose: () => void;
   onConnect: (peerId: string) => void;
 }) {
+  const { t } = useLanguage();
   const [skillInput, setSkillInput] = useState('');
   const [customSkills, setCustomSkills] = useState<string[]>([]);
   const [selectedDept, setSelectedDept] = useState('');
@@ -134,7 +135,7 @@ function SuggestTeammatesModal({
           {/* Free-Text Skill Search Input (No restricted presets) */}
           <div>
             <label className="block text-sm font-bold text-text-primary mb-2">
-              اكتب المهارة التي تبحث عنها (Type skills you are looking for)
+              {t('peers.typeSkillHint')}
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -144,7 +145,7 @@ function SuggestTeammatesModal({
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="e.g. Cybersecurity, Python, Linux, Marketing, AWS..."
+                  placeholder={t('peers.skillPh')}
                   className="w-full ps-10 pe-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 bg-gray-50"
                 />
               </div>
@@ -156,7 +157,7 @@ function SuggestTeammatesModal({
                 disabled={!skillInput.trim()}
                 className="rounded-xl px-4 bg-purple-600 hover:bg-purple-700"
               >
-                إضافة
+                {t('peers.add')}
               </Button>
             </div>
 
@@ -209,14 +210,14 @@ function SuggestTeammatesModal({
             onClick={suggest}
             disabled={allActiveSkills.length === 0}
           >
-            <Sparkles size={16} className="me-2" /> بحث عن زملاء مطابقين للمهارات
+            <Sparkles size={16} className="me-2" /> {t('peers.matchSearch')}
           </Button>
 
           {/* Results */}
           {results !== null && (
             <div>
               <p className="text-sm font-bold text-text-primary mb-3">
-                {results.length > 0 ? `✨ ${results.length} recommended teammates found` : 'No matches found. Try different skills or broad search.'}
+                {results.length > 0 ? `✨ ${results.length} ${t('peers.foundSuffix')}` : t('peers.noMatchHint')}
               </p>
               <div className="space-y-3">
                 {results.map((peer) => (
@@ -353,13 +354,13 @@ export default function PeersPage() {
       setNotification(
         res.ok
           ? action === 'accept'
-            ? 'تم قبول الطلب، تقدر تبدأ المحادثة من الرسائل'
-            : 'تم رفض الطلب'
-          : data.error || 'تعذر تنفيذ العملية'
+            ? t('peers.acceptedMsg')
+            : t('peers.declinedMsg')
+          : data.error || t('peers.actionFail')
       );
       setTimeout(() => setNotification(null), 4000);
     } catch {
-      setNotification('حدث خطأ في الاتصال بالخادم');
+      setNotification(t('verify.serverError'));
       setTimeout(() => setNotification(null), 4000);
     }
     fetchRequests();
@@ -371,21 +372,21 @@ export default function PeersPage() {
       const res = await fetch('/api/peers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peerId, message: 'I would like to collaborate on upcoming practical projects!' }),
+        body: JSON.stringify({ peerId, message: t('peers.defaultMsg') }),
       });
 
       const data = await res.json();
       if (res.ok) {
         fetchPeers();
         fetchRequests();
-        setNotification('تم إرسال طلب التواصل بنجاح! سيتم إخطار زميلك.');
+        setNotification(t('peers.requestSent'));
         setTimeout(() => setNotification(null), 4000);
       } else {
-        setNotification(data.error || 'فشل إرسال الطلب');
+        setNotification(data.error || t('peers.requestFail'));
         setTimeout(() => setNotification(null), 4000);
       }
     } catch {
-      setNotification('حدث خطأ أثناء التواصل');
+      setNotification(t('peers.connectFail'));
       setTimeout(() => setNotification(null), 4000);
     }
   };
@@ -469,7 +470,7 @@ export default function PeersPage() {
 
           {activeTab === 'explore' && incoming.length > 0 && (
             <div className="mb-6 bg-white rounded-3xl p-5 border border-orange-100 shadow-sm">
-              <h3 className="font-extrabold text-sm mb-3">طلبات تواصل واردة ({incoming.length})</h3>
+              <h3 className="font-extrabold text-sm mb-3">{t('peers.incoming')} ({incoming.length})</h3>
               <div className="flex flex-col gap-3">
                 {incoming.map((r) => (
                   <div key={r.id} className="flex items-center justify-between gap-3">
@@ -479,10 +480,10 @@ export default function PeersPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Button size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" onClick={() => respondToRequest(r.id, 'accept')}>
-                        قبول
+                        {t('peers.accept')}
                       </Button>
                       <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" onClick={() => respondToRequest(r.id, 'decline')}>
-                        رفض
+                        {t('peers.decline')}
                       </Button>
                     </div>
                   </div>
@@ -551,12 +552,12 @@ export default function PeersPage() {
                     👥
                   </div>
                   <h3 className="text-xl font-extrabold text-text-primary mb-2">
-                    {search || activeDept !== 'ALL' ? 'No Matching Peers Found' : 'لا يوجد زملاء مسجلون حالياً (0 Peers)'}
+                    {search || activeDept !== 'ALL' ? t('peers.noMatch') : t('peers.none')}
                   </h3>
                   <p className="text-sm text-text-muted max-w-md mx-auto mb-6 leading-relaxed">
                     {search || activeDept !== 'ALL'
-                      ? 'Try clearing your filters or search query to see all verified students.'
-                      : 'أنت أول من يستكشف المنصة! بمجرد قيام طلاب آخرين بالتسجيل وتأكيد حساباتهم الرسمية، ستظهر بطاقاتهم الأكاديمية هنا للتعاون وتكوين الفرق.'}
+                      ? t('peers.noMatchSub')
+                      : t('peers.noneSub')}
                   </p>
                   <div className="flex justify-center gap-3">
                     {(search || activeDept !== 'ALL') && (
@@ -602,7 +603,7 @@ export default function PeersPage() {
                         </div>
 
                         <p className="text-xs text-text-body line-clamp-2 mb-4">
-                          {peer.bio || 'Verified academic student actively collaborating on engineering & business systems.'}
+                          {peer.bio || t('peers.bioDefault')}
                         </p>
 
                         <div className="mb-4">
@@ -625,16 +626,16 @@ export default function PeersPage() {
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
                         <Link href={`/peers/${peer.id}`}>
                           <Button variant="ghost" size="sm" className="px-2.5 py-1 text-xs font-bold text-text-muted hover:text-brand-orange">
-                            View Profile
+                            {t('peers.viewProfile')}
                           </Button>
                         </Link>
                         {peer.connection === 'ACCEPTED' ? (
                           <span className="text-xs font-bold text-green-600 flex items-center gap-1">
-                            <Check size={13} /> متواصلين
+                            <Check size={13} /> {t('peers.connected')}
                           </span>
                         ) : peer.connection === 'SENT' ? (
                           <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" disabled>
-                            <Check size={13} className="me-1 text-green-600" /> تم الإرسال
+                            <Check size={13} className="me-1 text-green-600" /> {t('peers.sentShort')}
                           </Button>
                         ) : peer.connection === 'RECEIVED' ? (
                           <Button
@@ -646,11 +647,11 @@ export default function PeersPage() {
                               if (req) respondToRequest(req.id, 'accept');
                             }}
                           >
-                            <Check size={13} className="me-1" /> قبول الطلب
+                            <Check size={13} className="me-1" /> {t('peers.acceptReq')}
                           </Button>
                         ) : (
                           <Button variant="primary" size="sm" className="px-3 py-1.5 text-xs font-bold rounded-xl" onClick={() => handleConnect(peer.id)}>
-                            <UserPlus size={13} className="me-1" /> Connect
+                            <UserPlus size={13} className="me-1" /> {t('peers.connect')}
                           </Button>
                         )}
                       </div>

@@ -210,7 +210,7 @@ export default function NotificationPage() {
           {loading ? (
             <div className="py-20 text-center">
               <div className="w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs font-bold text-text-muted">جاري تحميل الإشعارات من قاعدة البيانات...</p>
+              <p className="text-xs font-bold text-text-muted">{t('notif.loading')}</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">

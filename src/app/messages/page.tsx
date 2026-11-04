@@ -1,6 +1,7 @@
 // src/app/messages/page.tsx
 'use client';
 import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -61,6 +62,7 @@ interface ConversationItem {
 }
 
 function MessagesContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -222,7 +224,7 @@ function MessagesContent() {
           setConversations((prev) =>
             prev.map((c) =>
               c.id === activeId
-                ? { ...c, lastMessage: textToSend, time: 'الآن' }
+                ? { ...c, lastMessage: textToSend, time: t('msg.now') }
                 : c
             )
           );
@@ -261,13 +263,13 @@ function MessagesContent() {
             <div className="w-16 h-16 bg-orange-50 text-brand-orange rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
               💬
             </div>
-            <h2 className="text-xl font-extrabold text-text-primary mb-2">تسجيل الدخول مطلوب</h2>
+            <h2 className="text-xl font-extrabold text-text-primary mb-2">{t('msg.loginRequired')}</h2>
             <p className="text-xs text-text-muted mb-6">
-              يرجى تسجيل الدخول بحسابك الجامعي للوصول إلى محادثاتك الأكاديمية ومساحات عمل الفرق.
+              {t('msg.loginNeed')}
             </p>
             <Link href="/auth/login">
               <Button variant="primary" size="md" className="rounded-xl px-6 font-bold">
-                تسجيل الدخول الآن
+                {t('msg.loginNow')}
               </Button>
             </Link>
           </div>
@@ -285,7 +287,7 @@ function MessagesContent() {
             <div className="w-80 md:w-88 flex-shrink-0 flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
               <div className="p-4 border-b border-gray-100 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-extrabold text-xl text-text-primary">الرسائل والمحادثات</h2>
+                  <h2 className="font-extrabold text-xl text-text-primary">{t('msg.title')}</h2>
                   <span className="text-xs font-bold bg-orange-100 text-brand-orange px-2.5 py-0.5 rounded-full">
                     {conversations.length}
                   </span>
@@ -301,7 +303,7 @@ function MessagesContent() {
                         : 'text-text-muted hover:text-text-primary'
                     }`}
                   >
-                    الكل ({counts.all})
+                    {t('msg.all')} ({counts.all})
                   </button>
                   <button
                     onClick={() => setActiveCategory('peers')}
@@ -312,7 +314,7 @@ function MessagesContent() {
                     }`}
                   >
                     <Users size={12} />
-                    <span>الزملاء ({counts.peers})</span>
+                    <span>{t('msg.peers')} ({counts.peers})</span>
                   </button>
                   <button
                     onClick={() => setActiveCategory('practical')}
@@ -323,7 +325,7 @@ function MessagesContent() {
                     }`}
                   >
                     <Briefcase size={12} />
-                    <span>عملي ({counts.practical})</span>
+                    <span>{t('msg.practical')} ({counts.practical})</span>
                   </button>
                 </div>
 
@@ -332,7 +334,7 @@ function MessagesContent() {
                   <Search size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     className="w-full ps-10 pe-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50"
-                    placeholder="بحث في المحادثات..."
+                    placeholder={t('msg.searchPh')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -344,20 +346,20 @@ function MessagesContent() {
                 {loadingConvs ? (
                   <div className="p-8 text-center">
                     <div className="w-6 h-6 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <p className="text-[11px] text-text-muted">جاري تحميل المحادثات...</p>
+                    <p className="text-[11px] text-text-muted">{t('msg.loadingConv')}</p>
                   </div>
                 ) : filteredConversations.length === 0 ? (
                   <div className="p-6 text-center text-xs text-text-muted space-y-3">
-                    <p>لا توجد محادثات في هذا التصنيف حالياً.</p>
+                    <p>{t('msg.noConv')}</p>
                     <div className="flex flex-col gap-2 pt-2">
                       <Link href="/peers">
                         <Button variant="outline" size="sm" fullWidth className="rounded-xl text-xs">
-                          <Users size={13} className="me-1" /> التواصل مع زملاء في Peers
+                          <Users size={13} className="me-1" /> {t('msg.contactPeers')}
                         </Button>
                       </Link>
                       <Link href="/practical">
                         <Button variant="outline" size="sm" fullWidth className="rounded-xl text-xs">
-                          <Briefcase size={13} className="me-1" /> استكشاف المشاريع العملية
+                          <Briefcase size={13} className="me-1" /> {t('msg.exploreProjects')}
                         </Button>
                       </Link>
                     </div>
@@ -433,7 +435,7 @@ function MessagesContent() {
                                 : 'bg-teal-100 text-teal-700'
                             }`}
                           >
-                            {activeConversation.category === 'practical' ? 'مشروع عملي' : 'محادثة زميل'}
+                            {activeConversation.category === 'practical' ? t('msg.projectChat') : t('msg.peerChat')}
                           </span>
                         </div>
                         <p className="text-xs text-text-muted truncate">{activeConversation.role}</p>
@@ -444,14 +446,14 @@ function MessagesContent() {
                       {activeConversation.otherUserId && (
                         <Link href={`/peers/${activeConversation.otherUserId}`}>
                           <Button variant="ghost" size="sm" className="rounded-xl text-xs font-bold text-brand-orange">
-                            عرض الملف الشخصي
+                            {t('msg.viewProfile')}
                           </Button>
                         </Link>
                       )}
                       {activeConversation.projectId && (
                         <Link href={`/practical/${activeConversation.projectId}`}>
                           <Button variant="ghost" size="sm" className="rounded-xl text-xs font-bold text-brand-orange">
-                            مساحة المشروع
+                            {t('msg.workspace')}
                           </Button>
                         </Link>
                       )}
@@ -463,13 +465,13 @@ function MessagesContent() {
                     {loadingMsgs && messages.length === 0 ? (
                       <div className="py-20 text-center">
                         <div className="w-8 h-8 border-3 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                        <p className="text-xs text-text-muted">جاري تحميل الرسائل...</p>
+                        <p className="text-xs text-text-muted">{t('msg.loadingMsgs')}</p>
                       </div>
                     ) : messages.length === 0 ? (
                       <div className="py-20 text-center text-xs text-text-muted max-w-sm mx-auto">
                         <p className="text-3xl mb-2">👋</p>
-                        <p className="font-bold text-sm text-text-primary mb-1">بداية المحادثة الأكاديمية</p>
-                        <p>ابدأ بالترحيب بزميلك وناقش معه أفكار المشاريع والتعاون الدراسي المشترك.</p>
+                        <p className="font-bold text-sm text-text-primary mb-1">{t('msg.startConv')}</p>
+                        <p>{t('msg.startHint')}</p>
                       </div>
                     ) : (
                       messages.map((msg) => (
@@ -517,7 +519,7 @@ function MessagesContent() {
                                     className="text-[10px] font-bold underline flex items-center gap-0.5 text-brand-orange hover:text-orange-400 flex-shrink-0"
                                     target="_blank"
                                   >
-                                    <span>فتح في المجتمع</span>
+                                    <span>{t('msg.openInCommunity')}</span>
                                     <ExternalLink size={10} />
                                   </Link>
                                 </div>
@@ -530,7 +532,7 @@ function MessagesContent() {
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={msg.sharedPost.mediaUrl}
-                                    alt="Shared Preview"
+                                    alt={t('msg.sharedPreview')}
                                     className="w-full h-24 object-cover rounded-lg mt-1"
                                   />
                                 )}
@@ -558,7 +560,7 @@ function MessagesContent() {
                     <input
                       type="text"
                       className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2.5 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange"
-                      placeholder="اكتب رسالتك الأكاديمية هنا..."
+                      placeholder={t('msg.writePh')}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -571,7 +573,7 @@ function MessagesContent() {
                       isLoading={sending}
                       disabled={!newMessage.trim()}
                     >
-                      <span>إرسال</span>
+                      <span>{t('msg.send')}</span>
                       <Send size={14} />
                     </Button>
                   </div>
@@ -581,13 +583,13 @@ function MessagesContent() {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-2xl mb-3">
                     <MessageSquare size={28} className="text-gray-400" />
                   </div>
-                  <h3 className="font-extrabold text-base text-text-primary mb-1">اختر محادثة للبدء</h3>
+                  <h3 className="font-extrabold text-base text-text-primary mb-1">{t('msg.pickConv')}</h3>
                   <p className="text-xs max-w-sm leading-relaxed mb-4">
-                    اختر زميلاً أو مساحة مشروع عملي من القائمة الجانبية لبدء المراسلة الفورية ومشاركة المنشورات.
+                    {t('msg.pickHint')}
                   </p>
                   <Link href="/peers">
                     <Button variant="primary" size="sm" className="rounded-xl font-bold">
-                      <Users size={14} className="me-1" /> تواصل مع زملاء جدد
+                      <Users size={14} className="me-1" /> {t('msg.contactNew')}
                     </Button>
                   </Link>
                 </div>
@@ -601,6 +603,7 @@ function MessagesContent() {
 }
 
 export default function MessagesPage() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={

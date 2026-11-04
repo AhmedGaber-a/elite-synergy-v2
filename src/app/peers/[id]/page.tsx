@@ -1,6 +1,7 @@
 // src/app/peers/[id]/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 import Link from 'next/link';
 import { ArrowLeft, UserPlus, Check, MessageCircle, GraduationCap, Briefcase, Star } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -12,6 +13,7 @@ import { LearnModal } from '@/components/learning/LearnModal';
 import { useRouter } from 'next/navigation';
 
 export default function PeerProfilePage({ params }: { params: { id: string } }) {
+  const { t } = useLanguage();
   const [peer, setPeer] = useState<PeerItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
@@ -30,7 +32,7 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
       });
       const data = await res.json();
       if (res.ok && data.roomId) router.push(`/collab/${data.roomId}`);
-      else alert(data.error || 'تعذر فتح الغرفة');
+      else alert(data.error || t('peers.roomFail'));
     } catch (err) {
       console.error('Failed to open room:', err);
     } finally {
@@ -133,19 +135,19 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
 
               <div className="flex justify-center sm:justify-start gap-3 w-full md:w-auto">
                 <Link href={`/messages?type=peer&id=${peer.id}`} className="flex-1 md:flex-initial">
-                  <Button variant="outline" size="md" fullWidth><MessageCircle size={18} className="mr-2" /> Message</Button>
+                  <Button variant="outline" size="md" fullWidth><MessageCircle size={18} className="mr-2" /> {t('peer.message')}</Button>
                 </Link>
                 {peer.connection === 'ACCEPTED' ? (
                   <Button variant="navy" size="md" disabled className="flex-1 md:flex-initial">
-                    <Check size={18} className="mr-2 text-green-400" /> Connected
+                    <Check size={18} className="mr-2 text-green-400" /> {t('peer.connected')}
                   </Button>
                 ) : peer.connection === 'SENT' ? (
                   <Button variant="navy" size="md" disabled className="flex-1 md:flex-initial">
-                    <Check size={18} className="mr-2 text-green-400" /> Request Sent
+                    <Check size={18} className="mr-2 text-green-400" /> {t('peer.requestSent')}
                   </Button>
                 ) : peer.connection === 'RECEIVED' ? (
                   <Link href="/peers" className="flex-1 md:flex-initial">
-                    <Button variant="primary" size="md" fullWidth>Respond to request</Button>
+                    <Button variant="primary" size="md" fullWidth>{t('peers.respond')}</Button>
                   </Link>
                 ) : (
                   <Button
@@ -155,7 +157,7 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                     isLoading={requesting}
                     className="flex-1 md:flex-initial"
                   >
-                    <UserPlus size={18} className="mr-2" /> Connect
+                    <UserPlus size={18} className="mr-2" /> {t('peer.connect')}
                   </Button>
                 )}
               </div>
@@ -163,11 +165,11 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
 
             <div className="flex flex-wrap gap-3 mb-6">
               <Button variant="primary" size="md" onClick={() => setLearning(true)}>
-                اطلب تتعلم منه
+                {t('peer.askLearn')}
               </Button>
               {peer.connection === 'ACCEPTED' && (
                 <Button variant="outline" size="md" isLoading={opening} onClick={openRoom}>
-                  غرفة التعاون والفيديو
+                  {t('peer.room')}
                 </Button>
               )}
             </div>
@@ -189,17 +191,17 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                 <div className="flex flex-wrap gap-2">
                   {peer.availability?.projects && (
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-green-500" /> متاح للمشاريع
+                      <span className="w-2 h-2 rounded-full bg-green-500" /> {t('peer.availProjects')}
                     </span>
                   )}
                   {peer.availability?.swaps && (
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" /> متاح لتبادل المهارات
+                      <span className="w-2 h-2 rounded-full bg-blue-500" /> {t('peer.availSwap')}
                     </span>
                   )}
                   {!peer.availability?.projects && !peer.availability?.swaps && (
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-gray-400" /> {peer.availability?.inActiveProject ? 'في مشروع شغال حالياً' : 'مش متاح حالياً'}
+                      <span className="w-2 h-2 rounded-full bg-gray-400" /> {peer.availability?.inActiveProject ? t('peer.inProject') : t('peer.unavailable')}
                     </span>
                   )}
                 </div>

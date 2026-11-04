@@ -84,6 +84,7 @@ function EditProfileModal({
   onSave: (updated: Partial<ProfileData>) => Promise<void>;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     avatar: user.avatar || '',
     avatarType: ((user.avatarType === 'female' || (user.avatarType as string) === 'hijab' || (user.avatarType as string) === 'niqab') ? 'female' : 'male') as 'male' | 'female',
@@ -221,7 +222,7 @@ function EditProfileModal({
 
               <div>
                 <label className="block text-[11px] font-semibold text-text-muted mb-1.5">
-                  الجنس / الصورة الرمزية
+                  {t('profile.genderAvatar')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -234,7 +235,7 @@ function EditProfileModal({
                     }`}
                   >
                     <Avatar name="طالب" avatarType="male" size="xs" />
-                    <span>ذكر (Male)</span>
+                    <span>{t('profile.male')}</span>
                   </button>
                   <button
                     type="button"
@@ -246,7 +247,7 @@ function EditProfileModal({
                     }`}
                   >
                     <Avatar name="طالبة" avatarType="female" size="xs" />
-                    <span>أنثى (Female)</span>
+                    <span>{t('profile.female')}</span>
                   </button>
                 </div>
               </div>
