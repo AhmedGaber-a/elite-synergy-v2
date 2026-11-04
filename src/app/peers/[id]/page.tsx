@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, UserPlus, Check, MessageCircle, GraduationCap, Briefcase, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, UserPlus, Check, MessageCircle, GraduationCap, Briefcase, Star } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
@@ -144,12 +144,6 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
                 <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">Academic Points</span>
                 <span className="font-mono text-xl font-bold text-yellow-600 flex items-center gap-1">
                   <Star size={18} className="fill-yellow-500 text-yellow-500" /> {peer.points} pts
-                </span>
-              </div>
-              <div>
-                <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">AI Match Score</span>
-                <span className="font-mono text-xl font-bold text-purple-700 flex items-center gap-1">
-                  <Sparkles size={18} /> {peer.matchScore}%
                 </span>
               </div>
               <div className="col-span-2 sm:col-span-1">

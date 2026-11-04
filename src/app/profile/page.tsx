@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Linkedin, Download, ExternalLink, Pencil, X, Check,
   Plus, Cloud, Award, BookOpen, Star, Facebook, ShieldCheck,
-  FileText, Briefcase, Sparkles, AlertCircle, Camera, Upload, Trash2
+  FileText, Briefcase, AlertCircle, Camera, Upload, Trash2
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Avatar } from '@/components/ui/Avatar';
@@ -691,20 +691,13 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Metrics */}
-                <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
+                <div className="grid grid-cols-1 gap-3 mb-6 relative z-10">
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-yellow-400 mb-1">
                       <Star size={16} className="fill-yellow-400" />
                     </div>
                     <span className="font-mono text-xl font-black text-white">{profile.points}</span>
                     <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider">Points</p>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                    <div className="flex items-center justify-center gap-1 text-purple-400 mb-1">
-                      <Sparkles size={16} />
-                    </div>
-                    <span className="font-mono text-xl font-black text-white">{profile.matchScore}%</span>
-                    <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider">AI Match</p>
                   </div>
                 </div>
 
@@ -788,12 +781,6 @@ export default function ProfilePage() {
                       <Download size={16} /> Add CV / Resume Link
                     </button>
                   )}
-                  <button
-                    onClick={() => setEditOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3 rounded-2xl transition-colors text-xs font-bold"
-                  >
-                    <Pencil size={16} /> Edit Profile
-                  </button>
                 </div>
               </div>
             </div>
@@ -906,9 +893,6 @@ export default function ProfilePage() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-xs text-text-muted">Previous work submitted during onboarding or uploaded later</span>
-                      <Button variant="outline" size="sm" onClick={() => setAddProjectOpen(true)} className="rounded-xl text-xs">
-                        <Plus size={14} className="me-1" /> Add Project
-                      </Button>
                     </div>
 
                     {profile.priorProjects.length === 0 ? (
@@ -918,7 +902,7 @@ export default function ProfilePage() {
                         </div>
                         <h4 className="font-bold text-text-primary mb-1">No Prior Projects Uploaded</h4>
                         <p className="text-xs text-text-muted max-w-sm mx-auto mb-4">
-                          Showcase your prior work, case studies, or github repos to boost your AI matchmaking score!
+                          Showcase your prior work, case studies, or GitHub repos to strengthen your profile!
                         </p>
                         <Button variant="primary" size="sm" onClick={() => setAddProjectOpen(true)} className="rounded-xl">
                           Upload Prior Project

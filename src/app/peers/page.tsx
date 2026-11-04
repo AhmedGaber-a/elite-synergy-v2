@@ -90,7 +90,7 @@ function SuggestTeammatesModal({
           querySkills.some((qs) => s.toLowerCase().includes(qs.toLowerCase()) || qs.toLowerCase().includes(s.toLowerCase()))
         ).length;
 
-        const calculatedScore = matchingCount * 20 + (p.matchScore ?? 75);
+        const calculatedScore = matchingCount; // plain skill-overlap count
         return {
           ...p,
           calculatedScore,
@@ -121,7 +121,7 @@ function SuggestTeammatesModal({
               <Sparkles size={20} className="text-purple-600" />
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-text-primary">AI Teammate Suggestions</h2>
+              <h2 className="text-lg font-extrabold text-text-primary">Teammate Suggestions</h2>
               <p className="text-xs text-text-muted">Find peers with matching skills for your practical project</p>
             </div>
           </div>
@@ -242,7 +242,7 @@ function SuggestTeammatesModal({
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span className="text-xs bg-purple-600 text-white px-2.5 py-1 rounded-full font-bold">
-                        {peer.matchScore}% match
+                        {peer.matchingCount} shared skill(s)
                       </span>
                       <div className="flex gap-2">
                         <Link href={`/peers/${peer.id}`}>
@@ -442,8 +442,8 @@ export default function PeersPage() {
                 <Sparkles size={24} className="text-yellow-300" />
               </div>
               <div>
-                <p className="font-bold text-white text-base">AI Teammate Finder ✨</p>
-                <p className="text-purple-200 text-xs md:text-sm">Need specific skills? Let AI analyze student competencies and recommend top team candidates.</p>
+                <p className="font-bold text-white text-base">Teammate Finder ✨</p>
+                <p className="text-purple-200 text-xs md:text-sm">Need specific skills? Search by skill to find the best teammate candidates.</p>
               </div>
             </div>
             <Button
@@ -602,9 +602,6 @@ export default function PeersPage() {
                             <p className="text-xs text-brand-orange font-semibold truncate">{peer.specialty}</p>
                             <p className="text-[11px] text-text-muted truncate">{peer.college}</p>
                           </div>
-                          <span className="text-xs font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 flex-shrink-0">
-                            {peer.matchScore}%
-                          </span>
                         </div>
 
                         <p className="text-xs text-text-body line-clamp-2 mb-4">
