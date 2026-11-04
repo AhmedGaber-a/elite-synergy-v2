@@ -82,6 +82,12 @@ model User {
   collabA        CollabRoom[]             @relation("CollabA")
   collabB        CollabRoom[]             @relation("CollabB")
   collabItems    CollabItem[]             @relation("CollabItemAuthor")
+  availability   TeachingSlot[]
+  skillWants     SkillWant[]
+  learnGroupsTaught LearnGroup[]          @relation("GroupTeacher")
+  learnMemberships  LearnGroupMember[]
+  swapsSent      SkillSwap[]               @relation("SwapFrom")
+  swapsReceived  SkillSwap[]               @relation("SwapTo")
   sentMessages   Message[]                 @relation("SentMessages")
 
   // Notifications Relations
@@ -618,4 +624,64 @@ model CollabItem {
   createdAt DateTime   @default(now())
 
   @@index([roomId])
+}
+
+// Weekly hours a student is free to teach (Cairo local time). One row = one 1-hour slot.
+model TeachingSlot {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek Int      // 0 (Sunday) .. 6 (Saturday)
+  hour      Int      // 0..23
+  @@unique([userId, dayOfWeek, hour])
+}
+
+// A skill the student wants to learn (drives swap suggestions).
+model SkillWant {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill     String
+  createdAt DateTime @default(now())
+  @@unique([userId, skill])
+}
+
+// One teaching session: a teacher, a skill and one slot. Learners join it, max 3.
+model LearnGroup {
+  id        String   @id @default(cuid())
+  teacherId String
+  teacher   User     @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  skill     String
+  dayOfWeek Int
+  hour      Int
+  createdAt DateTime @default(now())
+  members   LearnGroupMember[]
+  @@unique([teacherId, skill, dayOfWeek, hour])
+}
+
+model LearnGroupMember {
+  id        String     @id @default(cuid())
+  groupId   String
+  group     LearnGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  learnerId String
+  learner   User       @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  status    String     @default("PENDING") // PENDING | ACCEPTED | DECLINED
+  createdAt DateTime   @default(now())
+  @@unique([groupId, learnerId])
+  @@index([learnerId])
+}
+
+// Skill exchange: I teach `giveSkill` to `toId`, they teach `takeSkill` to me.
+model SkillSwap {
+  id        String   @id @default(cuid())
+  fromId    String
+  from      User     @relation("SwapFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  toId      String
+  to        User     @relation("SwapTo", fields: [toId], references: [id], onDelete: Cascade)
+  giveSkill String
+  takeSkill String
+  status    String   @default("PENDING") // PENDING | ACCEPTED | DECLINED
+  createdAt DateTime @default(now())
+  @@index([toId])
+  @@index([fromId])
 }

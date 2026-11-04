@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { PeerItem } from '@/app/peers/page';
-import { EndorseModal } from '@/components/peers/EndorseModal';
+import { LearnModal } from '@/components/learning/LearnModal';
 import { useRouter } from 'next/navigation';
 
 export default function PeerProfilePage({ params }: { params: { id: string } }) {
   const [peer, setPeer] = useState<PeerItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
-  const [teaching, setTeaching] = useState(false);
+  const [learning, setLearning] = useState(false);
   const [opening, setOpening] = useState(false);
   const router = useRouter();
 
@@ -162,19 +162,19 @@ export default function PeerProfilePage({ params }: { params: { id: string } }) 
               </div>
             </div>
 
-            {peer.connection === 'ACCEPTED' && (
-              <div className="flex flex-wrap gap-3 mb-6">
-                <Button variant="primary" size="md" onClick={() => setTeaching(true)}>
-                  علّم مهارة
-                </Button>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <Button variant="primary" size="md" onClick={() => setLearning(true)}>
+                اطلب تتعلم منه
+              </Button>
+              {peer.connection === 'ACCEPTED' && (
                 <Button variant="outline" size="md" isLoading={opening} onClick={openRoom}>
                   غرفة التعاون والفيديو
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
 
-            {teaching && (
-              <EndorseModal learnerId={peer.id} learnerName={peer.name} onClose={() => setTeaching(false)} />
+            {learning && (
+              <LearnModal teacherId={peer.id} teacherName={peer.fullName || peer.name} onClose={() => setLearning(false)} />
             )}
 
             {/* Metrics */}
