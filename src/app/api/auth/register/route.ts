@@ -59,6 +59,22 @@ export async function POST(request: Request) {
           { status: 201 }
         );
       } else {
+        // Cooldown: a fresh code at most once a minute (prevents mail flooding and guess resets).
+        const lastToken = await prisma.verificationToken.findFirst({
+          where: { identifier: trimmedEmail },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (lastToken && Date.now() - lastToken.createdAt.getTime() < 60 * 1000) {
+          return NextResponse.json(
+            {
+              success: true,
+              message: 'تم إنشاء الحساب بنجاح. برجاء مراجعة بريدك الجامعي لتفعيل الحساب.',
+              redirectUrl: `/auth/verify?email=${encodeURIComponent(trimmedEmail)}`,
+            },
+            { status: 201 }
+          );
+        }
+
         // If user registered but never verified, we can refresh OTP
         // Clean old tokens
         await prisma.verificationToken.deleteMany({ where: { identifier: trimmedEmail } });
