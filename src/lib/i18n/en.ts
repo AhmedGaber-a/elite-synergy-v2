@@ -770,6 +770,21 @@ export const en = {
   'reg.haveAccount': "Already have an account?",
   'reg.signIn': "Sign in",
   'reg.terms': "By signing up you agree to the terms of service and the academic privacy policy of the Higher Institute of Engineering and Technology.",
+  'prac.loading': "Loading projects from the database...",
+  'prac.noTeam': "No team projects are available right now",
+  'prac.noSolo': "No solo projects are available right now",
+  'prac.note': "Practical and applied projects are approved and posted directly by course instructors and doctors. Projects appear in the academic system as soon as they are added.",
+  'prac.waitApproval': "Waiting for this semester's projects to be approved by the college council",
+  'prac.slotsTeams': "team seats",
+  'prac.teamsFull': "Teams are full",
+  'prac.individual': "Individual submission",
+  'prac.pubDate': "Published:",
+  'prac.duration': "Expected duration:",
+  'prac.score': "Score / points:",
+  'prac.teamsRegistered': "Registered teams:",
+  'prac.teamsOf': "out of",
+  'prac.teamsWord': "teams",
+  'prac.supervisor': "Academic supervisor:",
 } as const;
 
 export type TranslationKey = keyof typeof en;

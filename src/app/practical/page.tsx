@@ -145,7 +145,7 @@ export default function PracticalPage() {
           {loading ? (
             <div className="py-24 text-center">
               <div className="w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs font-bold text-text-muted">جاري تحميل المشاريع من قاعدة البيانات...</p>
+              <p className="text-xs font-bold text-text-muted">{t('prac.loading')}</p>
             </div>
           ) : filteredProjects.length === 0 ? (
             /* Clean Zero State */
@@ -155,17 +155,17 @@ export default function PracticalPage() {
               </div>
               <h3 className="text-xl font-black text-text-primary mb-2">
                 {activeTab === 'TEAM'
-                  ? 'لا توجد مشاريع فرق عمل متاحة حالياً (0 Projects)'
-                  : 'لا توجد مشاريع فردية متاحة حالياً (0 Projects)'}
+                  ? t('prac.noTeam')
+                  : t('prac.noSolo')}
               </h3>
               <p className="text-sm text-text-muted mb-6 leading-relaxed">
                 {lang === 'ar'
-                  ? 'المشاريع العملية والتطبيقية يتم اعتمادها ورفعها مباشرة من قبل أساتذة المواد والدكاترة. ستظهر المشاريع فور إضافتها في النظام الأكاديمي.'
+                  ? t('prac.note')
                   : 'Practical projects are uploaded and approved directly by faculty professors. They will appear here once published.'}
               </p>
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-text-muted bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
                 <Shield size={14} className="text-brand-orange" />
-                <span>بانتظار اعتماد مشاريع الفصل الدراسي من مجلس الكلية</span>
+                <span>{t('prac.waitApproval')}</span>
               </div>
             </div>
           ) : (
@@ -197,12 +197,12 @@ export default function PracticalPage() {
                           }`}
                         >
                           {project.availableTeamsCount > 0
-                            ? `${project.availableTeamsCount} شواغر فرق`
-                            : 'اكتملت الفرق'}
+                            ? `${project.availableTeamsCount} ${t('prac.slotsTeams')}`
+                            : t('prac.teamsFull')}
                         </span>
                       ) : (
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
-                          تسليم فردي
+                          {t('prac.individual')}
                         </span>
                       )}
                     </div>
@@ -218,14 +218,14 @@ export default function PracticalPage() {
                     <div className="bg-gray-50/80 rounded-2xl p-3.5 mb-4 space-y-2 text-xs border border-gray-100">
                       {project.doctor && (
                         <div className="flex items-center justify-between text-text-muted">
-                          <span>المشرف الأكاديمي:</span>
+                          <span>{t('prac.supervisor')}</span>
                           <span className="font-bold text-text-primary">{project.doctor}</span>
                         </div>
                       )}
                       {project.createdAt && (
                         <div className="flex items-center justify-between text-text-muted">
                           <span className="flex items-center gap-1">
-                            <Clock size={12} className="text-brand-orange" /> تاريخ النشر:
+                            <Clock size={12} className="text-brand-orange" /> {t('prac.pubDate')}
                           </span>
                           <span className="font-semibold text-text-primary text-[11px]" title={formatArabicTimeAgo(project.createdAt).exact}>
                             {formatArabicTimeAgo(project.createdAt).exact} ({formatArabicTimeAgo(project.createdAt).relative})
@@ -233,22 +233,22 @@ export default function PracticalPage() {
                         </div>
                       )}
                       <div className="flex items-center justify-between text-text-muted">
-                        <span>المدة المقررة:</span>
+                        <span>{t('prac.duration')}</span>
                         <span className="font-semibold text-text-primary flex items-center gap-1">
                           <Clock size={12} /> {project.completionTime}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-text-muted">
-                        <span>الدرجات / النقاط:</span>
+                        <span>{t('prac.score')}</span>
                         <span className="font-bold text-brand-orange font-mono">
                           +{project.score} pts
                         </span>
                       </div>
                       {project.type === 'TEAM' && (
                         <div className="flex items-center justify-between text-text-muted pt-1 border-t border-gray-200/50">
-                          <span>الفرق المسجلة:</span>
+                          <span>{t('prac.teamsRegistered')}</span>
                           <span className="font-bold text-text-primary">
-                            {project.teamsCount} من أصل {project.maxTeams} فرق
+                            {project.teamsCount} {t('prac.teamsOf')} {project.maxTeams} {t('prac.teamsWord')}
                           </span>
                         </div>
                       )}
