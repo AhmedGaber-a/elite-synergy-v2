@@ -30,7 +30,7 @@ export function HeroSection() {
                 <p className="text-brand-orange font-bold text-sm md:text-base mb-2 uppercase tracking-wider">
                   {lang === 'ar' ? `منور يا ${user?.name}!` : `Welcome back, ${user?.name}!`}
                 </p>
-                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.75] mb-6">
+                <h1 className={`text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary mb-6 ${lang === 'ar' ? 'leading-[2]' : 'leading-[1.3]'}`}>
                   {t('home.heroTitle')}{' '}
                   <span className="text-brand-orange">{t('home.heroTitleHighlight')}</span>
                 </h1>
@@ -52,7 +52,7 @@ export function HeroSection() {
               </>
             ) : (
               <>
-                <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary leading-[1.75] mb-6">
+                <h1 className={`text-3xl md:text-5xl lg:text-5xl font-extrabold text-text-primary mb-6 ${lang === 'ar' ? 'leading-[2]' : 'leading-[1.3]'}`}>
                   {lang === 'ar' ? (
                     <>
                       ابني مستقبلك مع <span className="text-brand-orange">إيليت سينرجي</span>
