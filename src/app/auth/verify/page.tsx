@@ -153,7 +153,7 @@ function VerifyForm() {
           </p>
           <div className="inline-flex items-center gap-2 bg-blue-50 text-brand-blue px-3 py-1.5 rounded-full text-xs font-semibold mt-2 dir-ltr">
             <Mail size={14} />
-            <span>{email || 'بريدك الجامعي (.edu.eg)'}</span>
+            <span>{email || 'بريدك الإلكتروني'}</span>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ function VerifyForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@university.edu.eg"
+                placeholder="name@example.com"
                 required
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange focus:outline-none"
               />

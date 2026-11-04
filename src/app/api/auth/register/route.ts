@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import prisma from '@/lib/prisma';
 import { AvatarType, UserRole } from '@prisma/client';
+import { isStudentEmail, normalizeEmail, GENERIC_AUTH_ERROR, GENERIC_CODE_MESSAGE } from '@/lib/services/studentEmail';
 
 // تجهيز Nodemailer للإرسال عبر Gmail
 const transporter = nodemailer.createTransport({
@@ -38,15 +39,11 @@ export async function POST(request: Request) {
       priorProjects = [],
     } = body;
 
-    const trimmedEmail = (email || '').toLowerCase().trim();
+    const trimmedEmail = normalizeEmail(email);
 
-    // 1. Strict university email validation
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu\.eg$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      return NextResponse.json(
-        { error: 'عذراً، التسجيل مسموح فقط بالإيميل الجامعي (.edu.eg)' },
-        { status: 400 }
-      );
+    // 1. Only student addresses. Same generic error as any other bad input, so the rule is not revealed.
+    if (!isStudentEmail(trimmedEmail)) {
+      return NextResponse.json({ error: 'تعذر إتمام التسجيل. راجع البيانات وحاول تاني.' }, { status: 400 });
     }
 
     if (!password || password.length < 8) {
@@ -60,7 +57,15 @@ export async function POST(request: Request) {
     const existingUser = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     if (existingUser) {
       if (existingUser.isVerified) {
-        return NextResponse.json({ error: 'هذا الحساب مسجل بالفعل، يمكنك تسجيل الدخول.' }, { status: 400 });
+        // Same answer as a new sign-up, so the response does not reveal that the account exists.
+        return NextResponse.json(
+          {
+            success: true,
+            message: 'تم إنشاء الحساب بنجاح. برجاء مراجعة بريدك الجامعي لتفعيل الحساب.',
+            redirectUrl: `/auth/verify?email=${encodeURIComponent(trimmedEmail)}`,
+          },
+          { status: 201 }
+        );
       } else {
         // If user registered but never verified, we can refresh OTP
         // Clean old tokens

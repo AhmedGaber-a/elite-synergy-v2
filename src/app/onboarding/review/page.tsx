@@ -89,7 +89,7 @@ export default function ReviewPage() {
           <div className="flex items-start justify-between border-b border-gray-100 pb-4">
             <div>
               <span className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1">Account & College</span>
-              <p className="text-text-primary font-bold">{state.fullName || 'Student'} ({state.email || 'name@university.edu.eg'})</p>
+              <p className="text-text-primary font-bold">{state.fullName || 'Student'} ({state.email || 'name@example.com'})</p>
               <p className="text-xs text-text-muted mt-0.5">{state.college} · {state.specialty}</p>
             </div>
             <button onClick={() => router.push('/onboarding/register')} className="text-xs text-brand-orange hover:underline font-semibold">

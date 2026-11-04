@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/services/authService';
+import { isStudentEmail, normalizeEmail, GENERIC_AUTH_ERROR, GENERIC_CODE_MESSAGE } from '@/lib/services/studentEmail';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_MINUTES = 15;
@@ -35,18 +36,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: 'هذا الحساب غير مسجل على المنصة. يرجى إنشاء حساب جديد (Sign Up) أولاً ثم تسجيل الدخول.',
-          notRegistered: true,
-        },
-        { status: 404 }
-      );
+    // Unknown account, wrong domain and wrong password all get the same answer.
+    if (!user || !isStudentEmail(trimmedEmail)) {
+      return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
 
     if (!password || !user.password) {
-      return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
+      return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
 
     // Account lock after repeated wrong passwords (brute-force protection).
@@ -75,7 +71,7 @@ export async function POST(req: NextRequest) {
           { status: 429 }
         );
       }
-      return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
+      return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
 
     if (user.failedLoginAttempts > 0 || user.lockedUntil) {

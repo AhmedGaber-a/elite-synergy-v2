@@ -3,6 +3,7 @@ import { randomInt } from 'crypto';
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import prisma from '@/lib/prisma';
+import { isStudentEmail, normalizeEmail, GENERIC_AUTH_ERROR, GENERIC_CODE_MESSAGE } from '@/lib/services/studentEmail';
 
 // تجهيز Nodemailer للإرسال عبر Gmail باستخدام EMAIL_USER و EMAIL_PASS
 const transporter = nodemailer.createTransport({
@@ -21,19 +22,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'البريد الإلكتروني مطلوب' }, { status: 400 });
     }
 
-    const trimmedEmail = email.toLowerCase().trim();
+    const trimmedEmail = normalizeEmail(email);
+    const genericOk = () => NextResponse.json({ success: true, message: GENERIC_CODE_MESSAGE });
+
+    // Non-student addresses and unknown/verified accounts get the same answer and no email.
+    if (!isStudentEmail(trimmedEmail)) return genericOk();
 
     const user = await prisma.user.findUnique({
       where: { email: trimmedEmail },
     });
 
-    if (!user) {
-      return NextResponse.json({ error: 'الحساب غير مسجل' }, { status: 404 });
-    }
-
-    if (user.isVerified) {
-      return NextResponse.json({ error: 'الحساب مفعل بالفعل، يمكنك تسجيل الدخول مباشرة' }, { status: 400 });
-    }
+    if (!user || user.isVerified) return genericOk();
 
     // Cooldown: a new code can only be requested once a minute. Without this, each resend
     // creates a fresh token with 0 failed attempts, which would let an attacker keep guessing.
@@ -42,7 +41,7 @@ export async function POST(request: Request) {
       orderBy: { createdAt: 'desc' },
     });
     if (latest && Date.now() - latest.createdAt.getTime() < 60 * 1000) {
-      return NextResponse.json({ error: 'استنى دقيقة قبل ما تطلب كود جديد' }, { status: 429 });
+      return genericOk();
     }
 
     // Delete existing tokens for this email
@@ -81,10 +80,7 @@ export async function POST(request: Request) {
       console.error('Failed to resend verification email via Nodemailer:', mailErr);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'تم إرسال كود تفعيل جديد إلى بريدك الجامعي بنجاح.',
-    });
+    return genericOk();
   } catch (error) {
     console.error('Resend OTP Error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء إعادة إرسال الكود' }, { status: 500 });

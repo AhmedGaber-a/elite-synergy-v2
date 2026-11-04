@@ -70,10 +70,9 @@ function RegisterContent() {
       return;
     }
 
-    // Strict institutional email regex verification
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu\.eg$/;
-    if (!emailRegex.test(cleanEmail)) {
-      setError('عذراً، التسجيل مسموح فقط بالإيميل الجامعي (.edu.eg)');
+    // Format check only; the server decides which addresses are accepted.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError('اكتب بريد إلكتروني صحيح');
       return;
     }
 
@@ -270,12 +269,12 @@ function RegisterContent() {
                     type="email"
                     required
                     className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-orange bg-gray-50 text-sm transition-all dir-ltr"
-                    placeholder="name@university.edu.eg"
+                    placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <p className="text-[11px] text-text-muted mt-1">يجب أن ينتهي بالامتداد: .edu.eg (إيميل جامعتك الرسمي)</p>
+                
               </div>
 
               {/* Academic year (الفرقة) */}

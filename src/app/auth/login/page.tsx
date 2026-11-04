@@ -102,7 +102,7 @@ function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@university.edu.eg"
+              placeholder="name@example.com"
               leftIcon={<Mail size={16} />}
               autoComplete="email"
             />
