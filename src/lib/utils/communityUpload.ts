@@ -1,5 +1,6 @@
 // src/lib/utils/communityUpload.ts
 import { upload } from '@vercel/blob/client';
+import { compressImageFile } from '@/lib/utils/compressImage';
 
 export type UploadKind = 'image' | 'video' | 'file';
 
@@ -19,9 +20,11 @@ export function checkUploadSize(file: File, kind: UploadKind): string | null {
 
 // Uploads the file to Vercel Blob and resolves with its public URL.
 export async function uploadCommunityFile(file: File, kind: UploadKind): Promise<string> {
-  const safeName = file.name.replace(/[^\w.-]+/g, '_');
+  // Photos are shrunk first; videos and documents go up as they are.
+  const toSend = kind === 'image' ? await compressImageFile(file) : file;
+  const safeName = toSend.name.replace(/[^\w.-]+/g, '_');
   try {
-    const blob = await upload(`community/${kind}/${safeName}`, file, {
+    const blob = await upload(`community/${kind}/${safeName}`, toSend, {
       access: 'public',
       handleUploadUrl: '/api/community/upload',
       clientPayload: kind,
